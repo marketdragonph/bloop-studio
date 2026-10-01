@@ -53,8 +53,9 @@ export const directorMethods = {
         this.directorInput = '';
         this.directorBusy = true;
         this.directorLog.push({ id: `u${Date.now()}`, role: 'user', text: message, actions: [] });
-        const reply = { id: `a${Date.now()}`, role: 'assistant', text: '', actions: [], streaming: true };
-        this.directorLog.push(reply);
+        this.directorLog.push({ id: `a${Date.now()}`, role: 'assistant', text: '', actions: [], streaming: true });
+        // Write through Alpine's reactive copy: mutating the plain object would never repaint the bubble.
+        const reply = this.directorLog[this.directorLog.length - 1];
         this.scrollDirector();
 
         const controller = new AbortController();
