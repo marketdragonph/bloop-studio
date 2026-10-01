@@ -12,7 +12,12 @@ const MAX_SEED = 2 ** 32 - 1;
 export async function resolvePreset(ctx, next) {
     const { spaces, presets } = ctx.deps;
     ctx.upstream = spaces.upstreamOf(ctx.node.space_id, ctx.node.id);
-    const wired = ctx.upstream.filter((n) => n.media_path && n.to_socket !== 'prompt').map((n) => n.to_socket);
+    // A picture wired in but not rendered must not silently turn image-to-video into text-to-video.
+    const unrendered = ctx.upstream.find((n) => n.to_socket !== 'prompt' && !n.media_path);
+    if (unrendered) {
+        throw new StageError(`The ${unrendered.type} card wired into ${unrendered.to_socket.replace('_', ' ')} has no render yet. Generate it first.`);
+    }
+    const wired = ctx.upstream.filter((n) => n.to_socket !== 'prompt').map((n) => n.to_socket);
     ctx.preset = choosePreset(presets, { type: ctx.node.type, settings: ctx.node.settings, wired });
     if (!ctx.preset) throw new StageError('No workflow fits this card and its wires.');
     await next();

@@ -3,6 +3,16 @@ import { runPipeline } from './pipeline.js';
 import { GENERATION_STAGES } from './stages.js';
 
 const IDLE_POLL_MS = 1000;
+const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b' };
+
+/** The model family a queued job will load (the card's chosen family, else the type's default). */
+function jobFamily(job) {
+    try {
+        return JSON.parse(job.node_settings ?? '{}').family ?? DEFAULT_FAMILY[job.node_type] ?? null;
+    } catch {
+        return DEFAULT_FAMILY[job.node_type] ?? null;
+    }
+}
 
 export class GenerationWorker {
     constructor(deps) {
@@ -24,7 +34,7 @@ export class GenerationWorker {
 
     async #loop() {
         while (!this.stopped) {
-            const job = this.deps.jobs.claimNext();
+            const job = this.deps.jobs.claimNext({ preferFamily: this.lastFamily, familyOf: jobFamily });
             if (!job) {
                 await new Promise((r) => setTimeout(r, IDLE_POLL_MS));
                 continue;

@@ -23,10 +23,26 @@ export class JobsRepository {
         return hydrate(this.db.prepare("SELECT * FROM jobs WHERE node_id = ? AND status IN ('queued', 'running') ORDER BY id DESC LIMIT 1").get(nodeId));
     }
 
-    claimNext() {
+    /**
+     * The next job that can run now: oldest first, but never one whose wired-in cards are still
+     * queued or rendering (a video must wait for its first-frame still, or it would render without
+     * it). Among ready jobs, `preferFamily` wins so the loaded model is reused before swapping.
+     */
+    claimNext({ preferFamily = null, familyOf = () => null } = {}) {
         return transaction(this.db, () => {
-            const job = this.db.prepare("SELECT * FROM jobs WHERE status = 'queued' ORDER BY id LIMIT 1").get();
-            if (!job) return null;
+            // A job whose card was deleted can never run: close it instead of leaving it queued forever.
+            this.db.prepare("UPDATE jobs SET status = 'canceled', error = 'The card was deleted.', finished_at = ? WHERE status = 'queued' AND node_id IS NULL").run(now());
+            const ready = this.db.prepare(`
+                SELECT j.*, n.settings AS node_settings, n.type AS node_type FROM jobs j
+                JOIN space_nodes n ON n.id = j.node_id
+                WHERE j.status = 'queued' AND NOT EXISTS (
+                    SELECT 1 FROM space_connections c JOIN space_nodes up ON up.id = c.from_node_id
+                    WHERE c.to_node_id = j.node_id AND up.status IN ('queued', 'generating')
+                )
+                ORDER BY j.id
+            `).all();
+            if (!ready.length) return null;
+            const job = ready.find((j) => preferFamily && familyOf(j) === preferFamily) ?? ready[0];
             this.db.prepare("UPDATE jobs SET status = 'running', started_at = ? WHERE id = ?").run(now(), job.id);
             return hydrate({ ...job, status: 'running' });
         });
