@@ -3,21 +3,23 @@
   <script type="application/json" x-ref="boardData">{{{ boardJson }}}</script>
 
   <div class="board-tools" role="toolbar" aria-label="Board tools">
-    <a class="ae-key ae-key--sm" href="/spaces" aria-label="Back to spaces">‹ Spaces</a>
+    <a class="ae-key ae-key--sm" href="/spaces" aria-label="Back to spaces">{{{ icon('chevron') }}}<span>Spaces</span></a>
     <h1 class="board-tools__title">{{ board.space.name }}</h1>
 
     <div class="board-tools__group" role="group" aria-label="Add card">
-      <template x-for="[type, meta] in Object.entries(nodeTypes).filter(([, m]) => m.creatable)" :key="type">
-        <button type="button" class="ae-key ae-key--sm" @click="addCard(type)" x-text="'+ ' + meta.label"></button>
-      </template>
+      @each(type in creatableTypes)
+        <button type="button" class="ae-key ae-key--sm" @click="addCard('{{ type.key }}')" aria-label="Add {{ type.label }} card">
+          {{{ icon(type.icon) }}}<span>{{ type.label }}</span>
+        </button>
+      @end
     </div>
 
     <div class="board-tools__group" role="group" aria-label="History and view">
-      <button type="button" class="ae-key ae-key--sm" @click="undo()" :disabled="!canUndo" aria-label="Undo (Ctrl+Z)">Undo</button>
-      <button type="button" class="ae-key ae-key--sm" @click="redo()" :disabled="!canRedo" aria-label="Redo (Ctrl+Shift+Z)">Redo</button>
-      <button type="button" class="ae-key ae-key--sm" @click="zoomBy(1 / 1.2)" aria-label="Zoom out">−</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="undo()" :disabled="!canUndo" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)">{{{ icon('undo') }}}</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="redo()" :disabled="!canRedo" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)">{{{ icon('redo') }}}</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="zoomBy(1 / 1.2)" aria-label="Zoom out" title="Zoom out">{{{ icon('minus') }}}</button>
       <span class="ae-readout board-tools__zoom" x-text="Math.round(zoom * 100) + '%'"></span>
-      <button type="button" class="ae-key ae-key--sm" @click="zoomBy(1.2)" aria-label="Zoom in">+</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="zoomBy(1.2)" aria-label="Zoom in" title="Zoom in">{{{ icon('plus') }}}</button>
     </div>
 
     <span class="ae-readout save-state" :class="'save-state--' + saveState" x-text="saveLabel()" aria-live="polite"></span>

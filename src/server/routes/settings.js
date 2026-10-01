@@ -1,6 +1,7 @@
 // Settings page: engine address, media folder, and the Director's LLM provider + keys.
 import { Hono } from 'hono';
 import { ComfyClient } from '../services/comfy-client.js';
+import { THEMES } from '../views.js';
 
 const PROVIDERS = ['anthropic', 'openai'];
 
@@ -47,6 +48,14 @@ export function settingsRoutes({ views, settings }) {
         settings.clearSecret(name === 'openai' ? 'openaiApiKey' : 'anthropicApiKey');
         c.header('HX-Redirect', '/settings?saved=1');
         return c.body(null, 204);
+    });
+
+    // The top-bar theme switch: dark → light → system (follows Windows).
+    routes.put('/theme', async (c) => {
+        const { theme } = await c.req.json();
+        if (!THEMES.includes(theme)) return c.json({ error: 'Unknown theme.' }, 422);
+        settings.update({ theme });
+        return c.json({ theme });
     });
 
     // Lets the user test an address before saving it.

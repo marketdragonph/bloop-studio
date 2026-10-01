@@ -1,6 +1,7 @@
 // Spaces: list + create modal (HTMX pages) and the board's JSON API used by the editor.
 import { Hono } from 'hono';
 import { ValidationError } from '../repositories/spaces.js';
+import { NODE_TYPES } from '../../shared/node-types.js';
 
 const id = (c, name = 'id') => Number.parseInt(c.req.param(name), 10);
 
@@ -49,7 +50,8 @@ export function spacesRoutes({ views, spaces }) {
         if (!board) return c.notFound();
         // Embedded in <script type="application/json">: escape "<" so card text can never close the tag.
         const boardJson = JSON.stringify(board).replace(/</g, '\\u003c');
-        return c.html(await views.render('pages/spaces/editor', { board, boardJson }));
+        const creatableTypes = Object.entries(NODE_TYPES).filter(([, t]) => t.creatable).map(([key, t]) => ({ key, ...t }));
+        return c.html(await views.render('pages/spaces/editor', { board, boardJson, creatableTypes }));
     });
 
     routes.delete('/:id', (c) => {

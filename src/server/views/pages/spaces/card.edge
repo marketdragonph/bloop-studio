@@ -11,9 +11,9 @@
   <button type="button" class="port port--out" @pointerdown="startWire($event, node)" :aria-label="'Wire from this ' + typeLabel(node) + ' card'"></button>
 
   <header class="card__head">
-    <span class="ae-stencil" x-text="typeLabel(node)"></span>
+    <span class="ae-stencil"><span class="card__icon" x-html="iconSvg(nodeTypes[node.type]?.icon)"></span><span x-text="typeLabel(node)"></span></span>
     <span class="card__status ae-readout" x-show="node.status !== 'idle'" x-text="node.status"></span>
-    <button type="button" class="card__close" @click="removeCard(node.id)" aria-label="Delete card">×</button>
+    <button type="button" class="card__close" @click="removeCard(node.id)" aria-label="Delete card" title="Delete card">{{{ icon('close') }}}</button>
   </header>
 
   <div class="card__body">
@@ -37,7 +37,30 @@
         </div>
         <textarea class="card__text scrolls" rows="3" placeholder="Extra direction (optional)"
                   :value="node.prompt ?? ''" @input="editText(node, 'prompt', $event.target.value)"></textarea>
-        <button type="button" class="ae-key ae-key--accent ae-key--block" disabled title="Rendering arrives in the next step of Phase 1">⚡ Generate</button>
+
+        <div class="card__controls">
+          <label class="card__control">
+            <span class="ae-readout">Model</span>
+            <select class="card__select" :value="familyOf(node)" @change="setFamily(node, $event.target.value)" :disabled="isBusy(node)">
+              <template x-for="f in families[node.type]" :key="f.id">
+                <option :value="f.id" x-text="f.label" :selected="f.id === familyOf(node)"></option>
+              </template>
+            </select>
+          </label>
+          <button type="button" class="ae-key ae-key--sm" @click="toggleSeedLock(node)" :aria-pressed="!!node.settings?.seedLocked"
+                  :title="node.settings?.seed != null ? 'Seed ' + node.settings.seed : 'No seed yet'"
+                  x-text="node.settings?.seedLocked ? 'Seed locked' : 'Seed: new'"></button>
+        </div>
+
+        <div class="card__progress" x-show="isBusy(node)">
+          <div class="ae-level"><div class="ae-level__fill" :style="{ width: progressPercent(node) }"></div></div>
+          <span class="ae-readout" x-text="node.progressLabel || node.status"></span>
+        </div>
+
+        <p class="field__error" x-show="node.status === 'failed' && node.error" x-text="node.error"></p>
+
+        <button type="button" class="ae-key ae-key--accent ae-key--block" x-show="!isBusy(node)" @click="generate(node)">{{{ icon('bolt') }}}<span>Generate</span></button>
+        <button type="button" class="ae-key ae-key--block" x-show="isBusy(node)" @click="cancelRender(node)">Cancel</button>
       </div>
     </template>
 

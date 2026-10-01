@@ -119,6 +119,23 @@
 .ae-key:focus-visible { background: var(--text-primary); outline: none; }
 .ae-key:focus-visible::before { inset: 3px; }
 
+/* ── Level (progress) bar: square ends with a tick every 10% ── */
+.ae-level { position: relative; height: 0.25rem; background: var(--ae-seam); overflow: hidden; }
+.ae-level__fill { height: 100%; background: var(--ae-level-accent, var(--accent)); transition: width 0.4s var(--ease-out); }
+.ae-level::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(to right, transparent 0 calc(10% - 1px), color-mix(in srgb, var(--bg-primary) 70%, transparent) calc(10% - 1px) 10%);
+    pointer-events: none;
+}
+
+/* ── Icons: the hangar set, 16-unit grid, stroke follows currentColor (and so the theme) ── */
+.ae-icon { width: 1em; height: 1em; flex: none; vertical-align: -0.125em; }
+.ae-key .ae-icon { font-size: 0.875rem; }
+.ae-key--square { width: 1.875rem; padding-inline: 0; }
+.ae-key--sm.ae-key--square { width: 1.5rem; }
+
 /* ── Chip ── */
 .ae-chip {
     display: inline-flex;

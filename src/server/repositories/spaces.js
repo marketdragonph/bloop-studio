@@ -85,6 +85,10 @@ export class SpacesRepository {
 
     // ── Cards ──
 
+    spaceOfNode(nodeId) {
+        return this.db.prepare('SELECT space_id FROM space_nodes WHERE id = ?').get(nodeId)?.space_id ?? null;
+    }
+
     findNode(spaceId, nodeId) {
         return hydrateNode(this.db.prepare('SELECT * FROM space_nodes WHERE id = ? AND space_id = ?').get(nodeId, spaceId));
     }

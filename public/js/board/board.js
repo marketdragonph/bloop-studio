@@ -4,7 +4,9 @@ import { gestureMethods } from './gestures.js';
 import { wireMethods } from './wires.js';
 import { cardMethods } from './cards.js';
 import { persistenceMethods } from './persistence.js';
+import { generationMethods } from './generation.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
+import { icon } from '/shared/icons.js';
 
 export default function SpaceBoard() {
     return {
@@ -26,6 +28,8 @@ export default function SpaceBoard() {
         canRedo: false,
         toasts: [],
         nodeTypes: NODE_TYPES,
+        families: { image: [], video: [] },
+        streamDown: false,
         history: null,
 
         init() {
@@ -44,14 +48,20 @@ export default function SpaceBoard() {
             });
             this.initGestures();
             this.initPersistence();
+            this.initGeneration();
         },
 
         destroy() {
             this.destroyGestures();
+            this.destroyGeneration();
         },
 
         socketsOf(node) {
             return socketsOf(node.type);
+        },
+
+        iconSvg(name) {
+            return icon(name);
         },
 
         typeLabel(node) {
@@ -80,5 +90,6 @@ export default function SpaceBoard() {
         ...wireMethods,
         ...cardMethods,
         ...persistenceMethods,
+        ...generationMethods,
     };
 }

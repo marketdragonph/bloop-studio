@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="{{ currentTheme() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,14 +23,19 @@
             <span class="topbar__title">Studio</span>
         </a>
         <nav class="topbar__nav" aria-label="Main">
-            <a href="/" class="topbar__link">Hangar</a>
-            <a href="/spaces" class="topbar__link">Spaces</a>
-            <a href="/settings" class="topbar__link">Settings</a>
+            <a href="/" class="topbar__link">{{{ icon('grid') }}}<span>Hangar</span></a>
+            <a href="/spaces" class="topbar__link">{{{ icon('board') }}}<span>Spaces</span></a>
+            <a href="/settings" class="topbar__link">{{{ icon('settings') }}}<span>Settings</span></a>
         </nav>
         <div class="topbar__engine"
              hx-get="/engine/status" hx-trigger="load, every 5s" hx-swap="innerHTML" aria-live="polite">
             @include('partials/engine-status')
         </div>
+        <button type="button" class="ae-key ae-key--square" x-data="ThemeToggle" @click="cycle()" :aria-label="label" :title="label">
+            <span x-show="theme === 'dark'">{{{ icon('moon') }}}</span>
+            <span x-show="theme === 'light'" x-cloak>{{{ icon('sun') }}}</span>
+            <span x-show="theme === 'system'" x-cloak>{{{ icon('eye') }}}</span>
+        </button>
     </header>
 
     <main id="main" class="page">

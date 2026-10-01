@@ -1,0 +1,43 @@
+{
+  "id": "h3-t2va",
+  "label": "MiniMax-H3 (video + sound)",
+  "card": "video",
+  "needs": [],
+  "output": "video",
+  "dialect": "h3",
+  "defaults": { "width": 864, "height": 480, "length": 124, "steps": 20 },
+  "bindings": {
+    "prompt": ["@positive", "prompt"],
+    "seed": ["@noise", "noise_seed"],
+    "steps": ["@scheduler", "steps"],
+    "width": ["@positive", "width"],
+    "height": ["@positive", "height"],
+    "length": ["@positive", "length"]
+  },
+  "models": [
+    ["diffusion_models", "minimax_h3_fl2va_pruned-Q4_K_M.gguf"],
+    ["text_encoders", "qwen3vl_8b_fp8_scaled.safetensors"],
+    ["clip_projections", "mmh3-8b-ClipProj-v3.1.safetensors"],
+    ["vae", "minimax_h3_video_vae_fp16.safetensors"],
+    ["vae", "minimax_h3_audio_vae_fp32.safetensors"]
+  ],
+  "requiresNodes": ["UnetLoaderGGUF", "CCTechClipProjLoader", "MiniMaxH3ImageToVideo", "ForceUnloadBeforeDecode"],
+  "graph": {
+    "130": { "class_type": "UnetLoaderGGUF", "_meta": { "title": "@model" }, "inputs": { "unet_name": "minimax_h3_fl2va_pruned-Q4_K_M.gguf" } },
+    "131": { "class_type": "CCTechClipProjLoader", "_meta": { "title": "@clip" }, "inputs": { "clip_name": "qwen3vl_8b_fp8_scaled.safetensors", "type": "boogu", "projection": "mmh3-8b-ClipProj-v3.1.safetensors" } },
+    "132": { "class_type": "VAELoader", "_meta": { "title": "@vae" }, "inputs": { "vae_name": "minimax_h3_video_vae_fp16.safetensors" } },
+    "120": { "class_type": "VAELoader", "_meta": { "title": "@audio_vae" }, "inputs": { "vae_name": "minimax_h3_audio_vae_fp32.safetensors" } },
+    "129": { "class_type": "MiniMaxH3ImageToVideo", "_meta": { "title": "@positive" }, "inputs": { "clip": ["131", 0], "vae": ["132", 0], "prompt": "", "width": 864, "height": 480, "length": 124 } },
+    "136": { "class_type": "ForceUnloadBeforeDecode", "_meta": { "title": "@unload_before_sample" }, "inputs": { "samples": ["129", 1] } },
+    "127": { "class_type": "RandomNoise", "_meta": { "title": "@noise" }, "inputs": { "noise_seed": 0 } },
+    "126": { "class_type": "BasicGuider", "_meta": { "title": "@guider" }, "inputs": { "model": ["130", 0], "conditioning": ["129", 0] } },
+    "123": { "class_type": "KSamplerSelect", "_meta": { "title": "@sampler_select" }, "inputs": { "sampler_name": "res_multistep" } },
+    "124": { "class_type": "BasicScheduler", "_meta": { "title": "@scheduler" }, "inputs": { "model": ["130", 0], "scheduler": "simple", "steps": 20, "denoise": 1 } },
+    "125": { "class_type": "SamplerCustomAdvanced", "_meta": { "title": "@sampler" }, "inputs": { "noise": ["127", 0], "guider": ["126", 0], "sampler": ["123", 0], "sigmas": ["124", 0], "latent_image": ["136", 0] } },
+    "135": { "class_type": "ForceUnloadBeforeDecode", "_meta": { "title": "@unload_before_decode" }, "inputs": { "samples": ["125", 0] } },
+    "122": { "class_type": "VAEDecode", "_meta": { "title": "@decode" }, "inputs": { "samples": ["135", 0], "vae": ["132", 0] } },
+    "121": { "class_type": "VAEDecodeAudio", "_meta": { "title": "@decode_audio" }, "inputs": { "samples": ["135", 0], "vae": ["120", 0] } },
+    "128": { "class_type": "CreateVideo", "_meta": { "title": "@video" }, "inputs": { "images": ["122", 0], "fps": 24, "audio": ["121", 0], "bit_depth": 8 } },
+    "92": { "class_type": "SaveVideo", "_meta": { "title": "@output" }, "inputs": { "video": ["128", 0], "filename_prefix": "bloop-studio/video", "format": "auto", "codec": "auto" } }
+  }
+}

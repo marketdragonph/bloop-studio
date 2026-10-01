@@ -1,33 +1,38 @@
-/* Design tokens, ported from bloop's variables.css. Brand/platform tokens dropped;
-   "dragon" renamed to "accent". Dark is the default theme. */
+/* Design tokens, ported from bloop's variables.css (brand/platform tokens dropped, "dragon" → "accent").
+   Every colour is light-dark(LIGHT, DARK): the theme only sets color-scheme, so the two palettes
+   live side by side and cannot drift. data-theme = dark | light | system (follows Windows). */
 
 @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-600-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-700-normal.woff2') format('woff2'); }
 @font-face { font-family: 'Orbitron'; font-weight: 700; font-display: swap; src: url('/assets/vendor/fonts/orbitron/orbitron-latin-700-normal.woff2') format('woff2'); }
 
+:root { color-scheme: dark; }
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='system'] { color-scheme: light dark; }
+
 :root {
     --accent: #F97316;
     --accent-light: #FB923C;
     --accent-dark: #EA580C;
-    --accent-text: #C2410C;
+    --accent-text: light-dark(#C2410C, #F97316);
     --ink-on-accent: #1C1917;
     --sensor: #2563EB;
-    --sensor-text: #2563EB;
+    --sensor-text: light-dark(#2563EB, #60A5FA);
 
-    --bg-primary: #F9FAFB;
-    --bg-secondary: #FFFFFF;
-    --bg-tertiary: #F3F4F6;
-    --text-primary: #1E293B;
-    --text-secondary: #475569;
-    --text-muted: #64748B;
+    --bg-primary: light-dark(#F9FAFB, #09090b);
+    --bg-secondary: light-dark(#FFFFFF, #111113);
+    --bg-tertiary: light-dark(#F3F4F6, #1a1a1e);
+    --text-primary: light-dark(#1E293B, #e4e4e7);
+    --text-secondary: light-dark(#475569, #a1a1aa);
+    --text-muted: light-dark(#64748B, #8a8a93);
 
     --status-ok: #22C55E;
-    --status-ok-text: #15803D;
+    --status-ok-text: light-dark(#15803D, #22C55E);
     --status-warn: #FACC15;
-    --status-warn-text: #A16207;
+    --status-warn-text: light-dark(#A16207, #FACC15);
     --status-alert: #EF4444;
-    --status-alert-text: #DC2626;
+    --status-alert-text: light-dark(#DC2626, #EF4444);
 
     --overlay-backdrop: rgba(0, 0, 0, 0.6);
 
@@ -58,20 +63,6 @@
 
     --font-body: 'Inter', system-ui, sans-serif;
     --font-stencil: 'Orbitron', 'Inter', system-ui, sans-serif;
-}
-
-[data-theme='dark'] {
-    --bg-primary: #09090b;
-    --bg-secondary: #111113;
-    --bg-tertiary: #1a1a1e;
-    --text-primary: #e4e4e7;
-    --text-secondary: #a1a1aa;
-    --text-muted: #8a8a93;
-    --accent-text: #F97316;
-    --sensor-text: #60A5FA;
-    --status-ok-text: #22C55E;
-    --status-warn-text: #FACC15;
-    --status-alert-text: #EF4444;
 }
 
 @media (prefers-contrast: more) {
