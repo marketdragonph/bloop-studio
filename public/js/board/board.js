@@ -9,6 +9,7 @@ import { uploadMethods } from './uploads.js';
 import { directorMethods } from './director.js';
 import { knobMethods } from './knobs.js';
 import { viewerMethods } from './viewer.js';
+import { layoutMethods } from './layout.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
 import { icon } from '/shared/icons.js';
 
@@ -105,5 +106,6 @@ export default function SpaceBoard() {
         ...directorMethods,
         ...knobMethods,
         ...viewerMethods,
+        ...layoutMethods,
     };
 }

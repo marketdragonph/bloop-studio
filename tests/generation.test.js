@@ -33,11 +33,10 @@ test('compileGraph writes a multi-target binding into every node and leaves the 
     assert.equal(Object.values(preset.graph).find((n) => n._meta.title === '@latent').inputs.width, 832);
 });
 
-test('prompts join wired text and the card direction; H3 gets its three sections', () => {
+test('prompts come only from wired text; H3 gets its three sections', () => {
     const upstream = [{ to_socket: 'prompt', text_content: 'A hangar at night.' }, { to_socket: 'first_frame', text_content: 'ignored' }];
-    const node = { prompt: 'Slow push-in.' };
-    assert.equal(composePrompt({ node, upstream }), 'A hangar at night.\n\nSlow push-in.');
-    const h3 = composePrompt({ node, upstream, dialect: 'h3' });
+    assert.equal(composePrompt({ upstream }), 'A hangar at night.');
+    const h3 = composePrompt({ upstream, dialect: 'h3' });
     assert.match(h3, /^integrated_multimodal_description: \[Shot 1\]/);
     assert.match(h3, /overall_soundscape:/);
     assert.match(h3, /non_diegetic_music:/);
@@ -50,7 +49,7 @@ test('cast and location text follow the shot text, named by their card label', (
         { to_socket: 'prompt', label: 'Shot 3 · Sprint', text_content: 'Reyes sprints through the market.' },
     ];
     assert.equal(
-        composePrompt({ node: {}, upstream }),
+        composePrompt({ upstream }),
         'Reyes sprints through the market.\n\nOfficer Reyes: Woman, 40s, short grey hair, navy uniform.\n\nNight market: Wet stalls under neon.',
     );
 });

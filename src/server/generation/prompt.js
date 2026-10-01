@@ -1,5 +1,5 @@
 // PromptProcessor (ported from bloop): a prompt is composed from small parts, each with create().
-//   const text = new PromptProcessor().create(new UpstreamTextPrompt(upstream), new DirectionPrompt(node));
+//   const text = new PromptProcessor().create(new UpstreamTextPrompt(upstream));
 
 export class PromptProcessor {
     constructor(separator = '\n\n') {
@@ -28,17 +28,6 @@ export class UpstreamTextPrompt {
     }
 }
 
-/** The card's own "extra direction" field. */
-export class DirectionPrompt {
-    constructor(node) {
-        this.node = node;
-    }
-
-    create() {
-        return this.node.prompt ?? '';
-    }
-}
-
 /**
  * MiniMax-H3 expects three labelled sections. Text already in that shape passes through;
  * plain text becomes the scene, with neutral sound and music lines so the model still scores it.
@@ -61,7 +50,7 @@ export class H3FormatPrompt {
 }
 
 /** Builds the final prompt for a card from its preset's dialect. */
-export function composePrompt({ node, upstream, dialect }) {
-    const parts = [new UpstreamTextPrompt(upstream), new DirectionPrompt(node)];
+export function composePrompt({ upstream, dialect }) {
+    const parts = [new UpstreamTextPrompt(upstream)];
     return dialect === 'h3' ? new H3FormatPrompt(...parts).create() : new PromptProcessor().create(...parts);
 }

@@ -11,7 +11,6 @@ const AddCard = z.object({
     ref: z.string().min(1).max(40),
     type: z.enum(CARD_TYPES),
     text: z.string().max(4000).optional(),
-    direction: z.string().max(2000).optional(),
     label: z.string().max(80).optional(),
     column: z.number().int().min(0).max(30).optional(),
     row: z.number().int().min(0).max(60).optional(),
@@ -25,7 +24,6 @@ const Connect = z.object({
 const UpdateCard = z.object({
     card: z.string().min(1),
     text: z.string().max(4000).optional(),
-    direction: z.string().max(2000).optional(),
     label: z.string().max(80).optional(),
 }).strict();
 
@@ -39,7 +37,6 @@ export const TOOL_DEFINITIONS = [
                 ref: { type: 'string', description: 'Your own short name for this card in this turn, e.g. "shot1-still", so you can connect it.' },
                 type: { type: 'string', enum: CARD_TYPES },
                 text: { type: 'string', description: 'For text and note cards: the content.' },
-                direction: { type: 'string', description: 'For image and video cards: extra direction added to the wired text.' },
                 label: { type: 'string', description: 'Short title shown on the card.' },
                 column: { type: 'integer', description: 'Grid column, 0 = leftmost.' },
                 row: { type: 'integer', description: 'Grid row, 0 = top.' },
@@ -65,13 +62,12 @@ export const TOOL_DEFINITIONS = [
     },
     {
         name: 'update_card',
-        description: 'Change the text, direction or label of an existing card.',
+        description: 'Change the text or label of an existing card. Image and video cards have no text of their own: change the text card wired into them.',
         schema: {
             type: 'object',
             properties: {
                 card: { type: 'string', description: 'A ref from this turn or "#<id>" of an existing card.' },
                 text: { type: 'string' },
-                direction: { type: 'string' },
                 label: { type: 'string' },
             },
             required: ['card'],
@@ -123,7 +119,7 @@ export class BoardActions {
         return id;
     }
 
-    addCard({ ref, type, text, direction, label, column = 0, row = 0 }) {
+    addCard({ ref, type, text, label, column = 0, row = 0 }) {
         if (this.cardsAdded >= MAX_CARDS_PER_TURN) throw new ValidationError(`At most ${MAX_CARDS_PER_TURN} cards per turn; ask the person before adding more.`);
         if (this.refs.has(ref)) throw new ValidationError(`The ref "${ref}" is already used in this turn.`);
         const node = this.spaces.createNode(this.spaceId, {
@@ -133,7 +129,6 @@ export class BoardActions {
             position_x: this.origin.x + column * GRID_X,
             position_y: this.origin.y + row * GRID_Y,
         });
-        if (direction && (type === 'image' || type === 'video')) this.spaces.updateNode(this.spaceId, node.id, { prompt: direction });
         this.refs.set(ref, node.id);
         this.cardsAdded++;
         this.actions.push({ kind: 'card', nodeId: node.id });
@@ -146,15 +141,14 @@ export class BoardActions {
         return `Connected ${from} → ${to} (${wire.to_socket} socket).`;
     }
 
-    updateCard({ card, text, direction, label }) {
+    updateCard({ card, text, label }) {
         const id = this.resolve(card);
         const changes = {};
         if (text !== undefined) changes.text_content = text;
-        if (direction !== undefined) changes.prompt = direction;
         if (label !== undefined) changes.label = label;
         const before = this.spaces.findNode(this.spaceId, id);
         this.spaces.updateNode(this.spaceId, id, changes);
-        this.actions.push({ kind: 'update', nodeId: id, before: { text_content: before.text_content, prompt: before.prompt, label: before.label } });
+        this.actions.push({ kind: 'update', nodeId: id, before: { text_content: before.text_content, label: before.label } });
         return `Updated card #${id}.`;
     }
 }

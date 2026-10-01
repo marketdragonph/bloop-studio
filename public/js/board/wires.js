@@ -164,6 +164,11 @@ export const wireMethods = {
         return this.connections.some((c) => c.to_node_id === node.id && c.to_socket === socket.key);
     },
 
+    /** Image and video cards have no words of their own: they need a Text card in their Words socket. */
+    hasWords(node) {
+        return this.connections.some((c) => c.to_node_id === node.id && c.to_socket === 'prompt');
+    },
+
     async connect(fromId, toId, { record = true, socket = null } = {}) {
         try {
             const conn = await api('POST', `${this.base}/connections`, { from_node_id: fromId, to_node_id: toId, to_socket: socket });

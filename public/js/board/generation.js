@@ -27,6 +27,7 @@ export const generationMethods = {
                 this.families[type] = [];
             }
         }
+        this.tidyAfterRender(); // the knobs just appeared, so render cards are taller now
     },
 
     applyNodeUpdate(update) {

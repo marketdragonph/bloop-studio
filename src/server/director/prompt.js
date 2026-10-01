@@ -25,7 +25,7 @@ How you work (cast first, like a production):
 export function boardSnapshot({ nodes, connections }) {
     if (!nodes.length) return 'The board is empty.';
     const lines = nodes.map((n) => {
-        const text = (n.text_content ?? n.prompt ?? '').replace(/\s+/g, ' ').trim();
+        const text = (n.text_content ?? '').replace(/\s+/g, ' ').trim();
         const media = n.media_path ? ' [has a render]' : '';
         return `#${n.id} ${n.type}${n.label ? ` "${n.label}"` : ''}${media}${text ? `: ${text.slice(0, 300)}` : ''}`;
     });

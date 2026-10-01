@@ -17,6 +17,7 @@
     <div class="board-tools__group" role="group" aria-label="History and view">
       <button type="button" class="ae-key ae-key--sm ae-key--square" @click="undo()" :disabled="!canUndo" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)">{{{ icon('undo') }}}</button>
       <button type="button" class="ae-key ae-key--sm ae-key--square" @click="redo()" :disabled="!canRedo" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)">{{{ icon('redo') }}}</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="tidyLayout()" aria-label="Tidy layout: move overlapping cards apart" title="Tidy layout">{{{ icon('grid') }}}</button>
       <button type="button" class="ae-key ae-key--sm ae-key--square" @click="zoomBy(1 / 1.2)" aria-label="Zoom out" title="Zoom out">{{{ icon('minus') }}}</button>
       <span class="ae-readout board-tools__zoom" x-text="Math.round(zoom * 100) + '%'"></span>
       <button type="button" class="ae-key ae-key--sm ae-key--square" @click="zoomBy(1.2)" aria-label="Zoom in" title="Zoom in">{{{ icon('plus') }}}</button>

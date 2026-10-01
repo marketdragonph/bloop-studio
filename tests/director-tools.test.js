@@ -15,14 +15,14 @@ test('adds a text → image → video lane and wires it by ref', () => {
     const { spaces, space, actions } = fresh();
     assert.ok(actions.run('add_card', { ref: 's1', type: 'text', text: 'A pilot walks into a hangar.', column: 0, row: 0 }).ok);
     assert.ok(actions.run('add_card', { ref: 's1-still', type: 'image', column: 0, row: 1 }).ok);
-    assert.ok(actions.run('add_card', { ref: 's1-clip', type: 'video', direction: 'slow push-in', column: 0, row: 2 }).ok);
+    assert.ok(actions.run('add_card', { ref: 's1-clip', type: 'video', column: 0, row: 2 }).ok);
     assert.match(actions.run('connect', { from: 's1', to: 's1-still' }).content, /prompt socket/);
     assert.match(actions.run('connect', { from: 's1-still', to: 's1-clip' }).content, /first_frame socket/);
 
     const board = spaces.board(space.id);
     assert.equal(board.nodes.length, 3);
     assert.equal(board.connections.length, 2);
-    assert.equal(board.nodes.find((n) => n.type === 'video').prompt, 'slow push-in');
+    assert.equal(actions.run('add_card', { ref: 'x', type: 'video', direction: 'pan' }).ok, false); // no prompt box on media cards
     assert.equal(board.nodes.find((n) => n.type === 'image').position_y, 580);
     assert.equal(actions.actions.length, 5);
 });

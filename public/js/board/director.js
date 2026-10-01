@@ -44,6 +44,7 @@ export const directorMethods = {
         const live = new Map(this.nodes.map((n) => [n.id, n]));
         this.nodes = board.nodes.map((n) => ({ ...n, progress: live.get(n.id)?.progress, progressLabel: live.get(n.id)?.progressLabel }));
         this.connections = board.connections;
+        this.tidyAfterRender();
     },
 
     async sendDirector() {

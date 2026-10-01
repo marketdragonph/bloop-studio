@@ -1,4 +1,5 @@
-{{-- Body of an Image or Video card: preview, direction, model + seed, progress, Generate. --}}
+{{-- Body of an Image or Video card: preview, model + seed, progress, Generate.
+     No prompt box: its words come only from Text cards wired into the Words socket. --}}
 <div class="card__render">
   <div class="card__media" :style="{ aspectRatio: previewAspect(node) }" @dblclick="openViewer(node)">
     @include('pages/spaces/media-actions')
@@ -9,11 +10,9 @@
       <video :src="mediaUrl(node)" controls preload="metadata"></video>
     </template>
     <template x-if="!mediaUrl(node)">
-      <span class="ae-readout card__placeholder" x-text="node.type === 'image' ? 'No image yet' : 'No clip yet'"></span>
+      <span class="ae-readout card__placeholder" x-text="hasWords(node) ? 'Press Generate to make it' : 'Wire a Text card into Words'"></span>
     </template>
   </div>
-  <textarea class="card__text card__text--grow scrolls" rows="2" placeholder="Extra direction (optional)"
-            :value="node.prompt ?? ''" @input="editText(node, 'prompt', $event.target.value)"></textarea>
 
   <div class="card__knobs">
     <div class="card__knob card__knob--wide">
