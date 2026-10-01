@@ -16,10 +16,23 @@ async function boot() {
         height: 900,
         minWidth: 960,
         minHeight: 600,
+        show: false, // shown maximized once the first paint is ready (no flash of a small window)
         backgroundColor: '#09090b',
         title: 'Bloop Studio',
         autoHideMenuBar: true,
         webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
+    });
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.maximize();
+        mainWindow.show();
+    });
+
+    // F11 toggles true full screen (the board benefits from every pixel).
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.type === 'keyDown' && input.key === 'F11') {
+            event.preventDefault();
+            mainWindow.setFullScreen(!mainWindow.isFullScreen());
+        }
     });
 
     // Only our own server may load in the window; anything else opens in the real browser.
