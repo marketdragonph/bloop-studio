@@ -54,6 +54,20 @@ export const cardMethods = {
         return { x: center.x - 140, y: center.y - 80 };
     },
 
+    /** Pans just enough to show a card that landed outside the visible board (never zooms). */
+    bringIntoView(node, margin = 40) {
+        const rect = this.$refs.board.getBoundingClientRect();
+        const left = node.position_x * this.zoom + this.panX;
+        const top = node.position_y * this.zoom + this.panY;
+        const width = (node.width || 280) * this.zoom;
+        const height = 240 * this.zoom;
+        if (left + width > rect.width - margin) this.panX -= left + width - rect.width + margin;
+        if (left < margin) this.panX += margin - left;
+        if (top + height > rect.height - margin) this.panY -= top + height - rect.height + margin;
+        if (top < margin) this.panY += margin - top;
+        this.markViewChanged();
+    },
+
     async addCard(type) {
         const at = this.placementFor();
         try {
@@ -64,6 +78,7 @@ export const cardMethods = {
             });
             this.nodes.push(node);
             this.selectedNodeIds = [node.id];
+            this.bringIntoView(node);
             let current = node;
             this.history.push({
                 label: `Add ${NODE_TYPES[type].label} card`,

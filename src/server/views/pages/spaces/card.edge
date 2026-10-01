@@ -38,7 +38,21 @@
       </template>
 
       <template x-if="node.type === 'upload'">
-        <p class="plate-note">File upload arrives in the next step of Phase 1.</p>
+        <label class="card__drop" :class="{ 'has-media': mediaUrl(node) }"
+               @dragover.prevent @drop="onUploadDrop($event, node)">
+          <input type="file" class="visually-hidden" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+                 @change="uploadFile(node, $event.target.files[0]); $event.target.value = ''">
+          <template x-if="mediaUrl(node) && !isVideo(node)">
+            <img :src="mediaUrl(node)" :alt="node.label || 'Uploaded picture'">
+          </template>
+          <template x-if="mediaUrl(node) && isVideo(node)">
+            <video :src="mediaUrl(node)" controls preload="metadata"></video>
+          </template>
+          <span class="card__drop-hint" x-show="!mediaUrl(node)">
+            {{{ icon('upload') }}}<span x-text="node.status === 'generating' ? 'Uploading…' : 'Drop a picture or clip, or click to choose'"></span>
+          </span>
+        </label>
+        <p class="ae-readout card__filename" x-show="node.label" x-text="node.label"></p>
       </template>
     </div>
   </div>

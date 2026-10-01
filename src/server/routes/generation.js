@@ -1,7 +1,7 @@
 // Generate / cancel a card, the board's live event stream, and serving rendered media.
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
-import { mimeFromName } from '../generation/media-store.js';
+import { mimeFromName, UPLOADABLE, MAX_UPLOAD_BYTES } from '../generation/media-store.js';
 import { familiesFor } from '../generation/presets.js';
 
 const int = (value) => Number.parseInt(value, 10);
@@ -25,6 +25,22 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets 
     routes.post('/spaces/:id/nodes/:nodeId/cancel', async (c) => {
         const canceled = await worker.cancel(int(c.req.param('nodeId')));
         return canceled ? c.body(null, 204) : c.json({ error: 'Nothing is rendering on this card.' }, 409);
+    });
+
+    // A file dropped on an Upload card becomes that card's media (a picture or a clip to wire onward).
+    routes.post('/spaces/:id/nodes/:nodeId/upload', async (c) => {
+        const node = spaces.findNode(int(c.req.param('id')), int(c.req.param('nodeId')));
+        if (!node || node.type !== 'upload') return c.json({ error: 'Only Upload cards take files.' }, 422);
+        const { file } = await c.req.parseBody();
+        if (!(file instanceof File)) return c.json({ error: 'Choose a file to upload.' }, 422);
+        if (!UPLOADABLE.has(file.type)) return c.json({ error: 'Use a PNG, JPEG or WebP picture, or an MP4 or WebM clip.' }, 422);
+        if (file.size > MAX_UPLOAD_BYTES) return c.json({ error: 'That file is over 500 MB.' }, 422);
+
+        const bytes = Buffer.from(await file.arrayBuffer());
+        const mediaPath = await media.saveUpload({ spaceId: node.space_id, nodeId: node.id, bytes, mime: file.type });
+        spaces.setNodeResult(node.id, { status: 'done', media_path: mediaPath, media_mime: file.type });
+        spaces.updateNode(node.space_id, node.id, { label: file.name.slice(0, 120) });
+        return c.json(spaces.findNode(node.space_id, node.id));
     });
 
     routes.get('/spaces/:id/nodes/:nodeId/takes', (c) => c.json(jobs.takes(int(c.req.param('nodeId')))));

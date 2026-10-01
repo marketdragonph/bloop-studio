@@ -5,6 +5,7 @@ import { wireMethods } from './wires.js';
 import { cardMethods } from './cards.js';
 import { persistenceMethods } from './persistence.js';
 import { generationMethods } from './generation.js';
+import { uploadMethods } from './uploads.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
 import { icon } from '/shared/icons.js';
 
@@ -91,5 +92,6 @@ export default function SpaceBoard() {
         ...cardMethods,
         ...persistenceMethods,
         ...generationMethods,
+        ...uploadMethods,
     };
 }

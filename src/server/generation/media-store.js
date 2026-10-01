@@ -6,6 +6,8 @@ const EXTENSIONS = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.
 const MIME_BY_EXT = Object.fromEntries(Object.entries(EXTENSIONS).map(([mime, ext]) => [ext, mime]));
 
 export const mimeFromName = (name) => MIME_BY_EXT[extname(name).toLowerCase()] ?? 'application/octet-stream';
+export const UPLOADABLE = new Set(Object.keys(EXTENSIONS));
+export const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 export class MediaStore {
     constructor(getRoot) {
@@ -19,6 +21,17 @@ export class MediaStore {
         await mkdir(dir, { recursive: true });
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
         const file = join(dir, `${stamp}-seed${seed}${EXTENSIONS[mime] ?? '.bin'}`);
+        await writeFile(file, bytes);
+        return relative(root, file).split(sep).join('/');
+    }
+
+    /** Saves a file the user dropped onto an Upload card; returns its relative path. */
+    async saveUpload({ spaceId, nodeId, bytes, mime }) {
+        const root = this.getRoot();
+        const dir = join(root, 'spaces', String(spaceId), `card-${nodeId}`);
+        await mkdir(dir, { recursive: true });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const file = join(dir, `upload-${stamp}${EXTENSIONS[mime]}`);
         await writeFile(file, bytes);
         return relative(root, file).split(sep).join('/');
     }
