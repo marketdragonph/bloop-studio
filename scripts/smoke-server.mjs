@@ -21,7 +21,7 @@ async function check(path, options) {
 }
 
 try {
-    const { text: home } = await check('/');
+    const { text: home } = await check('/spaces');
     await check('/settings');
     await check('/engine/status');
     await check('/assets/css/app.css');

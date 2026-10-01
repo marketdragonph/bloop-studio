@@ -1,11 +1,10 @@
 import { Hono } from 'hono';
 
-export function homeRoutes({ views, settings }) {
+// The app opens on the Spaces list (the Hangar page is retired for now).
+export function homeRoutes() {
     const routes = new Hono();
 
-    routes.get('/', async (c) => {
-        return c.html(await views.render('pages/home', { settings: settings.all() }));
-    });
+    routes.get('/', (c) => c.redirect('/spaces'));
 
     return routes;
 }
