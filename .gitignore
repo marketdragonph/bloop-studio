@@ -8,3 +8,6 @@ public/vendor/
 .env
 *.log
 coverage/
+
+# Brand art previews (make-icons output, not shipped)
+build/preview-*.png

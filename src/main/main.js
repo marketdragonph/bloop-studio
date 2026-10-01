@@ -1,5 +1,6 @@
 // Electron entry: starts the local server on 127.0.0.1 and opens the studio window on it.
 import { app, BrowserWindow, shell } from 'electron';
+import { fileURLToPath } from 'node:url';
 import { createServer } from '../server/server.js';
 import { SettingsStore, settingsPath } from './settings-store.js';
 
@@ -19,6 +20,8 @@ async function boot() {
         show: false, // shown maximized once the first paint is ready (no flash of a small window)
         backgroundColor: '#09090b',
         title: 'Bloop Studio',
+        // The installed app takes its icon from the .exe; a dev run (npm start) needs it set here.
+        icon: app.isPackaged ? undefined : fileURLToPath(new URL('../../build/icon.ico', import.meta.url)),
         autoHideMenuBar: true,
         webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
     });

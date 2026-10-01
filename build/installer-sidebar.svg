@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 164 314" width="164" height="314">
+  <!-- Setup window sidebar (welcome and finish pages). __ORBITRON__ is replaced with the bundled font by make-icons. -->
+  <style>@font-face { font-family: Stencil; src: url(data:font/woff2;base64,__ORBITRON__) format('woff2'); font-weight: 700; }
+    text { font-family: Stencil, sans-serif; font-weight: 700; }</style>
+  <rect width="164" height="314" fill="#09090b"/>
+  <path d="M0 0 H164 V286 L136 314 H0 Z" fill="#111113"/>
+  <path d="M8 8 H156 V282 L132 306 H8 Z" fill="none" stroke="#27272a" stroke-width="1"/>
+  <g transform="translate(32 44) scale(0.625)">
+    <path d="M14 14 H146 V118 L118 146 H14 Z" fill="#18181b"/>
+    <path d="M32 34 H70 V60 L62 68 H32 Z" fill="#F97316"/>
+    <path d="M90 34 H128 V60 L120 68 H90 Z" fill="none" stroke="#F4F4F5" stroke-width="5"/>
+    <path d="M58 96 H104 V122 L96 130 H58 Z" fill="none" stroke="#2563EB" stroke-width="5"/>
+    <path d="M70 51 H90" stroke="#F4F4F5" stroke-width="4" fill="none"/>
+    <path d="M51 68 V82 H76 V96" stroke="#F97316" stroke-width="4" fill="none"/>
+    <path d="M109 68 V82 H86 V96" stroke="#F4F4F5" stroke-width="4" fill="none"/>
+  </g>
+  <text x="82" y="178" text-anchor="middle" font-size="11" letter-spacing="4" fill="#F97316">BLOOP</text>
+  <text x="82" y="200" text-anchor="middle" font-size="17" letter-spacing="2" fill="#F4F4F5">STUDIO</text>
+  <path d="M40 214 H124" stroke="#F97316" stroke-width="2"/>
+  <text x="82" y="262" text-anchor="middle" font-size="7" letter-spacing="2" fill="#8a8a93">SPACES · DIRECTOR</text>
+  <circle cx="82" cy="278" r="3" fill="#2563EB"/>
+</svg>

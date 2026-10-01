@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 57" width="150" height="57">
+  <!-- Setup window header (inner pages, top right). __ORBITRON__ is replaced with the bundled font by make-icons. -->
+  <style>@font-face { font-family: Stencil; src: url(data:font/woff2;base64,__ORBITRON__) format('woff2'); font-weight: 700; }
+    text { font-family: Stencil, sans-serif; font-weight: 700; }</style>
+  <path d="M0 0 H150 V45 L138 57 H0 Z" fill="#111113"/>
+  <g transform="translate(8 8.5) scale(0.25)">
+    <path d="M0 0 H160 V124 L124 160 H0 Z" fill="#18181b"/>
+    <path d="M18 18 H76 V58 L64 70 H18 Z" fill="#F97316"/>
+    <path d="M80 92 H142 V124 L130 136 H80 Z" fill="#2563EB"/>
+    <path d="M47 70 V113 H80" stroke="#F4F4F5" stroke-width="14" fill="none"/>
+  </g>
+  <text x="56" y="25" font-size="7" letter-spacing="2.5" fill="#F97316">BLOOP</text>
+  <text x="56" y="39" font-size="10" letter-spacing="1" fill="#F4F4F5">STUDIO</text>
+</svg>

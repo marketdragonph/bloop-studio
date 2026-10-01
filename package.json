@@ -5,13 +5,15 @@
   "description": "Offline Spaces + Director studio running on a local ComfyUI.",
   "private": true,
   "license": "UNLICENSED",
+  "author": "MarketDragon",
   "type": "module",
   "main": "src/main/main.js",
   "scripts": {
     "vendor": "node scripts/copy-vendor.js",
     "start": "npm run vendor && electron .",
     "test": "node --test \"tests/*.test.js\"",
-    "dist": "npm run vendor && electron-builder --win"
+    "dist": "npm run vendor && node scripts/build-installer.mjs",
+    "icons": "electron scripts/make-icons.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
@@ -30,10 +32,11 @@
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "studio.bloop.local",
+    "appId": "ph.marketdragon.bloopstudio",
     "productName": "Bloop Studio",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "src/**",
@@ -42,12 +45,24 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
-    }
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bloop Studio",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeader": "build/installer-header.bmp",
+      "installerSidebar": "build/installer-sidebar.bmp",
+      "uninstallerSidebar": "build/installer-sidebar.bmp",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Bloop-Studio-Setup-${version}.${ext}"
+    },
+    "copyright": "Copyright © MarketDragon"
   }
 }
