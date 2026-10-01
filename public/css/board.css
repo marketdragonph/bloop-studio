@@ -266,8 +266,6 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
     font: inherit;
     font-size: var(--fs-xs);
 }
-.card__progress { display: grid; gap: var(--space-1); }
-.card__progress .ae-level { --ae-level-accent: var(--sensor); }
 
 /* ── Sockets (ported from bloop's .sp-port) ──
    Round, deliberately: a socket is the one round thing a cut-plate card is allowed.

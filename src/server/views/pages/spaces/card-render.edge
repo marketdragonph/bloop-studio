@@ -1,4 +1,4 @@
-{{-- Body of an Image or Video card: preview, model + seed, progress, Generate.
+{{-- Body of an Image or Video card: preview (with the loader while it renders), model + seed, Generate.
      No prompt box: its words come only from Text cards wired into the Words socket. --}}
 <div class="card__render">
   <div class="card__media" :style="{ aspectRatio: previewAspect(node) }" @dblclick="openViewer(node)">
@@ -9,7 +9,8 @@
     <template x-if="mediaUrl(node) && node.type === 'video'">
       <video :src="mediaUrl(node)" controls preload="metadata"></video>
     </template>
-    <template x-if="!mediaUrl(node)">
+    @include('pages/spaces/card-loader')
+    <template x-if="!mediaUrl(node) && !isBusy(node)">
       <span class="ae-readout card__placeholder" x-text="hasWords(node) ? 'Press Generate to make it' : 'Wire a Text card into Words'"></span>
     </template>
   </div>
@@ -60,11 +61,6 @@
       <span x-show="node.settings?.seedLocked">{{{ icon('lock') }}}</span>
       <span x-text="node.settings?.seedLocked ? 'Seed locked' : 'Seed: new'"></span>
     </button>
-  </div>
-
-  <div class="card__progress" x-show="isBusy(node)">
-    <div class="ae-level"><div class="ae-level__fill" :style="{ width: progressPercent(node) }"></div></div>
-    <span class="ae-readout" x-text="node.progressLabel || node.status"></span>
   </div>
 
   <p class="field__error" x-show="node.status === 'failed' && node.error" x-text="node.error"></p>

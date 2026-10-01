@@ -1,0 +1,77 @@
+/* The beat line: an indeterminate wait drawn as a heartbeat trace (ported from the web Spaces).
+   Two strokes on one path: the faint track is the monitor, the pulse is the beat running along it.
+   pathLength="100" on the pulse makes the dash a percentage of the trace; keep it. */
+.beat-line {
+    display: block;
+    width: var(--beat-line-width, 6.5rem);
+    height: var(--beat-line-height, 1.25rem);
+    overflow: visible;
+}
+
+.beat-line polyline {
+    fill: none;
+    stroke: var(--beat-line-accent, var(--accent));
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.beat-line polyline.beat-line__track { stroke: color-mix(in srgb, var(--beat-line-accent, var(--accent)) 26%, transparent); }
+
+.beat-line polyline.beat-line__pulse {
+    stroke-dasharray: 16 84;
+    animation: beat-line-run 1.7s linear infinite;
+}
+
+@keyframes beat-line-run {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+}
+
+.beat-wait { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+
+/* In a card's media bay: fills the bay when empty, dims the last take when re-rendering. */
+.gen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.gen--bay { background: var(--bg-tertiary); }
+
+.gen--overlay {
+    --beat-line-accent: var(--on-media);
+    background: linear-gradient(to top, var(--media-scrim-strong), var(--media-scrim));
+}
+
+.gen__batch { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); width: min(9rem, 70%); }
+.gen__level { width: 100%; --ae-level-accent: var(--sensor); }
+
+.gen__readout {
+    font-family: var(--font-stencil);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+}
+
+.gen__label {
+    font-family: var(--font-stencil);
+    font-size: var(--fs-3xs);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.gen--overlay .gen__readout,
+.gen--overlay .gen__label { color: var(--on-media); text-shadow: 0 1px 4px var(--media-scrim-strong); }
+
+/* Motion off: the whole trace still draws, it just stops travelling. */
+@media (prefers-reduced-motion: reduce) {
+    .beat-line polyline.beat-line__pulse { stroke-dasharray: none; animation: none; opacity: 0.7; }
+}

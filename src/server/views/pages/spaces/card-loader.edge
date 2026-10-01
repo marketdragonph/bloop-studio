@@ -1,0 +1,24 @@
+{{-- The wait, drawn inside the media bay (same as the web Spaces loader).
+     Before the first step lands: the beat line, a heartbeat trace with the state under it.
+     Once ComfyUI reports steps: the readout, the level and the step label.
+     Over an earlier take it dims the picture instead of hiding it. --}}
+<template x-if="isBusy(node)">
+  <div class="gen" :class="mediaUrl(node) ? 'gen--overlay' : 'gen--bay'" role="status" aria-live="polite">
+    <template x-if="node.status === 'generating' && node.progress > 0">
+      <div class="gen__batch">
+        <span class="gen__readout" x-text="progressPercent(node)"></span>
+        <div class="ae-level gen__level"><div class="ae-level__fill" :style="{ width: progressPercent(node) }"></div></div>
+        <span class="gen__label" x-text="node.progressLabel || 'Generating'"></span>
+      </div>
+    </template>
+    <template x-if="!(node.status === 'generating' && node.progress > 0)">
+      <div class="beat-wait">
+        <svg class="beat-line" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <polyline class="beat-line__track" points="0,10 14,10 17,7 20,10 26,10 28,13 31,2 34,17 36,10 42,10 46,6 50,10 60,10 74,10 77,7 80,10 86,10 88,13 91,2 94,17 96,10 102,10 106,6 110,10 120,10" />
+          <polyline class="beat-line__pulse" pathLength="100" points="0,10 14,10 17,7 20,10 26,10 28,13 31,2 34,17 36,10 42,10 46,6 50,10 60,10 74,10 77,7 80,10 86,10 88,13 91,2 94,17 96,10 102,10 106,6 110,10 120,10" />
+        </svg>
+        <span class="gen__label" x-text="node.status === 'queued' ? 'Queued' : (node.progressLabel || 'Generating')"></span>
+      </div>
+    </template>
+  </div>
+</template>

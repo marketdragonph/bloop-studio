@@ -35,6 +35,10 @@
     --status-alert-text: light-dark(#DC2626, #EF4444);
 
     --overlay-backdrop: rgba(0, 0, 0, 0.6);
+    /* Over a picture there is no theme surface, only the last render: white on a dark scrim. */
+    --on-media: #FFFFFF;
+    --media-scrim: rgb(8 10 14 / 0.15);
+    --media-scrim-strong: rgb(8 10 14 / 0.45);
 
     --fs-3xs: 0.625rem;
     --fs-2xs: 0.6875rem;
