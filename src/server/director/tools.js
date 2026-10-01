@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { ValidationError } from '../repositories/spaces.js';
 
-const MAX_CARDS_PER_TURN = 24;
+const MAX_CARDS_PER_TURN = 60; // a 9-shot film (3 cards each) plus its cast and locations
 const CARD_TYPES = ['text', 'note', 'image', 'video'];
 
 const AddCard = z.object({

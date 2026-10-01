@@ -25,6 +25,20 @@ test('wires a text card into an image card on the words socket', () => {
     assert.equal(repo.upstreamOf(space.id, image.id)[0].text_content, 'a hangar at dusk');
 });
 
+test('a Words socket takes several text wires (shot + cast + location); a picture socket takes one', () => {
+    const { repo, space } = fresh();
+    const shot = repo.createNode(space.id, { type: 'text' });
+    const cast = repo.createNode(space.id, { type: 'text' });
+    const place = repo.createNode(space.id, { type: 'text' });
+    const image = repo.createNode(space.id, { type: 'image' });
+    for (const t of [shot, cast, place]) assert.equal(repo.connect(space.id, t.id, image.id).to_socket, 'prompt');
+    const a = repo.createNode(space.id, { type: 'image' });
+    const b = repo.createNode(space.id, { type: 'image' });
+    const clip = repo.createNode(space.id, { type: 'video' });
+    repo.connect(space.id, a.id, clip.id);
+    assert.throws(() => repo.connect(space.id, b.id, clip.id), /full or do not match/);
+});
+
 test('an image card feeds a video card as its first frame', () => {
     const { repo, space } = fresh();
     const still = repo.createNode(space.id, { type: 'image' });

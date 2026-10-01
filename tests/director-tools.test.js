@@ -40,8 +40,8 @@ test('caps cards per turn and refuses a reused ref', () => {
     const { actions } = fresh();
     assert.ok(actions.run('add_card', { ref: 'a', type: 'note' }).ok);
     assert.match(actions.run('add_card', { ref: 'a', type: 'note' }).content, /already used/);
-    for (let i = 0; i < 23; i++) actions.run('add_card', { ref: `n${i}`, type: 'note' });
-    assert.match(actions.run('add_card', { ref: 'one-too-many', type: 'note' }).content, /At most 24/);
+    for (let i = 0; i < 59; i++) actions.run('add_card', { ref: `n${i}`, type: 'note' });
+    assert.match(actions.run('add_card', { ref: 'one-too-many', type: 'note' }).content, /At most 60/);
 });
 
 test('update_card edits existing cards by #id and records the previous text', () => {

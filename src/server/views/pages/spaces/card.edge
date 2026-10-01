@@ -22,7 +22,7 @@
 
   <div class="card__plate">
     <header class="card__head">
-      <span class="ae-stencil"><span class="card__icon" x-html="iconSvg(nodeTypes[node.type]?.icon)"></span><span x-text="typeLabel(node)"></span></span>
+      <span class="ae-stencil card__title"><span class="card__icon" x-html="iconSvg(nodeTypes[node.type]?.icon)"></span><span x-text="node.label || typeLabel(node)" :title="node.label ? typeLabel(node) + ' · ' + node.label : ''"></span></span>
       <span class="card__status ae-readout" x-show="node.status !== 'idle'" x-text="node.status"></span>
       <button type="button" class="card__close" @click="removeCard(node.id)" aria-label="Delete card" title="Delete card">{{{ icon('close') }}}</button>
     </header>

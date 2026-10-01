@@ -43,6 +43,18 @@ test('prompts join wired text and the card direction; H3 gets its three sections
     assert.match(h3, /non_diegetic_music:/);
 });
 
+test('cast and location text follow the shot text, named by their card label', () => {
+    const upstream = [
+        { to_socket: 'prompt', label: 'Cast · Officer Reyes', text_content: 'Woman, 40s, short grey hair, navy uniform.' },
+        { to_socket: 'prompt', label: 'Location · Night market', text_content: 'Wet stalls under neon.' },
+        { to_socket: 'prompt', label: 'Shot 3 · Sprint', text_content: 'Reyes sprints through the market.' },
+    ];
+    assert.equal(
+        composePrompt({ node: {}, upstream }),
+        'Reyes sprints through the market.\n\nOfficer Reyes: Woman, 40s, short grey hair, navy uniform.\n\nNight market: Wet stalls under neon.',
+    );
+});
+
 test('pipeline stages run in order and a stage can stop the chain', async () => {
     const seen = [];
     await runPipeline([

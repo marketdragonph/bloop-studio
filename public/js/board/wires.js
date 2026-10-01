@@ -156,7 +156,7 @@ export const wireMethods = {
         if (!this.wireDraft) return '';
         const from = this.nodeById(this.wireDraft.fromId);
         if (!from || from.id === node.id) return 'blocked';
-        const taken = this.connections.some((c) => c.to_node_id === node.id && c.to_socket === socket.key);
+        const taken = !socket.multiple && this.connections.some((c) => c.to_node_id === node.id && c.to_socket === socket.key);
         return !taken && socketAccepts(from, node, socket.key) ? 'live' : 'blocked';
     },
 

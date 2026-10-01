@@ -15,6 +15,7 @@ const DEFAULTS = {
     anthropicModel: 'claude-opus-5-5',
     openaiModel: 'gpt-5.5',
     theme: 'dark',
+    fullscreen: true, // the window's last full-screen state (F11), restored on launch
 };
 
 export class SettingsStore {

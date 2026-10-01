@@ -11,16 +11,20 @@ export const NODE_TYPES = {
 };
 
 /** Input sockets per type, top to bottom. `accepts` lists the kinds a wire may carry in. */
+// `multiple`: text is folded into one prompt, so a Words socket takes any number of text wires
+// (shot + cast + location), as in bloop. Pictures are a real model limit: one per socket.
 export const SOCKETS = {
     image: [
-        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text' },
+        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
         { key: 'reference', label: 'Picture', accepts: ['image'], icon: 'image' },
     ],
     video: [
-        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text' },
+        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
         { key: 'first_frame', label: 'First frame', accepts: ['image'], icon: 'image' },
     ],
 };
+
+const isFull = (socket, taken) => !socket.multiple && taken.includes(socket.key);
 
 /** Can this specific socket on `to` take what `from` offers? */
 export function socketAccepts(from, to, socketKey) {
@@ -53,7 +57,7 @@ export function sourceKinds(node) {
 export function pickSocket(from, to, taken = []) {
     const offered = sourceKinds(from);
     return socketsOf(to.type).findIndex(
-        (socket) => !taken.includes(socket.key) && socket.accepts.some((kind) => offered.includes(kind)),
+        (socket) => !isFull(socket, taken) && socket.accepts.some((kind) => offered.includes(kind)),
     );
 }
 
@@ -91,7 +95,7 @@ export function checkConnection({ from, to, existing, socketKey = null }) {
         const socket = socketsOf(to.type).find((s) => s.key === socketKey);
         if (!socket) return { ok: false, reason: 'That socket does not exist.' };
         if (!socketAccepts(from, to, socketKey)) return { ok: false, reason: `${socket.label} takes ${socket.accepts.join(' or ')}, not this card.` };
-        if (taken.includes(socketKey)) return { ok: false, reason: `${socket.label} is already connected. Remove that wire first.` };
+        if (isFull(socket, taken)) return { ok: false, reason: `${socket.label} is already connected. Remove that wire first.` };
         return { ok: true, socket: socketKey };
     }
 

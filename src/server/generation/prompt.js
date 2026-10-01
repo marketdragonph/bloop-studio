@@ -17,10 +17,13 @@ export class UpstreamTextPrompt {
         this.upstream = upstream;
     }
 
+    /** Shot text first, then the cast's fixed looks, then the location: the shot leads, references follow. */
     create() {
+        const rank = (n) => (/^cast\b/i.test(n.label ?? '') ? 1 : /^location\b/i.test(n.label ?? '') ? 2 : 0);
         return this.upstream
             .filter((n) => n.to_socket === 'prompt' && n.text_content?.trim())
-            .map((n) => n.text_content.trim())
+            .sort((a, b) => rank(a) - rank(b))
+            .map((n) => (rank(n) ? `${n.label.replace(/^\w+\s*·\s*/, '')}: ${n.text_content.trim()}` : n.text_content.trim()))
             .join('\n\n');
     }
 }

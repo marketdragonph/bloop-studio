@@ -24,16 +24,19 @@ async function boot() {
     });
     mainWindow.once('ready-to-show', () => {
         mainWindow.maximize();
+        if (settings.get('fullscreen')) mainWindow.setFullScreen(true);
         mainWindow.show();
     });
 
-    // F11 toggles true full screen (the board benefits from every pixel).
+    // F11 toggles true full screen; the choice is remembered for the next launch.
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.type === 'keyDown' && input.key === 'F11') {
             event.preventDefault();
             mainWindow.setFullScreen(!mainWindow.isFullScreen());
         }
     });
+    mainWindow.on('enter-full-screen', () => settings.update({ fullscreen: true }));
+    mainWindow.on('leave-full-screen', () => settings.update({ fullscreen: false }));
 
     // Only our own server may load in the window; anything else opens in the real browser.
     mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
