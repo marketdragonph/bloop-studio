@@ -5,7 +5,7 @@
       <div class="viewer__frame">
         <header class="viewer__bar">
           <span class="ae-stencil" x-text="viewer.title"></span>
-          <a class="ae-key ae-key--sm" :href="viewer.download" download>{{{ icon('download') }}}<span>Download</span></a>
+          <button type="button" class="ae-key ae-key--sm" @click="showInFolder(viewer.path)">{{{ icon('folder') }}}<span>Show in folder</span></button>
           <button type="button" class="ae-key ae-key--sm ae-key--square" x-ref="viewerClose" @click="closeViewer()" aria-label="Close viewer">{{{ icon('close') }}}</button>
         </header>
         <template x-if="!viewer.video">

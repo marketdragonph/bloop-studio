@@ -23,7 +23,13 @@ import { directorRoutes } from './routes/director.js';
 import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true }) {
+/** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
+const explorerReveal = async (fullPath) => {
+    const { spawn } = await import('node:child_process');
+    spawn('explorer.exe', [`/select,${fullPath}`], { detached: true, stdio: 'ignore' }).unref();
+};
+
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -36,7 +42,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const worker = new GenerationWorker({ jobs, spaces, presets, media, events, comfy });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, presets, media, events, worker, director, directorService };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, presets, media, events, worker, director, directorService, reveal };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

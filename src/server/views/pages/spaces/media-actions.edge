@@ -1,7 +1,7 @@
-{{-- View full screen / download, over any card media that exists. Shown on hover and keyboard focus. --}}
+{{-- View full screen / show in folder, over any card media. Shown on hover and keyboard focus. --}}
 <div class="media-actions" x-show="hasMedia(node)">
-  <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--overlay" @click.stop="openViewer(node)"
-          aria-label="View full screen" title="View full screen (or double-click)">{{{ icon('eye') }}}</button>
-  <a class="ae-key ae-key--sm ae-key--square ae-key--overlay" :href="downloadUrl(node)" download @click.stop
-     aria-label="Download original" title="Download original">{{{ icon('download') }}}</a>
+  <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--overlay" @click.stop.prevent="openViewer(node)"
+          aria-label="View full screen" title="View full screen (or double-click)">{{{ icon('expand') }}}</button>
+  <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--overlay" @click.stop.prevent="showInFolder(node.media_path)"
+          aria-label="Show in folder" title="Show in folder">{{{ icon('folder') }}}</button>
 </div>

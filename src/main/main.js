@@ -9,7 +9,7 @@ let mainWindow = null;
 
 async function boot() {
     const settings = new SettingsStore(settingsPath(app.getPath('userData')));
-    const { url } = await createServer({ settings, dataDir: app.getPath('userData') });
+    const { url } = await createServer({ settings, dataDir: app.getPath('userData'), reveal: (fullPath) => shell.showItemInFolder(fullPath) });
 
     mainWindow = new BrowserWindow({
         width: 1440,

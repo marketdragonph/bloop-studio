@@ -13,6 +13,8 @@ export const ICONS = {
     'bolt': '<path d="M9.5 1.5 L3.5 9 H8 L6.5 14.5 L12.5 7 H8 Z"/>',
     'settings': '<path d="M6.75 1.75 H9.25 L9.75 3.5 L11.25 4.25 L12.9 3.5 L14.25 5.75 L12.9 7 V9 L14.25 10.25 L12.9 12.5 L11.25 11.75 L9.75 12.5 L9.25 14.25 H6.75 L6.25 12.5 L4.75 11.75 L3.1 12.5 L1.75 10.25 L3.1 9 V7 L1.75 5.75 L3.1 3.5 L4.75 4.25 L6.25 3.5 Z"/><path d="M6.5 6.5 H9.5 V9.5 H6.5 Z"/>',
     'note': '<path d="M2.75 2.75 H13.25 V9.75 L9.75 13.25 H2.75 Z"/><path d="M9.75 13.25 V9.75 H13.25"/><path d="M5 5.5 H11 M5 8 H8.5"/>',
+    'expand': '<path d="M2.25 6.25 V2.25 H6.25 M9.75 2.25 H13.75 V6.25 M13.75 9.75 V13.75 H9.75 M6.25 13.75 H2.25 V9.75"/><path d="M5.5 5.5 L7 7 M10.5 5.5 L9 7 M10.5 10.5 L9 9 M5.5 10.5 L7 9"/>',
+    'folder': '<path d="M1.75 3.25 H6.25 L7.75 4.75 H14.25 V11.25 L12 13.25 H1.75 Z"/><path d="M1.75 6.75 H14.25"/>',
     'arrow': '<g transform="rotate(0 8 8)"><path d="M2.25 8 H12.5" /><path d="M9 3.5 L13.5 8 L9 12.5" /></g>',
     'audience': '<path d="M6 3.5 H10 L12.5 6 V10 L10 12.5 H6 L3.5 10 V6 Z" /><path d="M8 1 V4.75 M8 11.25 V15 M1 8 H4.75 M11.25 8 H15" /><circle cx="8" cy="8" r="1.25" fill="currentColor" stroke="none" />',
     'board': '<path d="M4 0.75 H15.25 V12 L12 15.25 H0.75 V4 Z" /><path d="M4.75 3.25 H7.25 V7.25 H3.25 V4.75 Z" fill="currentColor" stroke="none" /><rect x="8.75" y="3.25" width="4" height="4" fill="currentColor" stroke="none" /><rect x="3.25" y="8.75" width="7.5" height="4" fill="currentColor" stroke="none" />',

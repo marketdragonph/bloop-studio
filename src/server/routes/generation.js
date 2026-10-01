@@ -6,7 +6,7 @@ import { familiesFor } from '../generation/presets.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, presets }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, presets, reveal }) {
     const routes = new Hono();
 
     routes.post('/spaces/:id/nodes/:nodeId/generate', (c) => {
@@ -61,6 +61,15 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets 
                 await stream.sleep(15_000);
             }
         });
+    });
+
+    // Local app: show the file in File Explorer (selected) instead of downloading a second copy.
+    routes.post('/media/reveal', async (c) => {
+        const { path: relativePath } = await c.req.json();
+        const full = typeof relativePath === 'string' ? media.resolve(relativePath) : null;
+        if (!full) return c.json({ error: 'That file is not in the media folder.' }, 404);
+        await reveal(full);
+        return c.body(null, 204);
     });
 
     routes.get('/media/*', async (c) => {
