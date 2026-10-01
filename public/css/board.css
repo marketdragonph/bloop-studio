@@ -46,6 +46,12 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
 }
 
 .board:active { cursor: grabbing; }
+
+/* Dragging the board must pan, not select every card's text like a web page.
+   Fields keep normal selection so text can still be selected and copied. */
+.board { user-select: none; -webkit-user-select: none; }
+.board textarea, .board input, .board [contenteditable='true'] { user-select: text; -webkit-user-select: text; }
+.board img, .board video { -webkit-user-drag: none; }
 .board.is-wiring { cursor: crosshair; }
 
 .board__world {
