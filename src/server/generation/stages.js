@@ -26,7 +26,7 @@ export async function resolvePreset(ctx, next) {
 export async function buildPrompt(ctx, next) {
     ctx.prompt = composePrompt({ upstream: ctx.upstream, dialect: ctx.preset.dialect });
     if (!ctx.prompt && !(ctx.preset.needs ?? []).length) {
-        throw new StageError('Wire a Text card with your idea into this card's Words socket.');
+        throw new StageError('Wire a Text card with your idea into the Words socket of this card.');
     }
     await next();
 }
