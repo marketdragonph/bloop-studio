@@ -13,14 +13,20 @@ export const NODE_TYPES = {
 /** Input sockets per type, top to bottom. `accepts` lists the kinds a wire may carry in. */
 export const SOCKETS = {
     image: [
-        { key: 'prompt', label: 'Words', accepts: ['text'] },
-        { key: 'reference', label: 'Picture', accepts: ['image'] },
+        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text' },
+        { key: 'reference', label: 'Picture', accepts: ['image'], icon: 'image' },
     ],
     video: [
-        { key: 'prompt', label: 'Words', accepts: ['text'] },
-        { key: 'first_frame', label: 'First frame', accepts: ['image'] },
+        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text' },
+        { key: 'first_frame', label: 'First frame', accepts: ['image'], icon: 'image' },
     ],
 };
+
+/** Can this specific socket on `to` take what `from` offers? */
+export function socketAccepts(from, to, socketKey) {
+    const socket = socketsOf(to.type).find((s) => s.key === socketKey);
+    return Boolean(socket && socket.accepts.some((kind) => sourceKinds(from).includes(kind)));
+}
 
 export const DEFAULT_WIDTH = 280;
 export const MAX_NODES_PER_SPACE = 300;
@@ -69,7 +75,7 @@ export function wouldCycle(edges, fromId, toId) {
  * Validates a new wire. Returns { ok: true, socket } or { ok: false, reason } in words a person reads.
  * `existing` is every connection on the board.
  */
-export function checkConnection({ from, to, existing }) {
+export function checkConnection({ from, to, existing, socketKey = null }) {
     if (!from || !to) return { ok: false, reason: 'That card no longer exists.' };
     if (from.id === to.id) return { ok: false, reason: 'A card cannot feed itself.' };
     if (!canReceive(to.type)) return { ok: false, reason: `${NODE_TYPES[to.type]?.label ?? 'This'} cards do not take inputs.` };
@@ -79,6 +85,16 @@ export function checkConnection({ from, to, existing }) {
     if (wouldCycle(existing, from.id, to.id)) return { ok: false, reason: 'That wire would make a loop.' };
 
     const taken = existing.filter((c) => c.to_node_id === to.id).map((c) => c.to_socket);
+
+    // Dropped on a specific socket: it must accept the source and be free.
+    if (socketKey) {
+        const socket = socketsOf(to.type).find((s) => s.key === socketKey);
+        if (!socket) return { ok: false, reason: 'That socket does not exist.' };
+        if (!socketAccepts(from, to, socketKey)) return { ok: false, reason: `${socket.label} takes ${socket.accepts.join(' or ')}, not this card.` };
+        if (taken.includes(socketKey)) return { ok: false, reason: `${socket.label} is already connected. Remove that wire first.` };
+        return { ok: true, socket: socketKey };
+    }
+
     const index = pickSocket(from, to, taken);
     if (index < 0) {
         const wants = socketsOf(to.type).map((s) => s.label.toLowerCase()).join(' or ');

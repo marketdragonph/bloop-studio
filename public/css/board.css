@@ -85,22 +85,40 @@
     pointer-events: none;
 }
 
-/* ── Card ── */
-.card {
-    position: absolute;
+/* ── Card ──
+   The article is unclipped so its round sockets can sit on the edge. The cut plate is
+   .card__plate, drawn the bloop way: clip-path removes a border along the cut, so the
+   plate's own background IS the edge and ::before, inset 1px, carries the fill. One
+   edge colour then follows all five sides, the chamfer included. */
+.card { position: absolute; cursor: default; }
+.card:focus-visible { outline: none; }
+
+.card__plate {
+    --card-edge: var(--ae-seam-strong);
+    position: relative;
+    isolation: isolate;
     display: grid;
     min-height: 4rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--ae-seam-strong);
+    background: var(--card-edge);
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--ae-chamfer)), calc(100% - var(--ae-chamfer)) 100%, 0 100%);
-    cursor: default;
 }
 
-.card.is-selected { border-color: var(--accent); }
-.card:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
-.card.is-live { border-color: var(--sensor); }
+.card__plate::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    z-index: -1;
+    background: var(--bg-secondary);
+    clip-path: inherit;
+}
+
+.card.is-selected .card__plate { --card-edge: var(--accent); }
+.card.is-live .card__plate { --card-edge: var(--sensor); }
+.card:focus-visible .card__plate { --card-edge: var(--text-primary); }
+.card:focus-visible .card__plate::before { inset: 2px; }
 
 .card__head {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -130,7 +148,7 @@
 
 .card__text {
     width: 100%;
-    resize: vertical;
+    resize: none;
     padding: var(--space-2);
     border: 1px solid var(--ae-seam);
     background: var(--bg-primary);
@@ -139,6 +157,9 @@
     font-size: var(--fs-sm);
 }
 .card__text:focus-visible { border-color: var(--accent); outline: none; }
+
+/* Grows with what is typed (like bloop's Spaces), up to a cap, then scrolls. */
+.card__text--grow { field-sizing: content; min-height: 3.5rem; max-height: 28rem; overflow-y: auto; }
 
 .card__render { display: grid; gap: var(--space-2); }
 .card__media {
@@ -167,19 +188,58 @@
 .card__progress { display: grid; gap: var(--space-1); }
 .card__progress .ae-level { --ae-level-accent: var(--sensor); }
 
-/* ── Ports ── */
+/* ── Sockets (ported from bloop's .sp-port) ──
+   Round, deliberately: a socket is the one round thing a cut-plate card is allowed.
+   Seamed grey at rest, blue while a wire could land (the sensor), orange under the
+   pointer (the press), dimmed when it cannot take the wire. 36px on a 40px pitch,
+   centred on the card edge so wires end under them. */
 .port {
     position: absolute;
-    width: 0.875rem;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
     height: 2.25rem;
     padding: 0;
-    border: 1px solid var(--ae-seam-control);
-    background: var(--bg-tertiary);
+    border: 0;
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    box-shadow: inset 0 0 0 1px var(--ae-seam-strong), 0 2px 8px rgb(0 0 0 / 0.1);
+    transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease, color var(--duration-fast) ease, background-color var(--duration-fast) ease;
 }
-.port--in { left: -0.5rem; }
-.port--out { right: 0; top: 0.5rem; cursor: crosshair; background: color-mix(in srgb, var(--accent) 30%, var(--bg-tertiary)); }
-.port--out:hover, .port--out:focus-visible { background: var(--accent); outline: none; }
-.board.is-wiring .port--in { border-color: var(--accent); }
+
+.port--in { left: -1.125rem; }
+.port--out { right: -1.125rem; top: 0.5rem; cursor: crosshair; }
+
+.port__glyph { display: inline-flex; }
+.port__glyph--drop { display: none; }
+.port.is-connected { color: var(--text-primary); box-shadow: inset 0 0 0 1px var(--ae-seam-control), 0 2px 8px rgb(0 0 0 / 0.1); }
+
+.port--out:hover,
+.port--out:focus-visible,
+.port--in.is-live {
+    color: var(--sensor-text);
+    box-shadow: inset 0 0 0 2px var(--sensor), 0 0 8px color-mix(in srgb, var(--sensor) 35%, transparent);
+    transform: scale(1.06);
+    outline: none;
+}
+
+.port--in.is-blocked { opacity: 0.35; cursor: not-allowed; }
+
+.port--in.is-live:hover {
+    background: var(--accent);
+    color: var(--ink-on-accent);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
+    transform: scale(1.15);
+}
+.port--in.is-live:hover .port__glyph { display: none; }
+.port--in.is-live:hover .port__glyph--drop { display: inline-flex; }
+
+@media (prefers-reduced-motion: reduce) {
+    .port { transition: none; }
+}
 
 /* ── Toasts ── */
 .toasts {

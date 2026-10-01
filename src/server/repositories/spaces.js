@@ -158,11 +158,11 @@ export class SpacesRepository {
         `).all(nodeId, spaceId).map(hydrateNode);
     }
 
-    connect(spaceId, fromId, toId) {
+    connect(spaceId, fromId, toId, socketKey = null) {
         const from = this.findNode(spaceId, fromId);
         const to = this.findNode(spaceId, toId);
         const existing = this.db.prepare('SELECT * FROM space_connections WHERE space_id = ?').all(spaceId);
-        const verdict = checkConnection({ from, to, existing });
+        const verdict = checkConnection({ from, to, existing, socketKey });
         if (!verdict.ok) throw new ValidationError(verdict.reason);
         return this.#insertConnection(spaceId, fromId, toId, verdict.socket);
     }

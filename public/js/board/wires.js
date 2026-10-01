@@ -2,7 +2,7 @@
 // connections.js. Each wire keeps its own SVG elements in a WeakMap and only changed
 // attributes are rewritten, so dragging a card touches only its own wires.
 import { api } from './api.js';
-import { checkConnection, socketsOf } from '/shared/node-types.js';
+import { checkConnection, socketsOf, socketAccepts } from '/shared/node-types.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const PORT_TOP = 8;
@@ -18,6 +18,7 @@ export function socketY(node, socketKey) {
 }
 
 export const outputY = (node) => node.position_y + PORT_TOP + PORT_HALF;
+// Sockets are centred on the card edge; wires run to the centre and the socket covers the end.
 const outputX = (node) => node.position_x + (node.width || 280);
 
 export function routeTrace(x1, y1, x2, y2) {
@@ -139,26 +140,40 @@ export const wireMethods = {
         this.wireDraft = null;
     },
 
-    async finishWire(event, toNode) {
+    /** Dropped on a card body (auto-pick a socket) or on one socket (socketKey). */
+    async finishWire(event, toNode, socketKey = null) {
         if (!this.wireDraft) return;
         event.stopPropagation();
         const from = this.nodeById(this.wireDraft.fromId);
         this.wireDraft = null;
-        const verdict = checkConnection({ from, to: toNode, existing: this.connections });
+        const verdict = checkConnection({ from, to: toNode, existing: this.connections, socketKey });
         if (!verdict.ok) return this.toast(verdict.reason, 'warn');
-        await this.connect(from.id, toNode.id);
+        await this.connect(from.id, toNode.id, { socket: verdict.socket });
     },
 
-    async connect(fromId, toId, { record = true } = {}) {
+    /** While a wire is being drawn: 'live' (can take it), 'blocked' (cannot), or '' (no wire). */
+    socketState(node, socket) {
+        if (!this.wireDraft) return '';
+        const from = this.nodeById(this.wireDraft.fromId);
+        if (!from || from.id === node.id) return 'blocked';
+        const taken = this.connections.some((c) => c.to_node_id === node.id && c.to_socket === socket.key);
+        return !taken && socketAccepts(from, node, socket.key) ? 'live' : 'blocked';
+    },
+
+    isSocketConnected(node, socket) {
+        return this.connections.some((c) => c.to_node_id === node.id && c.to_socket === socket.key);
+    },
+
+    async connect(fromId, toId, { record = true, socket = null } = {}) {
         try {
-            const conn = await api('POST', `${this.base}/connections`, { from_node_id: fromId, to_node_id: toId });
+            const conn = await api('POST', `${this.base}/connections`, { from_node_id: fromId, to_node_id: toId, to_socket: socket });
             this.connections.push(conn);
             if (record) {
                 let current = conn;
                 this.history.push({
                     label: 'Connect cards',
                     undo: async () => { await this.disconnect(current.id, { record: false }); },
-                    redo: async () => { current = await this.connect(fromId, toId, { record: false }); },
+                    redo: async () => { current = await this.connect(fromId, toId, { record: false, socket: current.to_socket }); },
                 });
             }
             return conn;
@@ -178,7 +193,7 @@ export const wireMethods = {
             let current = conn;
             this.history.push({
                 label: 'Remove wire',
-                undo: async () => { current = await this.connect(current.from_node_id, current.to_node_id, { record: false }); },
+                undo: async () => { current = await this.connect(current.from_node_id, current.to_node_id, { record: false, socket: current.to_socket }); },
                 redo: async () => { await this.disconnect(current.id, { record: false }); },
             });
         }

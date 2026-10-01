@@ -1,0 +1,39 @@
+{{-- Mecha select. Props (JS expressions evaluated by Alpine in the caller's scope):
+       options  – array of { value, label, description? }
+       value    – current value
+       change   – a function call receiving `v`, e.g. "setFamily(node, v)"
+       label    – visible stencil label (optional), disabled – expression (optional) --}}
+<div class="sel-field"
+     x-data="MechaSelect({ options: () => {{ options }}, value: () => {{ value }}, onChange: (v) => {{ change }} })"
+     @keydown.escape.window="open && closeAndFocus()" @resize.window="open && close()">
+  @if(label)
+    <span class="ae-readout" :id="id + '-label'">{{ label }}</span>
+  @end
+  <button type="button" class="sel-trigger" x-ref="trigger" :class="{ 'is-open': open }"
+          @click="toggle()" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)"
+          @keydown.enter.prevent="open ? choose() : show()" @keydown.space.prevent="open ? choose() : show()"
+          @keydown.tab="open && close()"
+          aria-haspopup="listbox" :aria-expanded="open ? 'true' : 'false'" :aria-controls="id + '-panel'"
+          :aria-activedescendant="open && active >= 0 ? optionId(active) : null"
+          {{{ label ? ':aria-labelledby="id + \'-label\'"' : '' }}}
+          {{{ disabled ? `:disabled="${disabled}"` : '' }}}>
+    <span class="sel-trigger__value" :class="{ 'sel-trigger__placeholder': !selected }" x-text="selected ? selected.label : placeholder"></span>
+    <span class="sel-trigger__chev" aria-hidden="true">{{{ icon('chevron') }}}</span>
+  </button>
+
+  <template x-teleport="body">
+    <div class="sel-panel" x-show="open" x-cloak :style="panelStyle" @click.outside="$event.target.closest('.sel-trigger') !== $refs.trigger && close()">
+      <ul class="sel-list" role="listbox" :id="id + '-panel'">
+        <template x-for="(option, index) in items" :key="option.value">
+          <li class="sel-option" role="option" :id="optionId(index)"
+              :class="{ 'is-active': index === active, 'is-selected': selected && option.value === selected.value }"
+              :aria-selected="selected && option.value === selected.value ? 'true' : 'false'"
+              @mouseenter="active = index" @click="choose(index)">
+            <span x-text="option.label"></span>
+            <span class="sel-option__desc" x-show="option.description" x-text="option.description"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </template>
+</div>

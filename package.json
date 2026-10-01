@@ -10,7 +10,7 @@
   "scripts": {
     "vendor": "node scripts/copy-vendor.js",
     "start": "npm run vendor && electron .",
-    "test": "node --test",
+    "test": "node --test tests/",
     "dist": "npm run vendor && electron-builder --win"
   },
   "dependencies": {

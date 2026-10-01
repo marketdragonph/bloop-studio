@@ -97,8 +97,8 @@ export function spacesRoutes({ views, spaces }) {
 
     routes.post('/:id/connections', json(async (c) => {
         if (!findOr404(c)) return c.notFound();
-        const { from_node_id: from, to_node_id: to } = await c.req.json();
-        return c.json(spaces.connect(id(c), Number(from), Number(to)), 201);
+        const { from_node_id: from, to_node_id: to, to_socket: socket } = await c.req.json();
+        return c.json(spaces.connect(id(c), Number(from), Number(to), socket || null), 201);
     }));
 
     routes.delete('/:id/connections/:connId', json((c) => {

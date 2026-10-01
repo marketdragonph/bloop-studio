@@ -1,5 +1,6 @@
 @import url('./tokens.css');
 @import url('./mecha.css');
+@import url('./select.css');
 @import url('./board.css');
 
 *, *::before, *::after { box-sizing: border-box; }

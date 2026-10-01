@@ -134,6 +134,7 @@
 .ae-icon { width: 1em; height: 1em; flex: none; vertical-align: -0.125em; }
 .ae-key .ae-icon { font-size: 0.875rem; }
 .ae-key--square { width: 1.875rem; padding-inline: 0; }
+.ae-icon--back { transform: rotate(180deg); } /* the hangar chevron points right */
 .ae-key--sm.ae-key--square { width: 1.5rem; }
 
 /* ── Chip ── */

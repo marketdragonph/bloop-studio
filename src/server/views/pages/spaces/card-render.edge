@@ -1,0 +1,43 @@
+{{-- Body of an Image or Video card: preview, direction, model + seed, progress, Generate. --}}
+<div class="card__render">
+  <div class="card__media">
+    <template x-if="mediaUrl(node) && node.type === 'image'">
+      <img :src="mediaUrl(node)" alt="" loading="lazy">
+    </template>
+    <template x-if="mediaUrl(node) && node.type === 'video'">
+      <video :src="mediaUrl(node)" controls preload="metadata"></video>
+    </template>
+    <template x-if="!mediaUrl(node)">
+      <span class="ae-readout card__placeholder" x-text="node.type === 'image' ? 'No image yet' : 'No clip yet'"></span>
+    </template>
+  </div>
+  <textarea class="card__text card__text--grow scrolls" rows="2" placeholder="Extra direction (optional)"
+            :value="node.prompt ?? ''" @input="editText(node, 'prompt', $event.target.value)"></textarea>
+
+  <div class="card__controls">
+    <div class="card__control">
+      @!component('components/select', {
+        label: 'Model',
+        options: "families[node.type].map(f => ({ value: f.id, label: f.label }))",
+        value: 'familyOf(node)',
+        change: 'setFamily(node, v)',
+        disabled: 'isBusy(node)'
+      })
+    </div>
+    <button type="button" class="ae-key ae-key--sm" @click="toggleSeedLock(node)" :aria-pressed="!!node.settings?.seedLocked"
+            :title="node.settings?.seed != null ? 'Seed ' + node.settings.seed : 'No seed yet'">
+      <span x-show="node.settings?.seedLocked">{{{ icon('lock') }}}</span>
+      <span x-text="node.settings?.seedLocked ? 'Seed locked' : 'Seed: new'"></span>
+    </button>
+  </div>
+
+  <div class="card__progress" x-show="isBusy(node)">
+    <div class="ae-level"><div class="ae-level__fill" :style="{ width: progressPercent(node) }"></div></div>
+    <span class="ae-readout" x-text="node.progressLabel || node.status"></span>
+  </div>
+
+  <p class="field__error" x-show="node.status === 'failed' && node.error" x-text="node.error"></p>
+
+  <button type="button" class="ae-key ae-key--accent ae-key--block" x-show="!isBusy(node)" @click="generate(node)">{{{ icon('bolt') }}}<span>Generate</span></button>
+  <button type="button" class="ae-key ae-key--block" x-show="isBusy(node)" @click="cancelRender(node)">{{{ icon('close') }}}<span>Cancel</span></button>
+</div>
