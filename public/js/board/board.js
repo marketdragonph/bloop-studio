@@ -35,6 +35,7 @@ export default function SpaceBoard() {
         nodeTypes: NODE_TYPES,
         families: { image: [], video: [] },
         streamDown: false,
+        renderQueue: [],
         directorOpen: false,
         directorLoaded: false,
         directorBusy: false,

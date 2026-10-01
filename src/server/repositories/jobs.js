@@ -60,13 +60,27 @@ export class JobsRepository {
         this.db.prepare('UPDATE jobs SET status = ?, error = ?, finished_at = ? WHERE id = ?').run(status, error, now(), id);
     }
 
+    /** Every unfinished job in the order it will most likely run: the running one, then by age. */
+    activeQueue() {
+        return this.db.prepare(`
+            SELECT j.id, j.node_id AS nodeId, n.space_id AS spaceId, j.status
+            FROM jobs j JOIN space_nodes n ON n.id = j.node_id
+            WHERE j.status IN ('queued', 'running')
+            ORDER BY j.status = 'running' DESC, j.id`).all().map((row) => ({ ...row }));
+    }
+
     queuePosition(id) {
         return this.db.prepare("SELECT COUNT(*) AS n FROM jobs WHERE status IN ('queued', 'running') AND id < ?").get(id).n;
     }
 
-    /** After a crash or restart, work that was mid-flight is queued again rather than lost. */
+    /**
+     * After a crash or restart, work that was mid-flight is queued again rather than lost.
+     * Returns the ComfyUI prompt ids those jobs had, so the caller can drop the orphaned runs.
+     */
     requeueInterrupted() {
-        return this.db.prepare("UPDATE jobs SET status = 'queued', comfy_prompt_id = NULL, progress = 0 WHERE status = 'running'").run().changes;
+        const orphans = this.db.prepare("SELECT comfy_prompt_id AS id FROM jobs WHERE status = 'running' AND comfy_prompt_id IS NOT NULL").all().map((row) => row.id);
+        const changes = this.db.prepare("UPDATE jobs SET status = 'queued', comfy_prompt_id = NULL, progress = 0 WHERE status = 'running'").run().changes;
+        return { changes, orphans };
     }
 
     addTake({ nodeId, mediaPath, mime, preset, seed, params }) {

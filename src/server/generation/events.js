@@ -11,4 +11,9 @@ export class BoardEvents extends EventEmitter {
     node(update) {
         this.emit('node', update);
     }
+
+    /** The render queue changed: [{ id, nodeId, spaceId, status }] in run order, for every board. */
+    queue(order) {
+        this.emit('queue', order);
+    }
 }

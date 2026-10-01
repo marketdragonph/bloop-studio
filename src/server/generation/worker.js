@@ -23,8 +23,10 @@ export class GenerationWorker {
     }
 
     start() {
-        const requeued = this.deps.jobs.requeueInterrupted();
-        if (requeued) console.log(`worker: re-queued ${requeued} job(s) interrupted by a restart`);
+        const { changes, orphans } = this.deps.jobs.requeueInterrupted();
+        if (changes) console.log(`worker: re-queued ${changes} job(s) interrupted by a restart`);
+        // ComfyUI kept running what we sent before the restart: drop it, or the re-queued run waits behind a twin.
+        for (const promptId of orphans) this.deps.comfy().cancel(promptId).catch(() => {});
         this.#loop();
     }
 
@@ -54,6 +56,7 @@ export class GenerationWorker {
         this.current = ctx;
         spaces.setNodeResult(node.id, { status: 'generating' });
         report({ status: 'generating', progress: 0, label: 'starting' });
+        events.queue(jobs.activeQueue());
 
         try {
             await runPipeline(GENERATION_STAGES, ctx);
@@ -68,6 +71,7 @@ export class GenerationWorker {
         } finally {
             ctx.done = true;
             this.current = null;
+            events.queue(jobs.activeQueue());
         }
     }
 
@@ -80,6 +84,7 @@ export class GenerationWorker {
             jobs.finish(job.id, 'canceled');
             spaces.setNodeResult(nodeId, { status: 'idle' });
             this.deps.events.node({ spaceId: spaces.spaceOfNode(nodeId), nodeId, status: 'idle' });
+            this.deps.events.queue(jobs.activeQueue());
             return true;
         }
         if (this.current?.job.id === job.id && this.current.promptId) await this.current.deps.comfy.cancel(this.current.promptId);

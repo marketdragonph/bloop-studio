@@ -24,6 +24,7 @@
     </div>
 
     <span class="ae-readout save-state" :class="'save-state--' + saveState" x-text="saveLabel()" aria-live="polite"></span>
+    <span class="ae-readout queue-state" x-show="queueSummary()" x-text="queueSummary()" aria-live="polite"></span>
     <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': directorOpen }" @click="toggleDirector()"
             :aria-pressed="directorOpen ? 'true' : 'false'" aria-controls="director-panel">
       {{{ icon('chat') }}}<span>Director</span>

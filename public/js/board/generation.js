@@ -9,6 +9,7 @@ export const generationMethods = {
     initGeneration() {
         const source = new EventSource(`${this.base}/events`);
         source.addEventListener('node', (event) => this.applyNodeUpdate(JSON.parse(event.data)));
+        source.addEventListener('queue', (event) => { this.renderQueue = JSON.parse(event.data); });
         source.addEventListener('error', () => { this.streamDown = source.readyState !== EventSource.OPEN; });
         source.addEventListener('open', () => { this.streamDown = false; });
         STREAMS.set(this.$refs.board, source);
@@ -36,6 +37,7 @@ export const generationMethods = {
         node.status = update.status;
         node.progress = update.progress ?? node.progress ?? 0;
         node.progressLabel = update.label ?? (update.status === 'generating' ? node.progressLabel : '');
+        this._trackEta(node);
         if (update.media_path) Object.assign(node, { media_path: update.media_path, media_mime: update.media_mime });
         node.error = update.error ?? null;
         if (update.status === 'failed') this.toast(`${this.typeLabel(node)} card failed: ${update.error}`, 'alert');
@@ -75,6 +77,41 @@ export const generationMethods = {
 
     toggleSeedLock(node) {
         this.updateCard(node, { settings: { ...node.settings, seedLocked: !node.settings?.seedLocked } });
+    },
+
+    /** Time left from the step rate, measured from the first step (model loading is not a step). */
+    _trackEta(node) {
+        if (node.status !== 'generating' || !(node.progress > 0)) {
+            node.etaFrom = null;
+            node.etaSeconds = null;
+            return;
+        }
+        const now = performance.now();
+        if (!node.etaFrom) node.etaFrom = { at: now, progress: node.progress };
+        const done = node.progress - node.etaFrom.progress;
+        node.etaSeconds = done > 0 ? ((now - node.etaFrom.at) / 1000 / done) * (1 - node.progress) : null;
+    },
+
+    /** "Next up", "2 ahead": renders before this card across every board. */
+    waitLabel(node) {
+        const ahead = this.renderQueue.findIndex((job) => job.nodeId === node.id);
+        if (ahead <= 0) return 'Queued · next up';
+        return `Queued · ${ahead} ahead`;
+    },
+
+    stepLabel(node) {
+        const step = (node.progressLabel || 'Generating').replace(/^step /, 'Step ');
+        if (node.etaSeconds == null) return step;
+        const s = Math.max(1, Math.round(node.etaSeconds));
+        return `${step} · ~${s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`} left`;
+    },
+
+    /** Toolbar summary: what is left on this board, and how much other boards have in front. */
+    queueSummary() {
+        const here = this.renderQueue.filter((job) => job.spaceId === this.spaceId).length;
+        if (!here) return '';
+        const elsewhere = this.renderQueue.length - here;
+        return `${here} render${here > 1 ? 's' : ''} left` + (elsewhere ? ` · ${elsewhere} on other boards` : '');
     },
 
     progressPercent(node) {

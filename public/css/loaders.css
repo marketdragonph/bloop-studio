@@ -75,3 +75,6 @@
 @media (prefers-reduced-motion: reduce) {
     .beat-line polyline.beat-line__pulse { stroke-dasharray: none; animation: none; opacity: 0.7; }
 }
+
+/* Toolbar readout: renders left on this board. */
+.queue-state { color: var(--sensor-text); }

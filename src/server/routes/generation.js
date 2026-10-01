@@ -18,7 +18,8 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets,
         const job = jobs.enqueue({ nodeId: node.id, preset: node.settings.family ?? 'auto' });
         spaces.setNodeResult(node.id, { status: 'queued' });
         const position = jobs.queuePosition(job.id);
-        events.node({ spaceId: node.space_id, nodeId: node.id, status: 'queued', label: position ? `queued (#${position + 1})` : 'queued' });
+        events.node({ spaceId: node.space_id, nodeId: node.id, status: 'queued' });
+        events.queue(jobs.activeQueue());
         return c.json({ jobId: job.id, position }, 202);
     });
 
@@ -54,8 +55,15 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets,
             const onNode = (update) => {
                 if (update.spaceId === spaceId) stream.writeSSE({ event: 'node', data: JSON.stringify(update) });
             };
+            // The queue is shared by every board, so each board sees how many renders are ahead of its own.
+            const onQueue = (order) => stream.writeSSE({ event: 'queue', data: JSON.stringify(order) });
             events.on('node', onNode);
-            stream.onAbort(() => events.off('node', onNode));
+            events.on('queue', onQueue);
+            stream.onAbort(() => {
+                events.off('node', onNode);
+                events.off('queue', onQueue);
+            });
+            await onQueue(jobs.activeQueue());
             while (!stream.aborted) {
                 await stream.writeSSE({ event: 'ping', data: '' });
                 await stream.sleep(15_000);

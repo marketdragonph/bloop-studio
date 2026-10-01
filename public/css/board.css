@@ -110,6 +110,7 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
     position: relative;
     isolation: isolate;
     display: grid;
+    grid-template-columns: minmax(0, 1fr); /* never wider than the card, whatever the text inside wants */
     min-height: 4rem;
     background: var(--card-edge);
     clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--ae-chamfer)), calc(100% - var(--ae-chamfer)) 100%, 0 100%);
@@ -140,7 +141,9 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
 }
 
 .card__head > .ae-stencil { margin-right: auto; }
-.card__title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.card__title { display: flex; align-items: center; gap: var(--space-1); flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+.card__title > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.card__close { flex-shrink: 0; }
 .card__icon { display: inline-flex; font-size: 0.875rem; }
 .card__close { display: inline-grid; place-items: center; }
 .card--image .card__head .ae-stencil { color: var(--accent-text); }
@@ -157,7 +160,9 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
 }
 .card__close:hover { color: var(--status-alert-text); }
 
-.card__body { display: grid; gap: var(--space-2); padding: var(--space-3); }
+/* minmax(0, 1fr): a grow-to-content textarea would otherwise widen the column to its longest line
+   and push the card past its width (text to the edge, the close key off the plate). */
+.card__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-3); }
 
 .card__text {
     width: 100%;

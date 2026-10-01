@@ -50,3 +50,27 @@ test('a queued job whose card was deleted is canceled, not stuck', () => {
     assert.equal(jobs.claimNext(), null);
     assert.equal(jobs.find(job.id).status, 'canceled');
 });
+
+test('the active queue lists the running render first, then the waiting ones by age', () => {
+    const { spaces, jobs, space, queue } = fresh();
+    const [a, b, c] = ['image', 'image', 'image'].map((type) => spaces.createNode(space.id, { type }));
+    queue(a);
+    queue(b);
+    queue(c);
+    jobs.claimNext(); // a starts running
+    assert.deepEqual(jobs.activeQueue().map((j) => [j.nodeId, j.status, j.spaceId]), [
+        [a.id, 'running', space.id],
+        [b.id, 'queued', space.id],
+        [c.id, 'queued', space.id],
+    ]);
+});
+
+test('a restart re-queues running work and hands back its orphaned ComfyUI prompt', () => {
+    const { spaces, jobs, space, queue } = fresh();
+    const still = spaces.createNode(space.id, { type: 'image' });
+    queue(still);
+    const job = jobs.claimNext();
+    jobs.setPromptId(job.id, 'prompt-abc');
+    assert.deepEqual(jobs.requeueInterrupted(), { changes: 1, orphans: ['prompt-abc'] });
+    assert.equal(jobs.find(job.id).status, 'queued');
+});
