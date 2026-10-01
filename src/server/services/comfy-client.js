@@ -16,7 +16,10 @@ export class ComfyClient {
             const text = await response.text().catch(() => '');
             throw new ComfyError(`ComfyUI ${method} ${path} answered ${response.status}: ${text.slice(0, 500)}`);
         }
-        return raw ? response : response.json();
+        if (raw) return response;
+        // Some endpoints (/free, /interrupt, /queue POST) answer 200 with an empty body.
+        const text = await response.text();
+        return text ? JSON.parse(text) : null;
     }
 
     /** Engine health for the status light: never throws. */
