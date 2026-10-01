@@ -37,6 +37,8 @@ export const generationMethods = {
         node.status = update.status;
         node.progress = update.progress ?? node.progress ?? 0;
         node.progressLabel = update.label ?? (update.status === 'generating' ? node.progressLabel : '');
+        // After the steps: "Decoding video", "Saving" (a step update clears it).
+        node.phase = update.status === 'generating' ? ('phase' in update ? update.phase : node.phase) : null;
         this._trackEta(node);
         if (update.media_path) Object.assign(node, { media_path: update.media_path, media_mime: update.media_mime });
         node.error = update.error ?? null;

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { loadPresets, compileGraph, choosePreset, familiesFor } from '../src/server/generation/presets.js';
 import { composePrompt } from '../src/server/generation/prompt.js';
 import { runPipeline } from '../src/server/generation/pipeline.js';
+import { phaseOf } from '../src/server/generation/stages.js';
 
 const presets = loadPresets();
 
@@ -62,4 +63,12 @@ test('pipeline stages run in order and a stage can stop the chain', async () => 
         async () => { seen.push('never'); },
     ], {});
     assert.deepEqual(seen, ['a', 'b']);
+});
+
+test('after the steps, the card says what ComfyUI is doing instead of sitting on 100%', () => {
+    assert.equal(phaseOf('VAEDecodeTiled', 'video'), 'Decoding video');
+    assert.equal(phaseOf('VAEDecode', 'image'), 'Decoding');
+    assert.equal(phaseOf('SaveVideo', 'video'), 'Saving');
+    assert.equal(phaseOf('UnetLoaderGGUF', 'video'), 'Loading models');
+    assert.equal(phaseOf('KSampler', 'video'), null); // the sampler reports its own steps
 });

@@ -74,6 +74,18 @@ export async function compile(ctx, next) {
     await next();
 }
 
+/**
+ * What ComfyUI is doing outside the sampler's steps, from the class of the node it is running.
+ * The steps reach 100% long before a clip is done: a tiled video decode can take minutes.
+ */
+export function phaseOf(classType = '', cardType = 'image') {
+    if (/VAEDecode/i.test(classType)) return cardType === 'video' ? 'Decoding video' : 'Decoding';
+    if (/Save|CreateVideo|VideoCombine/i.test(classType)) return 'Saving';
+    if (/TextEncode|CLIPLoader|Qwen.*VL/i.test(classType)) return 'Reading the prompt';
+    if (/Loader|LoadImage/i.test(classType)) return 'Loading models';
+    return null;
+}
+
 /** Submits to ComfyUI and resolves when it finishes, reporting step progress as it goes. */
 export async function render(ctx, next) {
     const { comfy, jobs } = ctx.deps;
@@ -87,11 +99,14 @@ export async function render(ctx, next) {
             if (promptId && data.prompt_id && data.prompt_id !== promptId) return;
             if (msg.type === 'progress' && data.max) {
                 const progress = data.value / data.max;
-                ctx.report({ status: 'generating', progress, label: `step ${data.value}/${data.max}` });
+                ctx.report({ status: 'generating', progress, label: `step ${data.value}/${data.max}`, phase: null });
                 if (Date.now() - lastWrite > 1000) {
                     lastWrite = Date.now();
                     jobs.progress(ctx.job.id, progress, `step ${data.value}/${data.max}`);
                 }
+            } else if (msg.type === 'executing' && data.node != null) {
+                const phase = phaseOf(ctx.graph[data.node]?.class_type, ctx.node.type);
+                if (phase) ctx.report({ status: 'generating', phase });
             } else if (msg.type === 'executing' && data.node === null && data.prompt_id === promptId) {
                 resolve();
             } else if (msg.type === 'execution_success' && data.prompt_id === promptId) {
