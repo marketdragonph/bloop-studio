@@ -1,0 +1,6 @@
+{{-- Signal strip. Tone changes colour AND the rank word, so it never relies on colour alone. --}}
+@let(ranks = { ok: 'OK', warn: 'Caution', alert: 'Fault', info: 'Note' })
+<div class="ae-signal ae-signal--{{ tone ?? 'info' }}" role="{{ tone === 'alert' ? 'alert' : 'status' }}">
+  <span class="ae-signal__rank ae-stencil">{{ ranks[tone ?? 'info'] }}</span>
+  <span class="ae-signal__msg">{{ message }}</span>
+</div>

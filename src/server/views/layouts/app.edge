@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- 'unsafe-eval' is required by Alpine's inline expressions (ported from bloop). Only our own
+         127.0.0.1 server is ever loaded in this window, and no remote content is allowed. --}}
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self'; script-src 'self' 'unsafe-eval'; connect-src 'self'">
+    <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
+    <title>{{ title ? `${title} · ${appName}` : appName }}</title>
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <script src="/assets/vendor/htmx.min.js" defer></script>
+    <script type="module" src="/assets/js/app.js"></script>
+</head>
+<body hx-headers='{"X-CSRF-Token": "{{ csrfToken }}"}' hx-boost="true">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="topbar">
+        <a class="topbar__brand" href="/">
+            <span class="ae-stencil">Bloop</span>
+            <span class="topbar__title">Studio</span>
+        </a>
+        <nav class="topbar__nav" aria-label="Main">
+            <a href="/" class="topbar__link">Hangar</a>
+            <a href="/settings" class="topbar__link">Settings</a>
+        </nav>
+        <div class="topbar__engine"
+             hx-get="/engine/status" hx-trigger="load, every 5s" hx-swap="innerHTML" aria-live="polite">
+            @include('partials/engine-status')
+        </div>
+    </header>
+
+    <main id="main" class="page">
+        {{{ await $slots.main() }}}
+    </main>
+
+    <div id="modal"></div>
+</body>
+</html>

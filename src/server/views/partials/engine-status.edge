@@ -1,0 +1,17 @@
+@if(!status)
+  <span class="status-light status-light--idle">
+    <span class="status-light__dot" aria-hidden="true"></span>
+    <span class="ae-readout">Engine · checking</span>
+  </span>
+@elseif(status.online)
+  @let(activity = status.running ? ` · rendering${status.pending ? ` (+${status.pending} queued)` : ''}` : '')
+  <span class="status-light status-light--ok" title="{{ status.gpu }} · {{ status.vramFreeGb.toFixed(1) }} of {{ status.vramTotalGb.toFixed(1) }} GB free">
+    <span class="status-light__dot {{ status.running ? 'ae-sensor-dot' : '' }}" aria-hidden="true"></span>
+    <span class="ae-readout">Engine online{{ activity }}</span>
+  </span>
+@else
+  <a href="/settings" class="status-light status-light--fault" title="{{ status.error }}">
+    <span class="status-light__dot" aria-hidden="true"></span>
+    <span class="ae-readout">Engine offline</span>
+  </a>
+@end

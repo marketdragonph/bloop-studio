@@ -1,0 +1,24 @@
+@component('layouts/app', { title: 'Hangar' })
+<div class="stack">
+  <header class="page-head">
+    <p class="ae-stencil ae-stencil--sensor">Hangar</p>
+    <h1 class="page-head__title">Bloop Studio</h1>
+    <p class="page-head__lead">Spaces and the Director, rendered on your own GPU.</p>
+  </header>
+
+  <div class="grid-2">
+    @component('components/plate', { heading: 'Spaces', labelledBy: 'spaces-h', variant: 'flash' })
+      <p class="plate-note">Wire prompts, images and clips on an infinite board, then render each card locally.</p>
+      <span class="ae-chip">Phase 1</span>
+    @end
+    @component('components/plate', { heading: 'Director', labelledBy: 'director-h' })
+      <p class="plate-note">Brief, style, cast, locations and scenes: a film planned with you, then storyboarded.</p>
+      <span class="ae-chip">Phase 2</span>
+    @end
+  </div>
+
+  @if(!settings.configured.anthropicApiKey && !settings.configured.openaiApiKey)
+    @!component('components/alert', { tone: 'warn', message: 'The Director needs a Claude or OpenAI key. Add one in Settings.' })
+  @end
+</div>
+@end

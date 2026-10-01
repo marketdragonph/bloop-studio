@@ -1,0 +1,5 @@
+@if(status.online)
+  @!component('components/alert', { tone: 'ok', message: `Connected: ComfyUI ${status.version} on ${status.gpu} (${status.vramTotalGb.toFixed(0)} GB).` })
+@else
+  @!component('components/alert', { tone: 'alert', message: `Could not reach ComfyUI: ${status.error}` })
+@end

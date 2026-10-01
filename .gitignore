@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+public/vendor/
+*.db
+*.db-*
+*.sqlite*
+.env
+*.log
+coverage/

@@ -1,0 +1,83 @@
+@component('layouts/app', { title: 'Settings' })
+<div class="stack">
+  <header class="page-head">
+    <p class="ae-stencil ae-stencil--sensor">Hangar control</p>
+    <h1 class="page-head__title">Settings</h1>
+  </header>
+
+  @if(saved)
+    @!component('components/alert', { tone: 'ok', message: 'Settings saved.' })
+  @end
+
+  <form method="POST" action="/settings" class="stack">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+    @component('components/plate', { heading: 'Engine', labelledBy: 'engine-h' })
+      <p class="plate-note">Bloop Studio renders through ComfyUI running on this PC.</p>
+      @!component('components/field', {
+        name: 'comfyUrl', label: 'ComfyUI address', value: old?.comfyUrl ?? settings.comfyUrl,
+        hint: 'Usually http://127.0.0.1:8188', error: errors.comfyUrl
+      })
+      <div class="row">
+        <button type="button" class="ae-key"
+                hx-post="/settings/test-engine" hx-include="[name=comfyUrl]" hx-target="#engine-test" hx-swap="innerHTML">
+          Test connection
+        </button>
+      </div>
+      <div id="engine-test" aria-live="polite"></div>
+    @end
+
+    @component('components/plate', { heading: 'Media', labelledBy: 'media-h' })
+      @!component('components/field', {
+        name: 'mediaDir', label: 'Media folder', value: old?.mediaDir ?? settings.mediaDir,
+        hint: 'Where generated images, videos and exports are saved.', error: errors.mediaDir
+      })
+    @end
+
+    @component('components/plate', { heading: 'Director', labelledBy: 'director-h' })
+      <fieldset class="choice-row">
+        <legend class="field__label ae-stencil">Language model</legend>
+        @each(option in [{ value: 'anthropic', label: 'Claude (Anthropic)' }, { value: 'openai', label: 'OpenAI' }])
+          <label class="choice">
+            <input type="radio" name="llmProvider" value="{{ option.value }}"
+                   {{ (old?.llmProvider ?? settings.llmProvider) === option.value ? 'checked' : '' }}>
+            <span>{{ option.label }}</span>
+          </label>
+        @end
+      </fieldset>
+      @if(errors.llmProvider)
+        <p class="field__error">{{ errors.llmProvider }}</p>
+      @end
+
+      <div class="grid-2">
+        <div class="stack-sm">
+          @!component('components/field', {
+            name: 'anthropicApiKey', label: 'Claude API key', type: 'password', autocomplete: 'off',
+            placeholder: settings.configured.anthropicApiKey ? '•••••••• stored, leave blank to keep' : 'sk-ant-…',
+            hint: 'Encrypted with Windows. Only ever sent to Anthropic.'
+          })
+          @!component('components/field', { name: 'anthropicModel', label: 'Claude model', value: settings.anthropicModel })
+          @if(settings.configured.anthropicApiKey)
+            <button type="button" class="ae-key ae-key--sm" hx-delete="/settings/keys/anthropic" hx-confirm="Remove the stored Claude key?">Remove Claude key</button>
+          @end
+        </div>
+        <div class="stack-sm">
+          @!component('components/field', {
+            name: 'openaiApiKey', label: 'OpenAI API key', type: 'password', autocomplete: 'off',
+            placeholder: settings.configured.openaiApiKey ? '•••••••• stored, leave blank to keep' : 'sk-…',
+            hint: 'Encrypted with Windows. Only ever sent to OpenAI.'
+          })
+          @!component('components/field', { name: 'openaiModel', label: 'OpenAI model', value: settings.openaiModel })
+          @if(settings.configured.openaiApiKey)
+            <button type="button" class="ae-key ae-key--sm" hx-delete="/settings/keys/openai" hx-confirm="Remove the stored OpenAI key?">Remove OpenAI key</button>
+          @end
+        </div>
+      </div>
+    @end
+
+    <div class="row row--end">
+      <button type="submit" class="ae-key ae-key--accent">Save settings</button>
+    </div>
+  </form>
+</div>
+@end

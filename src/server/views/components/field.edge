@@ -1,0 +1,15 @@
+{{-- Labelled input with stencil label, hint and error wired to aria-describedby. --}}
+@let(id = `field-${name}`)
+@let(describedBy = [hint ? `${id}-hint` : '', error ? `${id}-error` : ''].filter(Boolean).join(' '))
+<div class="field">
+  <label class="field__label ae-stencil" for="{{ id }}">{{ label }}</label>
+  <input class="field__input" id="{{ id }}" name="{{ name }}" type="{{ type ?? 'text' }}"
+         value="{{ value ?? '' }}" placeholder="{{ placeholder ?? '' }}" autocomplete="{{ autocomplete ?? 'off' }}"
+         aria-invalid="{{ error ? 'true' : 'false' }}"{{{ describedBy ? ` aria-describedby="${describedBy}"` : '' }}}>
+  @if(hint)
+    <p class="field__hint" id="{{ id }}-hint">{{ hint }}</p>
+  @end
+  @if(error)
+    <p class="field__error" id="{{ id }}-error">{{ error }}</p>
+  @end
+</div>

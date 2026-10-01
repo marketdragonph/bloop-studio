@@ -1,0 +1,9 @@
+{{-- Cut-corner panel with a stencilled heading. --}}
+<section class="ae-plate {{ variant ? `ae-plate--${variant}` : '' }}"{{{ labelledBy ? ` aria-labelledby="${labelledBy}"` : '' }}}>
+  <div class="ae-plate__inner plate-body">
+    @if(heading)
+      <h2 class="ae-stencil ae-stencil--ruled" id="{{ labelledBy ?? '' }}">{{ heading }}</h2>
+    @end
+    {{{ await $slots.main() }}}
+  </div>
+</section>

@@ -1,0 +1,79 @@
+/* Design tokens, ported from bloop's variables.css. Brand/platform tokens dropped;
+   "dragon" renamed to "accent". Dark is the default theme. */
+
+@font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url('/assets/vendor/fonts/inter/inter-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Orbitron'; font-weight: 700; font-display: swap; src: url('/assets/vendor/fonts/orbitron/orbitron-latin-700-normal.woff2') format('woff2'); }
+
+:root {
+    --accent: #F97316;
+    --accent-light: #FB923C;
+    --accent-dark: #EA580C;
+    --accent-text: #C2410C;
+    --ink-on-accent: #1C1917;
+    --sensor: #2563EB;
+    --sensor-text: #2563EB;
+
+    --bg-primary: #F9FAFB;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F3F4F6;
+    --text-primary: #1E293B;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+
+    --status-ok: #22C55E;
+    --status-ok-text: #15803D;
+    --status-warn: #FACC15;
+    --status-warn-text: #A16207;
+    --status-alert: #EF4444;
+    --status-alert-text: #DC2626;
+
+    --overlay-backdrop: rgba(0, 0, 0, 0.6);
+
+    --fs-3xs: 0.625rem;
+    --fs-2xs: 0.6875rem;
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.8125rem;
+    --fs-base: 0.875rem;
+    --fs-md: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.375rem;
+    --fs-2xl: 1.75rem;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+
+    --duration-fast: 120ms;
+    --duration-base: 160ms;
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+    --z-sticky: 40;
+    --z-modal: 50;
+    --z-toast: 9999;
+
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-stencil: 'Orbitron', 'Inter', system-ui, sans-serif;
+}
+
+[data-theme='dark'] {
+    --bg-primary: #09090b;
+    --bg-secondary: #111113;
+    --bg-tertiary: #1a1a1e;
+    --text-primary: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-muted: #8a8a93;
+    --accent-text: #F97316;
+    --sensor-text: #60A5FA;
+    --status-ok-text: #22C55E;
+    --status-warn-text: #FACC15;
+    --status-alert-text: #EF4444;
+}
+
+@media (prefers-contrast: more) {
+    :root { --text-muted: var(--text-secondary); }
+}
