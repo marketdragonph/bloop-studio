@@ -2,6 +2,7 @@
 @import url('./mecha.css');
 @import url('./select.css');
 @import url('./board.css');
+@import url('./director.css');
 
 *, *::before, *::after { box-sizing: border-box; }
 

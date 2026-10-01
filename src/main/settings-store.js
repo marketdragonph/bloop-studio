@@ -12,8 +12,8 @@ const DEFAULTS = {
     comfyUrl: 'http://127.0.0.1:8188',
     mediaDir: join(homedir(), 'Videos', 'Bloop Studio'),
     llmProvider: 'anthropic',
-    anthropicModel: 'claude-sonnet-5-5',
-    openaiModel: 'gpt-5',
+    anthropicModel: 'claude-opus-5-5',
+    openaiModel: 'gpt-5.5',
     theme: 'dark',
 };
 

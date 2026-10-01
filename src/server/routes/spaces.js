@@ -63,6 +63,11 @@ export function spacesRoutes({ views, spaces }) {
 
     // ── Board API (JSON) ──
 
+    routes.get('/:id/board.json', (c) => {
+        const board = spaces.board(id(c));
+        return board ? c.json(board) : c.notFound();
+    });
+
     routes.patch('/:id', json(async (c) => {
         if (!findOr404(c)) return c.notFound();
         spaces.rename(id(c), (await c.req.json()).name);

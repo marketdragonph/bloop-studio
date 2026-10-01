@@ -1,0 +1,42 @@
+/* The Director panel: a docked plate on the right of the board. */
+.board-page { position: relative; }
+
+.director {
+    position: absolute;
+    top: 3rem;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    z-index: var(--z-sticky);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    width: min(26rem, calc(100% - 1.5rem));
+    border: 1px solid var(--ae-seam-strong);
+    background: var(--bg-secondary);
+    filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.3));
+}
+
+.director__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--ae-seam);
+}
+.director__head .ae-stencil { margin-right: auto; }
+
+.director__log { display: grid; align-content: start; gap: var(--space-3); padding: var(--space-3); overflow-y: auto; }
+
+.director__empty { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-2); }
+
+.director__msg { display: grid; gap: var(--space-1); max-width: 92%; }
+.director__msg--user { justify-self: end; padding: var(--space-2) var(--space-3); background: color-mix(in srgb, var(--accent) 14%, var(--bg-tertiary)); }
+.director__msg--assistant { justify-self: start; padding: var(--space-2) var(--space-3); border-left: 2px solid var(--sensor); background: var(--bg-tertiary); }
+.director__msg--notice { justify-self: stretch; max-width: none; }
+.director__text { margin: 0; white-space: pre-wrap; font-size: var(--fs-sm); }
+.director__actions { color: var(--sensor-text); }
+
+.director__compose { display: grid; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--ae-seam); }
+
+@media (max-width: 40rem) {
+    .director { top: auto; left: var(--space-2); right: var(--space-2); width: auto; height: 60vh; }
+}

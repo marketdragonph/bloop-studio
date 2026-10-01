@@ -23,7 +23,13 @@
     </div>
 
     <span class="ae-readout save-state" :class="'save-state--' + saveState" x-text="saveLabel()" aria-live="polite"></span>
+    <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': directorOpen }" @click="toggleDirector()"
+            :aria-pressed="directorOpen ? 'true' : 'false'" aria-controls="director-panel">
+      {{{ icon('chat') }}}<span>Director</span>
+    </button>
   </div>
+
+  @include('pages/spaces/director-panel')
 
   <div class="board" x-ref="board" tabindex="-1"
        :class="{ 'is-wiring': wireDraft, 'is-pan-ready': spaceHeld }"

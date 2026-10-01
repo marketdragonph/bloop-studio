@@ -19,6 +19,9 @@ import { settingsRoutes } from './routes/settings.js';
 import { engineRoutes } from './routes/engine.js';
 import { spacesRoutes } from './routes/spaces.js';
 import { generationRoutes } from './routes/generation.js';
+import { directorRoutes } from './routes/director.js';
+import { DirectorRepository } from './repositories/director.js';
+import { DirectorService } from './director/service.js';
 
 export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true }) {
     const csrfToken = randomBytes(32).toString('hex');
@@ -31,7 +34,9 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const events = new BoardEvents();
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
     const worker = new GenerationWorker({ jobs, spaces, presets, media, events, comfy });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, presets, media, events, worker };
+    const director = new DirectorRepository(db);
+    const directorService = new DirectorService({ settings, spaces, director });
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, presets, media, events, worker, director, directorService };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -42,6 +47,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/engine', engineRoutes(deps));
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
+    app.route('/', directorRoutes(deps));
     app.notFound((c) => c.html(views.render('pages/not-found', {}), 404));
     app.onError((error, c) => {
         console.error(error);

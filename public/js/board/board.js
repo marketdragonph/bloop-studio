@@ -6,6 +6,7 @@ import { cardMethods } from './cards.js';
 import { persistenceMethods } from './persistence.js';
 import { generationMethods } from './generation.js';
 import { uploadMethods } from './uploads.js';
+import { directorMethods } from './director.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
 import { icon } from '/shared/icons.js';
 
@@ -31,6 +32,11 @@ export default function SpaceBoard() {
         nodeTypes: NODE_TYPES,
         families: { image: [], video: [] },
         streamDown: false,
+        directorOpen: false,
+        directorLoaded: false,
+        directorBusy: false,
+        directorInput: '',
+        directorLog: [],
         history: null,
 
         init() {
@@ -93,5 +99,6 @@ export default function SpaceBoard() {
         ...persistenceMethods,
         ...generationMethods,
         ...uploadMethods,
+        ...directorMethods,
     };
 }

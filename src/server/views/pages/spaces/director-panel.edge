@@ -1,0 +1,35 @@
+{{-- The Space Director: a chat that builds the board. It never renders; Generate stays with the person. --}}
+<aside class="director" id="director-panel" x-show="directorOpen" x-cloak aria-label="Director">
+  <header class="director__head">
+    <span class="ae-stencil ae-stencil--sensor">{{{ icon('chat') }}} Director</span>
+    <button type="button" class="ae-key ae-key--sm" @click="clearDirector()" :disabled="directorBusy || !directorLog.length" title="Clear conversation">{{{ icon('delete') }}}</button>
+    <button type="button" class="ae-key ae-key--sm ae-key--square" @click="directorOpen = false" aria-label="Close Director">{{{ icon('close') }}}</button>
+  </header>
+
+  <div class="director__log scrolls" x-ref="directorLog" aria-live="polite">
+    <template x-if="!directorLog.length">
+      <div class="director__empty">
+        <p class="ae-stencil">Brief the Director</p>
+        <p class="plate-note">Describe a scene or a short sequence. The Director lays out text, image and video cards and wires them; you press Generate.</p>
+        <p class="plate-note"><em>"Three shots: a pilot walks into a dark hangar, looks up at her mech, the visor lights up."</em></p>
+      </div>
+    </template>
+    <template x-for="entry in directorLog" :key="entry.id">
+      <div class="director__msg" :class="'director__msg--' + entry.role">
+        <p class="director__text" x-text="entry.text || (entry.streaming ? '…' : '')" x-show="entry.text || entry.streaming"></p>
+        <p class="ae-readout director__actions" x-show="entry.actions?.length" x-text="actionSummary(entry.actions || [])"></p>
+        <p class="field__error" x-show="entry.notice" x-text="entry.notice"></p>
+      </div>
+    </template>
+  </div>
+
+  <form class="director__compose" @submit.prevent="sendDirector()">
+    <textarea class="card__text card__text--grow" x-ref="directorInput" rows="2" x-model="directorInput"
+              placeholder="Describe what to build…" aria-label="Message to the Director"
+              @keydown="onDirectorKey($event)" :disabled="directorBusy"></textarea>
+    <div class="row row--end">
+      <button type="button" class="ae-key" x-show="directorBusy" @click="stopDirector()">{{{ icon('close') }}}<span>Stop</span></button>
+      <button type="submit" class="ae-key ae-key--accent" x-show="!directorBusy" :disabled="!directorInput.trim()">{{{ icon('wand') }}}<span>Send</span></button>
+    </div>
+  </form>
+</aside>
