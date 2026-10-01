@@ -1,0 +1,56 @@
+@component('layouts/app', { title: board.space.name, bodyClass: 'is-board' })
+<div class="board-page" x-data="SpaceBoard" @keydown.window="onKeyDown($event)" @keyup.window="onKeyUp($event)">
+  <script type="application/json" x-ref="boardData">{{{ boardJson }}}</script>
+
+  <div class="board-tools" role="toolbar" aria-label="Board tools">
+    <a class="ae-key ae-key--sm" href="/spaces" aria-label="Back to spaces">‹ Spaces</a>
+    <h1 class="board-tools__title">{{ board.space.name }}</h1>
+
+    <div class="board-tools__group" role="group" aria-label="Add card">
+      <template x-for="[type, meta] in Object.entries(nodeTypes).filter(([, m]) => m.creatable)" :key="type">
+        <button type="button" class="ae-key ae-key--sm" @click="addCard(type)" x-text="'+ ' + meta.label"></button>
+      </template>
+    </div>
+
+    <div class="board-tools__group" role="group" aria-label="History and view">
+      <button type="button" class="ae-key ae-key--sm" @click="undo()" :disabled="!canUndo" aria-label="Undo (Ctrl+Z)">Undo</button>
+      <button type="button" class="ae-key ae-key--sm" @click="redo()" :disabled="!canRedo" aria-label="Redo (Ctrl+Shift+Z)">Redo</button>
+      <button type="button" class="ae-key ae-key--sm" @click="zoomBy(1 / 1.2)" aria-label="Zoom out">−</button>
+      <span class="ae-readout board-tools__zoom" x-text="Math.round(zoom * 100) + '%'"></span>
+      <button type="button" class="ae-key ae-key--sm" @click="zoomBy(1.2)" aria-label="Zoom in">+</button>
+    </div>
+
+    <span class="ae-readout save-state" :class="'save-state--' + saveState" x-text="saveLabel()" aria-live="polite"></span>
+  </div>
+
+  <div class="board" x-ref="board" tabindex="-1"
+       :class="{ 'is-wiring': wireDraft, 'is-pan-ready': spaceHeld }"
+       @pointerdown="onPointerDown($event)" @pointermove="onPointerMove($event)"
+       @pointerup="onPointerUp($event); cancelWire()" @pointercancel="onPointerUp($event); cancelWire()"
+       @wheel="onWheel($event)">
+    <div class="board__world" :style="{ transform: boardTransform() }">
+      <svg class="board__wires" x-ref="wires" x-effect="syncWires()" @click="onWireClick($event)" aria-hidden="true">
+        <path class="wire-draft" x-show="wireDraft" :d="previewPath()"></path>
+      </svg>
+
+      <template x-for="node in nodes" :key="node.id">
+        @include('pages/spaces/card')
+      </template>
+
+      <div class="marquee" x-show="marquee"
+           :style="marquee && { left: Math.min(marquee.x1, marquee.x2) + 'px', top: Math.min(marquee.y1, marquee.y2) + 'px', width: Math.abs(marquee.x2 - marquee.x1) + 'px', height: Math.abs(marquee.y2 - marquee.y1) + 'px' }"></div>
+    </div>
+
+    <div class="board__empty" x-show="!nodes.length">
+      <p class="ae-stencil">Empty bay</p>
+      <p class="plate-note">Add a Text card for your idea, then an Image card, and wire them together.</p>
+    </div>
+  </div>
+
+  <div class="toasts" aria-live="polite">
+    <template x-for="t in toasts" :key="t.id">
+      <div class="ae-signal" :class="'ae-signal--' + t.tone" role="status"><span class="ae-signal__msg" x-text="t.message"></span></div>
+    </template>
+  </div>
+</div>
+@end

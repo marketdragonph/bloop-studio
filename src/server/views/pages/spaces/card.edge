@@ -1,0 +1,48 @@
+{{-- One card on the board (rendered by Alpine x-for; `node` is the loop variable). --}}
+<article class="card" :data-node-id="node.id" tabindex="0"
+         :class="{ ['card--' + node.type]: true, 'is-selected': isSelected(node), 'is-live': node.status === 'generating' || node.status === 'queued' }"
+         :style="{ left: node.position_x + 'px', top: node.position_y + 'px', width: (node.width || 280) + 'px' }"
+         :aria-label="typeLabel(node) + ' card'"
+         @pointerdown="selectCard($event, node)" @pointerup="finishWire($event, node)">
+
+  <template x-for="(socket, i) in socketsOf(node)" :key="socket.key">
+    <span class="port port--in" :style="{ top: socketTop(i) + 'px' }" :title="socket.label" :data-socket="socket.key"></span>
+  </template>
+  <button type="button" class="port port--out" @pointerdown="startWire($event, node)" :aria-label="'Wire from this ' + typeLabel(node) + ' card'"></button>
+
+  <header class="card__head">
+    <span class="ae-stencil" x-text="typeLabel(node)"></span>
+    <span class="card__status ae-readout" x-show="node.status !== 'idle'" x-text="node.status"></span>
+    <button type="button" class="card__close" @click="removeCard(node.id)" aria-label="Delete card">×</button>
+  </header>
+
+  <div class="card__body">
+    <template x-if="node.type === 'text' || node.type === 'note'">
+      <textarea class="card__text scrolls" rows="5" :placeholder="node.type === 'note' ? 'A note for yourself…' : 'Describe the shot, the character, the idea…'"
+                :value="node.text_content ?? ''" @input="editText(node, 'text_content', $event.target.value)"></textarea>
+    </template>
+
+    <template x-if="node.type === 'image' || node.type === 'video'">
+      <div class="card__render">
+        <div class="card__media">
+          <template x-if="mediaUrl(node) && node.type === 'image'">
+            <img :src="mediaUrl(node)" alt="" loading="lazy">
+          </template>
+          <template x-if="mediaUrl(node) && node.type === 'video'">
+            <video :src="mediaUrl(node)" controls preload="metadata"></video>
+          </template>
+          <template x-if="!mediaUrl(node)">
+            <span class="ae-readout card__placeholder" x-text="node.type === 'image' ? 'No image yet' : 'No clip yet'"></span>
+          </template>
+        </div>
+        <textarea class="card__text scrolls" rows="3" placeholder="Extra direction (optional)"
+                  :value="node.prompt ?? ''" @input="editText(node, 'prompt', $event.target.value)"></textarea>
+        <button type="button" class="ae-key ae-key--accent ae-key--block" disabled title="Rendering arrives in the next step of Phase 1">⚡ Generate</button>
+      </div>
+    </template>
+
+    <template x-if="node.type === 'upload'">
+      <p class="plate-note">File upload arrives in the next step of Phase 1.</p>
+    </template>
+  </div>
+</article>

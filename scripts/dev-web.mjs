@@ -16,5 +16,11 @@ const settings = {
     clearSecret() {},
 };
 
-const { url } = await createServer({ settings, dataDir: '.', port: Number(process.env.PORT ?? 5199) });
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+// Dev data lives in the temp folder, never in the repo.
+const dataDir = join(tmpdir(), 'bloop-studio-dev');
+const { url } = await createServer({ settings, dataDir, port: Number(process.env.PORT ?? 5199) });
+console.log(`dev data: ${dataDir}`);
 console.log(`dev web server on ${url}`);

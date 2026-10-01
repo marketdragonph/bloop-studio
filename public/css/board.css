@@ -1,0 +1,180 @@
+/* The Space board: full-height work surface with a faint hangar grid, mecha cards and trace wires. */
+
+.is-board .page { width: 100%; max-width: none; padding: 0; }
+
+.board-page {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: calc(100vh - 3.25rem);
+}
+
+.board-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--ae-seam);
+    background: var(--bg-secondary);
+}
+
+.board-tools__title { margin: 0; font-size: var(--fs-md); font-weight: 600; }
+.board-tools__group { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; }
+.board-tools__zoom { min-width: 3rem; justify-content: center; }
+
+.save-state { margin-left: auto; }
+.save-state--saving, .save-state--unsaved { color: var(--sensor-text); }
+.save-state--failed { color: var(--status-alert-text); }
+
+.board {
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    background-color: var(--bg-primary);
+    background-image:
+        linear-gradient(var(--ae-seam) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ae-seam) 1px, transparent 1px);
+    background-size: 40px 40px;
+    outline: none;
+}
+
+.board:active { cursor: grabbing; }
+.board.is-wiring { cursor: crosshair; }
+
+.board__world {
+    position: absolute;
+    inset: 0 auto auto 0;
+    transform-origin: 0 0;
+}
+
+.board__wires {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.wire { pointer-events: auto; cursor: pointer; }
+.wire__line { fill: none; stroke: var(--ae-seam-control); stroke-width: 2; stroke-linejoin: round; }
+.wire__hit { fill: none; stroke: transparent; stroke-width: 16; }
+.wire:hover .wire__line { stroke: var(--text-secondary); }
+.wire.is-selected .wire__line { stroke: var(--accent); }
+.wire.is-live .wire__line { stroke: var(--sensor); stroke-dasharray: 6 6; animation: wire-signal 0.8s linear infinite; }
+.wire-draft { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 4; }
+
+@keyframes wire-signal { to { stroke-dashoffset: -12; } }
+
+.board__empty {
+    position: absolute;
+    inset: 40% 0 auto;
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    text-align: center;
+    pointer-events: none;
+}
+
+.marquee {
+    position: absolute;
+    border: 1px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    pointer-events: none;
+}
+
+/* ── Card ── */
+.card {
+    position: absolute;
+    display: grid;
+    min-height: 4rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--ae-seam-strong);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--ae-chamfer)), calc(100% - var(--ae-chamfer)) 100%, 0 100%);
+    cursor: default;
+}
+
+.card.is-selected { border-color: var(--accent); }
+.card:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.card.is-live { border-color: var(--sensor); }
+
+.card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--ae-seam);
+    cursor: grab;
+}
+
+.card__head > .ae-stencil { margin-right: auto; }
+.card--image .card__head .ae-stencil { color: var(--accent-text); }
+.card--video .card__head .ae-stencil { color: var(--sensor-text); }
+
+.card__close {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: var(--fs-md);
+    cursor: pointer;
+}
+.card__close:hover { color: var(--status-alert-text); }
+
+.card__body { display: grid; gap: var(--space-2); padding: var(--space-3); }
+
+.card__text {
+    width: 100%;
+    resize: vertical;
+    padding: var(--space-2);
+    border: 1px solid var(--ae-seam);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-sm);
+}
+.card__text:focus-visible { border-color: var(--accent); outline: none; }
+
+.card__render { display: grid; gap: var(--space-2); }
+.card__media {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--bg-tertiary);
+}
+.card__media img, .card__media video { width: 100%; height: 100%; object-fit: contain; }
+
+.ae-key--block { width: 100%; }
+
+/* ── Ports ── */
+.port {
+    position: absolute;
+    width: 0.875rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--ae-seam-control);
+    background: var(--bg-tertiary);
+}
+.port--in { left: -0.5rem; }
+.port--out { right: 0; top: 0.5rem; cursor: crosshair; background: color-mix(in srgb, var(--accent) 30%, var(--bg-tertiary)); }
+.port--out:hover, .port--out:focus-visible { background: var(--accent); outline: none; }
+.board.is-wiring .port--in { border-color: var(--accent); }
+
+/* ── Toasts ── */
+.toasts {
+    position: fixed;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    z-index: var(--z-toast);
+    display: grid;
+    gap: var(--space-2);
+    width: min(24rem, calc(100vw - 2rem));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wire.is-live .wire__line { animation: none; }
+}

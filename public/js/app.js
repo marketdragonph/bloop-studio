@@ -1,6 +1,10 @@
-// Browser entry: starts Alpine. Each component lives in its own file under ./components
-// and is registered here with Alpine.data("Name", Name).
+// Browser entry: registers each Alpine component (one per file) and starts Alpine.
 import Alpine from '/assets/vendor/alpine.esm.js';
+import Modal from './components/modal.js';
+import SpaceBoard from './board/board.js';
+
+Alpine.data('Modal', Modal);
+Alpine.data('SpaceBoard', SpaceBoard);
 
 window.Alpine = Alpine;
 Alpine.start();

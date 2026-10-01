@@ -6,13 +6,15 @@
     {{-- 'unsafe-eval' is required by Alpine's inline expressions (ported from bloop). Only our own
          127.0.0.1 server is ever loaded in this window, and no remote content is allowed. --}}
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self'; script-src 'self' 'unsafe-eval'; connect-src 'self'">
-    <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
+    {{-- 422 = validation errors: swap them in like a success so the form shows what to fix. --}}
+    <meta name="htmx-config" content='{"includeIndicatorStyles": false, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "422", "swap": true}, {"code": "[45]..", "swap": false, "error": true}]}'>
+    <meta name="csrf-token" content="{{ csrfToken }}">
     <title>{{ title ? `${title} · ${appName}` : appName }}</title>
     <link rel="stylesheet" href="/assets/css/app.css">
     <script src="/assets/vendor/htmx.min.js" defer></script>
     <script type="module" src="/assets/js/app.js"></script>
 </head>
-<body hx-headers='{"X-CSRF-Token": "{{ csrfToken }}"}' hx-boost="true">
+<body class="{{ bodyClass ?? '' }}" hx-headers='{"X-CSRF-Token": "{{ csrfToken }}"}' hx-boost="true">
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="topbar">
@@ -22,6 +24,7 @@
         </a>
         <nav class="topbar__nav" aria-label="Main">
             <a href="/" class="topbar__link">Hangar</a>
+            <a href="/spaces" class="topbar__link">Spaces</a>
             <a href="/settings" class="topbar__link">Settings</a>
         </nav>
         <div class="topbar__engine"

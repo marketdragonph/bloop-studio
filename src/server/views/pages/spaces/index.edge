@@ -1,0 +1,31 @@
+@component('layouts/app', { title: 'Spaces' })
+<div class="stack">
+  <header class="page-head page-head--row">
+    <div>
+      <p class="ae-stencil ae-stencil--sensor">Hangar</p>
+      <h1 class="page-head__title">Spaces</h1>
+    </div>
+    <button class="ae-key ae-key--accent" hx-get="/spaces/create" hx-target="#modal" hx-swap="innerHTML">New space</button>
+  </header>
+
+  @if(spaces.length)
+    <ul class="tile-grid" role="list">
+      @each(space in spaces)
+        <li>
+          <a class="ae-plate tile" href="/spaces/{{ space.id }}">
+            <span class="ae-plate__inner tile__inner">
+              <span class="tile__name">{{ space.name }}</span>
+              <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
+            </span>
+          </a>
+        </li>
+      @end
+    </ul>
+  @else
+    <div class="empty-bay">
+      <p class="ae-stencil">Empty bay</p>
+      <p class="plate-note">No spaces yet. Create one to start wiring cards.</p>
+    </div>
+  @end
+</div>
+@end

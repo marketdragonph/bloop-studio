@@ -1,0 +1,11 @@
+@component('components/modal', { title: 'New space' })
+  <form method="POST" action="/spaces" hx-post="/spaces" hx-target="#modal" hx-swap="innerHTML" class="stack-sm">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    @!component('components/field', { name: 'name', label: 'Name', value: old.name, placeholder: 'e.g. Pilot episode', error: errors.name, autofocus: true })
+    @!component('components/field', { name: 'description', label: 'Notes (optional)', value: old.description })
+    <div class="row row--end">
+      <button type="button" class="ae-key" @click="close()">Cancel</button>
+      <button type="submit" class="ae-key ae-key--accent">Create space</button>
+    </div>
+  </form>
+@end

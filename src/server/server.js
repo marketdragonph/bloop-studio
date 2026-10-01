@@ -9,19 +9,27 @@ import { ComfyClient } from './services/comfy-client.js';
 import { homeRoutes } from './routes/home.js';
 import { settingsRoutes } from './routes/settings.js';
 import { engineRoutes } from './routes/engine.js';
+import { spacesRoutes } from './routes/spaces.js';
+import { openDatabase } from './db/database.js';
+import { SpacesRepository } from './repositories/spaces.js';
+import { join } from 'node:path';
 
-export async function createServer({ settings, dataDir, port = 0 }) {
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db') }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken });
+    const db = openDatabase(dbPath);
+    const spaces = new SpacesRepository(db);
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
-    const deps = { settings, views, comfy, dataDir };
+    const deps = { settings, views, comfy, dataDir, db, spaces };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
     app.use('/assets/*', staticFiles('/assets/'));
+    app.use('/shared/*', staticFiles('/shared/', '../../shared/')); // src/shared
     app.route('/', homeRoutes(deps));
     app.route('/settings', settingsRoutes(deps));
     app.route('/engine', engineRoutes(deps));
+    app.route('/spaces', spacesRoutes(deps));
     app.notFound((c) => c.html(views.render('pages/not-found', {}), 404));
     app.onError((error, c) => {
         console.error(error);

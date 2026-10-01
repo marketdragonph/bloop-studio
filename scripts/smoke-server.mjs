@@ -10,7 +10,7 @@ const settings = {
     clearSecret() {},
 };
 
-const { server, url } = await createServer({ settings, dataDir: '.' });
+const { server, url } = await createServer({ settings, dataDir: '.', dbPath: ':memory:' });
 const marker = /Engine (online|offline)|Settings saved|CSRF token|Something went wrong[^<]*/;
 
 async function check(path, options) {

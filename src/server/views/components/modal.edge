@@ -1,0 +1,12 @@
+{{-- HTMX modal shell: loaded into #modal by hx-get, closed by Esc, the backdrop or Cancel. --}}
+<div class="modal" x-data="Modal" @keydown.escape.window="close()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal__backdrop" @click="close()"></div>
+  <div class="ae-plate modal__panel">
+    <div class="ae-plate__inner modal__inner">
+      <header class="modal__head">
+        <h2 class="ae-stencil ae-stencil--ruled" id="modal-title">{{ title }}</h2>
+      </header>
+      {{{ await $slots.main() }}}
+    </div>
+  </div>
+</div>

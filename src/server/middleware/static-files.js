@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PUBLIC_DIR = fileURLToPath(new URL('../../../public/', import.meta.url));
+// Default root is public/; the board also loads src/shared/ (rules shared with the server).
+const PUBLIC_RELATIVE = '../../../public/';
 
 const TYPES = {
     '.css': 'text/css; charset=utf-8',
@@ -18,11 +19,14 @@ const TYPES = {
     '.ico': 'image/x-icon',
 };
 
-export function staticFiles(prefix) {
+/** `rootRelative` is relative to this file (src/server/middleware/). */
+export function staticFiles(prefix, rootRelative = PUBLIC_RELATIVE) {
+    const root = fileURLToPath(new URL(rootRelative, import.meta.url));
+
     return async (c, next) => {
         const relative = decodeURIComponent(c.req.path.slice(prefix.length));
-        const filePath = normalize(join(PUBLIC_DIR, relative));
-        if (!filePath.startsWith(PUBLIC_DIR) || filePath.endsWith(sep)) return next();
+        const filePath = normalize(join(root, relative));
+        if (!filePath.startsWith(root) || filePath.endsWith(sep)) return next();
 
         try {
             const body = await readFile(filePath);

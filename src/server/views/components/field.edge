@@ -5,7 +5,7 @@
   <label class="field__label ae-stencil" for="{{ id }}">{{ label }}</label>
   <input class="field__input" id="{{ id }}" name="{{ name }}" type="{{ type ?? 'text' }}"
          value="{{ value ?? '' }}" placeholder="{{ placeholder ?? '' }}" autocomplete="{{ autocomplete ?? 'off' }}"
-         aria-invalid="{{ error ? 'true' : 'false' }}"{{{ describedBy ? ` aria-describedby="${describedBy}"` : '' }}}>
+         aria-invalid="{{ error ? 'true' : 'false' }}"{{{ describedBy ? ` aria-describedby="${describedBy}"` : '' }}}{{{ autofocus ? ' autofocus' : '' }}}>
   @if(hint)
     <p class="field__hint" id="{{ id }}-hint">{{ hint }}</p>
   @end
