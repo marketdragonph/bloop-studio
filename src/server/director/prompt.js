@@ -36,7 +36,7 @@ export function boardSnapshot({ nodes, connections }) {
 /** Where a turn's new cards start: below-left of what exists, so they never land on top of cards. */
 export function turnOrigin(nodes) {
     if (!nodes.length) return { x: 0, y: 0 };
-    const maxY = Math.max(...nodes.map((n) => n.position_y + 400));
+    const maxY = Math.max(...nodes.map((n) => n.position_y + 620));
     const minX = Math.min(...nodes.map((n) => n.position_x));
     return { x: Math.round(minX / 20) * 20, y: Math.round(maxY / 20) * 20 };
 }

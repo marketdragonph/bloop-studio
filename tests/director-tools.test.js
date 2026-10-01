@@ -23,7 +23,7 @@ test('adds a text → image → video lane and wires it by ref', () => {
     assert.equal(board.nodes.length, 3);
     assert.equal(board.connections.length, 2);
     assert.equal(board.nodes.find((n) => n.type === 'video').prompt, 'slow push-in');
-    assert.equal(board.nodes.find((n) => n.type === 'image').position_y, 320);
+    assert.equal(board.nodes.find((n) => n.type === 'image').position_y, 580);
     assert.equal(actions.actions.length, 5);
 });
 
@@ -57,6 +57,6 @@ test('snapshot lists cards and wires; new turns start below existing cards', () 
     spaces.createNode(space.id, { type: 'text', text_content: 'hello', position_x: 100, position_y: 200 });
     const board = spaces.board(space.id);
     assert.match(boardSnapshot(board), /#\d+ text: hello/);
-    assert.deepEqual(turnOrigin(board.nodes), { x: 100, y: 600 });
+    assert.deepEqual(turnOrigin(board.nodes), { x: 100, y: 820 });
     assert.equal(boardSnapshot({ nodes: [], connections: [] }), 'The board is empty.');
 });

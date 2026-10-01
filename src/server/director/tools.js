@@ -81,8 +81,10 @@ export const TOOL_DEFINITIONS = [
     },
 ];
 
+// A column fits one card plus its sockets; a row fits the tallest card (a video card with all its
+// knobs is ~500 px), so the Director's layout never stacks cards on top of each other.
 const GRID_X = 380;
-const GRID_Y = 320;
+const GRID_Y = 580;
 
 /** Applies validated tool calls for one Director turn. Holds the ref → id map and the turn's actions. */
 export class BoardActions {

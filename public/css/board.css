@@ -1,6 +1,8 @@
 /* The Space board: full-height work surface with a faint hangar grid, mecha cards and trace wires. */
 
-.is-board .page { width: 100%; max-width: none; padding: 0; }
+/* Full width whenever the page holds a board. Not a body class: hx-boost swaps the body's
+   content but keeps its attributes, so a class set by the editor never reached <body>. */
+.page:has(.board-page) { width: 100%; max-width: none; padding: 0; }
 
 .board-page {
     display: grid;
