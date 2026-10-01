@@ -78,6 +78,7 @@ export const cardMethods = {
             });
             this.nodes.push(node);
             this.selectedNodeIds = [node.id];
+            this.applyStickyDefaults(node);
             this.bringIntoView(node);
             let current = node;
             this.history.push({

@@ -1,0 +1,61 @@
+// Card knobs (aspect, resolution, duration, quality) as in MarketDragon Spaces. Options come from
+// the shared formats table for the card's model family. The last choice per card type is
+// remembered (sticky defaults) and applied to new cards of that type. The seed is never sticky.
+import { knobOptions, aspectCss, DEFAULT_KNOBS } from '/shared/formats.js';
+
+const STICKY_KEY = 'bloop-studio:card-defaults';
+const KNOBS = ['family', 'aspect', 'resolution', 'duration', 'quality'];
+
+function readSticky() {
+    try {
+        return JSON.parse(localStorage.getItem(STICKY_KEY) ?? '{}');
+    } catch {
+        return {};
+    }
+}
+
+function writeSticky(type, key, value) {
+    try {
+        const all = readSticky();
+        all[type] = { ...all[type], [key]: value };
+        localStorage.setItem(STICKY_KEY, JSON.stringify(all));
+    } catch {
+        /* storage unavailable: defaults simply are not remembered */
+    }
+}
+
+export const knobMethods = {
+    knobsFor(node) {
+        return knobOptions(this.familyOf(node)) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
+    },
+
+    knobValue(node, key) {
+        const value = node.settings?.[key];
+        if (value !== undefined && value !== null) return value;
+        const options = this.knobsFor(node);
+        if (key === 'resolution') return options.resolutions[0]?.value;
+        if (key === 'quality') return options.qualities.at(-1)?.value;
+        if (key === 'duration') return options.durations.at(-1)?.value;
+        return DEFAULT_KNOBS[key];
+    },
+
+    setKnob(node, key, value) {
+        const settings = { ...node.settings, [key]: value };
+        // A new model family may not offer the old resolution/duration/quality: drop them.
+        if (key === 'family') for (const k of ['resolution', 'duration', 'quality']) delete settings[k];
+        this.updateCard(node, { settings });
+        writeSticky(node.type, key, value);
+    },
+
+    /** Applies remembered knob choices to a freshly created card. */
+    applyStickyDefaults(node) {
+        const sticky = readSticky()[node.type];
+        if (!sticky || !['image', 'video'].includes(node.type)) return;
+        const settings = Object.fromEntries(KNOBS.filter((k) => sticky[k] !== undefined).map((k) => [k, sticky[k]]));
+        if (Object.keys(settings).length) this.updateCard(node, { settings: { ...node.settings, ...settings } });
+    },
+
+    previewAspect(node) {
+        return aspectCss(this.knobValue(node, 'aspect'));
+    },
+};

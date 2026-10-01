@@ -199,7 +199,12 @@
     white-space: nowrap;
 }
 
-.card__controls { display: flex; align-items: end; gap: var(--space-2); }
+.card__controls { display: flex; align-items: end; justify-content: flex-end; gap: var(--space-2); }
+
+/* Knob grid: model across the top, then two per row. */
+.card__knobs { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.card__knob { min-width: 0; }
+.card__knob--wide { grid-column: 1 / -1; }
 .card__control { display: grid; gap: 0.125rem; flex: 1; }
 .card__select {
     min-height: 1.75rem;

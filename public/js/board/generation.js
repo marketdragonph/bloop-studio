@@ -69,7 +69,7 @@ export const generationMethods = {
     },
 
     setFamily(node, family) {
-        this.updateCard(node, { settings: { ...node.settings, family } });
+        this.setKnob(node, 'family', family);
     },
 
     toggleSeedLock(node) {

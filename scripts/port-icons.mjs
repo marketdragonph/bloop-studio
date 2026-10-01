@@ -27,7 +27,12 @@ const icons = {
 for (const file of readdirSync(sourceDir).sort()) {
     const match = file.match(/^icon-([a-z0-9-]+)\.blade\.php$/);
     if (!match || match[1].startsWith('maker') || icons[match[1]]) continue;
-    const source = readFileSync(join(sourceDir, file), 'utf8').replace(/\{\{--[\s\S]*?--\}\}/g, '');
+    // Strip Blade comments AND echoes first: `{{ $attributes->merge(...) }}` sits inside the <svg>
+    // tag, and its `->` would otherwise end the tag match early and leak Blade code into the icon.
+    const source = readFileSync(join(sourceDir, file), 'utf8')
+        .replace(/\{\{--[\s\S]*?--\}\}/g, '')
+        .replace(/\{\{[\s\S]*?\}\}/g, '')
+        .replace(/rotate\(\s+/g, 'rotate(0 '); // a stripped direction echo: default orientation (right)
     const inner = source.match(/<svg[^>]*>([\s\S]*?)<\/svg>/);
     if (!inner) {
         console.warn(`skipped ${file}: no inline <svg> drawing`);

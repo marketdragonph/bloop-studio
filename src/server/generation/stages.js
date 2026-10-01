@@ -5,6 +5,7 @@ import { choosePreset, compileGraph } from './presets.js';
 import { composePrompt } from './prompt.js';
 import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
+import { knobInputs } from '../../shared/formats.js';
 
 const MAX_SEED = 2 ** 32 - 1;
 
@@ -58,7 +59,8 @@ export async function compile(ctx, next) {
     const settings = ctx.node.settings ?? {};
     ctx.seed = Number.isInteger(settings.seed) && settings.seedLocked ? settings.seed : randomInt(0, MAX_SEED);
     ctx.params = {
-        ...pick(settings, ['width', 'height', 'length', 'steps', 'strength']),
+        ...knobInputs(ctx.preset.id.split('-')[0], settings), // aspect, resolution, duration, quality → pixels, frames, steps
+        ...pick(settings, ['strength']),
         ...ctx.uploads,
         prompt: ctx.prompt,
         seed: ctx.seed,

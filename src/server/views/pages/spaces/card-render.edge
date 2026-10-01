@@ -1,6 +1,6 @@
 {{-- Body of an Image or Video card: preview, direction, model + seed, progress, Generate. --}}
 <div class="card__render">
-  <div class="card__media">
+  <div class="card__media" :style="{ aspectRatio: previewAspect(node) }">
     <template x-if="mediaUrl(node) && node.type === 'image'">
       <img :src="mediaUrl(node)" alt="" loading="lazy">
     </template>
@@ -14,8 +14,8 @@
   <textarea class="card__text card__text--grow scrolls" rows="2" placeholder="Extra direction (optional)"
             :value="node.prompt ?? ''" @input="editText(node, 'prompt', $event.target.value)"></textarea>
 
-  <div class="card__controls">
-    <div class="card__control">
+  <div class="card__knobs">
+    <div class="card__knob card__knob--wide">
       @!component('components/select', {
         label: 'Model',
         options: "families[node.type].map(f => ({ value: f.id, label: f.label }))",
@@ -24,6 +24,37 @@
         disabled: 'isBusy(node)'
       })
     </div>
+    <div class="card__knob">
+      @!component('components/select', {
+        label: 'Aspect', options: 'knobsFor(node).aspects', value: "knobValue(node, 'aspect')",
+        change: "setKnob(node, 'aspect', v)", disabled: 'isBusy(node)'
+      })
+    </div>
+    <div class="card__knob">
+      @!component('components/select', {
+        label: 'Resolution', options: 'knobsFor(node).resolutions', value: "knobValue(node, 'resolution')",
+        change: "setKnob(node, 'resolution', v)", disabled: 'isBusy(node)'
+      })
+    </div>
+    <template x-if="knobsFor(node).durations.length">
+      <div class="card__knob">
+        @!component('components/select', {
+          label: 'Duration', options: 'knobsFor(node).durations', value: "knobValue(node, 'duration')",
+          change: "setKnob(node, 'duration', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
+    <template x-if="knobsFor(node).qualities.length > 1">
+      <div class="card__knob">
+        @!component('components/select', {
+          label: 'Quality', options: 'knobsFor(node).qualities', value: "knobValue(node, 'quality')",
+          change: "setKnob(node, 'quality', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
+  </div>
+
+  <div class="card__controls">
     <button type="button" class="ae-key ae-key--sm" @click="toggleSeedLock(node)" :aria-pressed="!!node.settings?.seedLocked"
             :title="node.settings?.seed != null ? 'Seed ' + node.settings.seed : 'No seed yet'">
       <span x-show="node.settings?.seedLocked">{{{ icon('lock') }}}</span>
