@@ -19,15 +19,25 @@ export class DirectorService {
     }
 
     /** emit(event, data): 'text' (delta), 'actions' (board changes), 'done' (final log entry), 'error'. */
+    /** The chosen provider, or the other one when only the other has a key (and say so). */
+    resolveProvider() {
+        const chosen = PROVIDERS[this.settings.get('llmProvider')] ? this.settings.get('llmProvider') : 'anthropic';
+        if (this.settings.get(PROVIDERS[chosen].keyName)) return { providerId: chosen, switched: false };
+        const other = chosen === 'anthropic' ? 'openai' : 'anthropic';
+        if (this.settings.get(PROVIDERS[other].keyName)) return { providerId: other, switched: true };
+        return { providerId: chosen, switched: false, missing: true };
+    }
+
     async turn(spaceId, request, emit, signal) {
-        const provider = PROVIDERS[this.settings.get('llmProvider')] ?? PROVIDERS.anthropic;
-        const apiKey = this.settings.get(provider.keyName);
-        if (!apiKey) return emit('error', { message: `Add your ${provider.label} API key in Settings to use the Director.` });
+        const { providerId, switched, missing } = this.resolveProvider();
+        const provider = PROVIDERS[providerId];
+        if (missing) return emit('error', { message: 'Add a Claude or OpenAI API key in Settings to use the Director.' });
         if (this.busy.has(spaceId)) return emit('error', { message: 'The Director is still working on the last request.' });
+        if (switched) emit('notice', { message: `Using ${provider.label}: it is the only key in Settings.` });
 
         this.busy.add(spaceId);
+        const apiKey = this.settings.get(provider.keyName);
         const model = this.settings.get(provider.modelName);
-        const providerId = this.settings.get('llmProvider');
         const board = this.spaces.board(spaceId);
         const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes) });
         this.director.addLog(spaceId, 'user', request);

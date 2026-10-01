@@ -84,6 +84,7 @@ export const directorMethods = {
             reply.actions.push(...data.actions);
             this.refreshBoard().catch(() => {});
         }
+        if (event === 'notice') reply.info = data.message;
         if (event === 'done' && data.notice) reply.notice = data.notice;
         if (event === 'error') reply.notice = data.message;
         this.scrollDirector();

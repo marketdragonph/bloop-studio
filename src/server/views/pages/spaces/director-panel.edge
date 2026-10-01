@@ -16,6 +16,7 @@
     </template>
     <template x-for="entry in directorLog" :key="entry.id">
       <div class="director__msg" :class="'director__msg--' + entry.role">
+        <p class="ae-readout" x-show="entry.info" x-text="entry.info"></p>
         <p class="director__text" x-text="entry.text || (entry.streaming ? '…' : '')" x-show="entry.text || entry.streaming"></p>
         <p class="ae-readout director__actions" x-show="entry.actions?.length" x-text="actionSummary(entry.actions || [])"></p>
         <p class="field__error" x-show="entry.notice" x-text="entry.notice"></p>

@@ -31,10 +31,19 @@ export function settingsRoutes({ views, settings }) {
         const errors = validate(body);
         if (Object.keys(errors).length) return page(c, { errors, old: body });
 
+        // Picking a provider with no key while the other has one would leave the Director dead:
+        // follow the key.
+        const hasKey = (name, typed) => Boolean(typed?.trim()) || settings.all().configured[name];
+        const claudeKey = hasKey('anthropicApiKey', body.anthropicApiKey);
+        const openaiKey = hasKey('openaiApiKey', body.openaiApiKey);
+        let llmProvider = body.llmProvider;
+        if (llmProvider === 'anthropic' && !claudeKey && openaiKey) llmProvider = 'openai';
+        if (llmProvider === 'openai' && !openaiKey && claudeKey) llmProvider = 'anthropic';
+
         settings.update({
             comfyUrl: body.comfyUrl.trim(),
             mediaDir: body.mediaDir.trim(),
-            llmProvider: body.llmProvider,
+            llmProvider,
             anthropicModel: body.anthropicModel?.trim() || undefined,
             openaiModel: body.openaiModel?.trim() || undefined,
             anthropicApiKey: body.anthropicApiKey?.trim() ?? '',
