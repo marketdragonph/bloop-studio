@@ -2,12 +2,16 @@
 
 /* Full width whenever the page holds a board. Not a body class: hx-boost swaps the body's
    content but keeps its attributes, so a class set by the editor never reached <body>. */
-.page:has(.board-page) { width: 100%; max-width: none; padding: 0; }
+.page:has(.board-page) { width: 100%; max-width: none; padding: 0; flex: 1; min-height: 0; }
+
+/* The board fills exactly what is left under the top bar: no guessed heights, no page scrollbar. */
+body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .board-page {
     display: grid;
     grid-template-rows: auto 1fr;
-    height: calc(100vh - 3.25rem);
+    height: 100%;
+    min-height: 0;
 }
 
 .board-tools {
