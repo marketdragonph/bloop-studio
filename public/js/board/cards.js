@@ -181,6 +181,7 @@ export const cardMethods = {
                 event.preventDefault();
                 await this.deleteSelection();
             } else if (event.key === 'Escape') {
+                if (this.viewer) return this.closeViewer();
                 this.cancelWire();
                 this.clearSelection();
             }

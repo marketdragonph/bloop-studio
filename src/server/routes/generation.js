@@ -68,7 +68,15 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets 
         if (!media.resolve(relativePath)) return c.notFound();
         try {
             const bytes = await media.read(relativePath);
-            return c.body(bytes, 200, { 'content-type': mimeFromName(relativePath), 'cache-control': 'private, max-age=31536000, immutable' });
+            const headers = { 'content-type': mimeFromName(relativePath), 'cache-control': 'private, max-age=31536000, immutable' };
+            // ?download=<name> saves the original file under a readable name (the card's title).
+            const name = c.req.query('download');
+            if (name !== undefined) {
+                const ext = relativePath.slice(relativePath.lastIndexOf('.'));
+                const safe = (name || 'bloop-studio').replace(/[\\/:*?"<>|\x00-\x1f]+/g, ' ').trim().slice(0, 100) || 'bloop-studio';
+                headers['content-disposition'] = `attachment; filename*=UTF-8''${encodeURIComponent(safe + ext)}`;
+            }
+            return c.body(bytes, 200, headers);
         } catch {
             return c.notFound();
         }

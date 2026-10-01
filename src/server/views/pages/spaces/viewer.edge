@@ -1,0 +1,20 @@
+{{-- Full-screen viewer for a card's image or clip. Esc, the close key or a click outside closes it. --}}
+<template x-teleport="body">
+  <div class="viewer" x-show="viewer" x-cloak role="dialog" aria-modal="true" :aria-label="viewer?.title" @click.self="closeViewer()">
+    <template x-if="viewer">
+      <div class="viewer__frame">
+        <header class="viewer__bar">
+          <span class="ae-stencil" x-text="viewer.title"></span>
+          <a class="ae-key ae-key--sm" :href="viewer.download" download>{{{ icon('download') }}}<span>Download</span></a>
+          <button type="button" class="ae-key ae-key--sm ae-key--square" x-ref="viewerClose" @click="closeViewer()" aria-label="Close viewer">{{{ icon('close') }}}</button>
+        </header>
+        <template x-if="!viewer.video">
+          <img class="viewer__media" :src="viewer.url" :alt="viewer.title">
+        </template>
+        <template x-if="viewer.video">
+          <video class="viewer__media" :src="viewer.url" controls autoplay loop></video>
+        </template>
+      </div>
+    </template>
+  </div>
+</template>

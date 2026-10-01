@@ -39,7 +39,8 @@
 
       <template x-if="node.type === 'upload'">
         <label class="card__drop" :class="{ 'has-media': mediaUrl(node) }"
-               @dragover.prevent @drop="onUploadDrop($event, node)">
+               @dragover.prevent @drop="onUploadDrop($event, node)" @dblclick.prevent="openViewer(node)">
+          @include('pages/spaces/media-actions')
           <input type="file" class="visually-hidden" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
                  @change="uploadFile(node, $event.target.files[0]); $event.target.value = ''">
           <template x-if="mediaUrl(node) && !isVideo(node)">

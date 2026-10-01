@@ -8,6 +8,7 @@ import { generationMethods } from './generation.js';
 import { uploadMethods } from './uploads.js';
 import { directorMethods } from './director.js';
 import { knobMethods } from './knobs.js';
+import { viewerMethods } from './viewer.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
 import { icon } from '/shared/icons.js';
 
@@ -38,6 +39,7 @@ export default function SpaceBoard() {
         directorBusy: false,
         directorInput: '',
         directorLog: [],
+        viewer: null,
         history: null,
 
         init() {
@@ -102,5 +104,6 @@ export default function SpaceBoard() {
         ...uploadMethods,
         ...directorMethods,
         ...knobMethods,
+        ...viewerMethods,
     };
 }

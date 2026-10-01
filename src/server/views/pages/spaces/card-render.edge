@@ -1,6 +1,7 @@
 {{-- Body of an Image or Video card: preview, direction, model + seed, progress, Generate. --}}
 <div class="card__render">
-  <div class="card__media" :style="{ aspectRatio: previewAspect(node) }">
+  <div class="card__media" :style="{ aspectRatio: previewAspect(node) }" @dblclick="openViewer(node)">
+    @include('pages/spaces/media-actions')
     <template x-if="mediaUrl(node) && node.type === 'image'">
       <img :src="mediaUrl(node)" alt="" loading="lazy">
     </template>
