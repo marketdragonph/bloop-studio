@@ -1,5 +1,6 @@
 {
   "id": "h3-t2va",
+  "variant": "gguf",
   "label": "MiniMax-H3 Turbo (video + sound)",
   "card": "video",
   "needs": [],
@@ -37,38 +38,6 @@
       "length"
     ]
   },
-  "models": [
-    [
-      "diffusion_models",
-      "minimax_h3_fl2va_pruned-Q4_K_M.gguf"
-    ],
-    [
-      "text_encoders",
-      "qwen3vl_8b_fp8_scaled.safetensors"
-    ],
-    [
-      "clip_projections",
-      "mmh3-8b-ClipProj-v3.1.safetensors"
-    ],
-    [
-      "vae",
-      "minimax_h3_video_vae_fp16.safetensors"
-    ],
-    [
-      "vae",
-      "minimax_h3_audio_vae_fp32.safetensors"
-    ],
-    [
-      "loras",
-      "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
-    ]
-  ],
-  "requiresNodes": [
-    "UnetLoaderGGUF",
-    "CCTechClipProjLoader",
-    "MiniMaxH3ImageToVideo",
-    "ForceUnloadBeforeDecode"
-  ],
   "graph": {
     "92": {
       "class_type": "SaveVideo",

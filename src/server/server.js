@@ -10,7 +10,8 @@ import { ComfyClient } from './services/comfy-client.js';
 import { openDatabase } from './db/database.js';
 import { SpacesRepository } from './repositories/spaces.js';
 import { JobsRepository } from './repositories/jobs.js';
-import { loadPresets } from './generation/presets.js';
+import { loadCatalog } from './generation/presets.js';
+import { EngineProfile } from './services/engine-profile.js';
 import { MediaStore } from './generation/media-store.js';
 import { BoardEvents } from './generation/events.js';
 import { GenerationWorker } from './generation/worker.js';
@@ -35,14 +36,14 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const db = openDatabase(dbPath);
     const spaces = new SpacesRepository(db);
     const jobs = new JobsRepository(db);
-    const presets = loadPresets();
     const media = new MediaStore(() => settings.get('mediaDir'));
     const events = new BoardEvents();
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
-    const worker = new GenerationWorker({ jobs, spaces, presets, media, events, comfy });
+    const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
+    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, presets, media, events, worker, director, directorService, reveal };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

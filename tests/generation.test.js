@@ -1,15 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadPresets, compileGraph, choosePreset, familiesFor } from '../src/server/generation/presets.js';
+import { loadCatalog, firstVariants, compileGraph, choosePreset, familiesFor } from '../src/server/generation/presets.js';
 import { composePrompt } from '../src/server/generation/prompt.js';
 import { runPipeline } from '../src/server/generation/pipeline.js';
 import { phaseOf } from '../src/server/generation/stages.js';
 
-const presets = loadPresets();
+const presets = firstVariants(loadCatalog());
 
 test('every shipped preset loads and its bindings point at real nodes', () => {
     assert.ok(presets.size >= 6);
     for (const id of ['zimage-t2i', 'zimage-i2i', 'wan5b-t2v', 'wan5b-i2v', 'h3-t2va', 'h3-fl2va']) assert.ok(presets.has(id), id);
+});
+
+test('every variant of a preset binds the same inputs, so cards render on any machine', () => {
+    for (const [id, variants] of loadCatalog()) {
+        for (const v of variants) {
+            assert.deepEqual(Object.keys(v.bindings).sort(), Object.keys(variants[0].bindings).sort(), `${id} ${v.variant}`);
+            assert.deepEqual(v.needs ?? [], variants[0].needs ?? [], `${id} ${v.variant}`);
+            assert.equal(v.card, variants[0].card, `${id} ${v.variant}`);
+        }
+    }
 });
 
 test('an image card picks text-to-image, and image-to-image once a picture is wired', () => {
@@ -20,7 +30,8 @@ test('an image card picks text-to-image, and image-to-image once a picture is wi
 test('a video card keeps its chosen family and switches to the first-frame variant', () => {
     assert.equal(choosePreset(presets, { type: 'video', wired: [] }).id, 'wan5b-t2v');
     assert.equal(choosePreset(presets, { type: 'video', settings: { family: 'h3' }, wired: ['first_frame'] }).id, 'h3-fl2va');
-    assert.deepEqual(familiesFor(presets, 'video').map((f) => f.id).sort(), ['h3', 'wan5b']);
+    assert.deepEqual(familiesFor(presets, 'video').map((f) => f.id), ['wan5b', 'h3', 'ltx']); // the default first
+    assert.equal(choosePreset(presets, { type: 'video', settings: { family: 'ltx' }, wired: ['first_frame'] }).id, 'ltx-i2v');
 });
 
 test('compileGraph writes a multi-target binding into every node and leaves the preset untouched', () => {

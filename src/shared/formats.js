@@ -1,7 +1,15 @@
 // Card knobs (as in MarketDragon Spaces): aspect ratio, resolution, duration, quality.
-// One table per model family, shared by the server (pixel sizes, frames, steps) and the card UI
-// (which options to offer), so the two can never disagree. Values are what was tested on the
-// RX 7900 XTX / 24 GB: H3 above ~0.6 MP or past 5 s pushes 32 GB of RAM into swap.
+// One table per model family, or per family variant where a machine's model set behaves
+// differently (a preset's "knobs" names its table). Shared by the server (pixel sizes, frames,
+// steps) and the card UI (which options to offer), so the two can never disagree.
+// zimage / wan5b / h3: tested on the RX 7900 XTX / 24 GB (H3 GGUF above ~0.6 MP or past 5 s pushes
+// 32 GB of RAM into swap). h3-int8 / ltx: tested on the RTX 3080 Ti / 12 GB + 32 GB RAM.
+
+/** H3's own frame rule: max(5, round(s·24)) rounded up to 17k + 5 frames. */
+const h3Frames = (seconds) => {
+    const base = Math.max(5, Math.round(seconds * 24));
+    return base + ((5 - (base % 17)) % 17 + 17) % 17;
+};
 
 export const ASPECTS = [
     { id: '16:9', label: '16:9 Wide', w: 16, h: 9 },
@@ -27,12 +35,25 @@ export const FAMILIES = {
         resolutions: [{ id: '480p', label: '480p', mp: 0.41 }, { id: '576p', label: '576p (slower)', mp: 0.6 }],
         durations: [3, 4, 5],
         fps: 24,
-        // The H3 template's own rule: max(5, round(s·24)) rounded up to 17k + 5 frames.
-        frames: (seconds) => {
-            const base = Math.max(5, Math.round(seconds * 24));
-            return base + ((5 - (base % 17)) % 17 + 17) % 17;
-        },
+        frames: h3Frames,
         qualities: [{ id: 'draft', label: 'Draft (6 steps)', steps: 6 }, { id: 'final', label: 'Final (8 steps)', steps: 8 }],
+    },
+    // int8 H3 with the 4-step 768p turbo LoRA: 5 s took 65 s at 480p and 190 s at 768p.
+    'h3-int8': {
+        resolutions: [{ id: '480p', label: '480p', mp: 0.41 }, { id: '768p', label: '768p (slower)', mp: 1.03 }],
+        durations: [3, 4, 5],
+        fps: 24,
+        frames: h3Frames,
+        qualities: [{ id: 'final', label: 'Final (4 steps)', steps: 4 }],
+    },
+    // LTX-2.3 distilled: 8 fixed sigmas (no steps knob), 25 fps, frames 8n + 1. 5 s took 55 s at
+    // 480p and 105 s at 720p on 12 GB.
+    ltx: {
+        resolutions: [{ id: '480p', label: '480p', mp: 0.41 }, { id: '720p', label: '720p (slower)', mp: 0.92 }],
+        durations: [3, 4, 5],
+        fps: 25,
+        frames: (seconds) => Math.round((seconds * 25) / 8) * 8 + 1,
+        qualities: [{ id: 'final', label: 'Final (8 steps)', steps: 8 }],
     },
 };
 

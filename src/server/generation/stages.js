@@ -1,7 +1,7 @@
 // The stages one generation job passes through. ctx carries { job, node, deps, ... }.
 import { randomInt } from 'node:crypto';
 import { basename } from 'node:path';
-import { choosePreset, compileGraph } from './presets.js';
+import { choosePreset, compileGraph, familyOf, knobsOf } from './presets.js';
 import { composePrompt } from './prompt.js';
 import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
@@ -10,7 +10,7 @@ import { knobInputs } from '../../shared/formats.js';
 const MAX_SEED = 2 ** 32 - 1;
 
 export async function resolvePreset(ctx, next) {
-    const { spaces, presets } = ctx.deps;
+    const { spaces, engine } = ctx.deps;
     ctx.upstream = spaces.upstreamOf(ctx.node.space_id, ctx.node.id);
     // A picture wired in but not rendered must not silently turn image-to-video into text-to-video.
     const unrendered = ctx.upstream.find((n) => n.to_socket !== 'prompt' && !n.media_path);
@@ -18,8 +18,14 @@ export async function resolvePreset(ctx, next) {
         throw new StageError(`The ${unrendered.type} card wired into ${unrendered.to_socket.replace('_', ' ')} has no render yet. Generate it first.`);
     }
     const wired = ctx.upstream.filter((n) => n.to_socket !== 'prompt').map((n) => n.to_socket);
+    const { presets } = await engine.current();
     ctx.preset = choosePreset(presets, { type: ctx.node.type, settings: ctx.node.settings, wired });
-    if (!ctx.preset) throw new StageError('No workflow fits this card and its wires.');
+    if (!ctx.preset) throw new StageError('No workflow on this PC fits this card and its wires. Settings → Engine lists what is missing.');
+    // A wired picture the workflow cannot take (a last frame on Wan, or without a first frame) must not be dropped silently.
+    const ignored = wired.find((socket) => !(ctx.preset.needs ?? []).includes(socket));
+    if (ignored) {
+        throw new StageError(`${ctx.preset.label.replace(/\s*\(.*\)$/, '')} cannot use the ${ignored.replace('_', ' ')} picture${ignored === 'last_frame' ? ' (it needs a first frame too)' : ''}. Remove that wire or pick another model.`);
+    }
     await next();
 }
 
@@ -49,7 +55,7 @@ export async function uploadInputs(ctx, next) {
  * (Windows spilled into shared memory). Switching family frees ComfyUI's memory first.
  */
 export async function freeOnFamilySwitch(ctx, next) {
-    const family = ctx.preset.id.split('-')[0];
+    const family = familyOf(ctx.preset.id);
     const { worker } = ctx;
     // null (first render since launch) also frees: we cannot know what ComfyUI kept loaded.
     if (worker && worker.lastFamily !== family) {
@@ -64,7 +70,7 @@ export async function compile(ctx, next) {
     const settings = ctx.node.settings ?? {};
     ctx.seed = Number.isInteger(settings.seed) && settings.seedLocked ? settings.seed : randomInt(0, MAX_SEED);
     ctx.params = {
-        ...knobInputs(ctx.preset.id.split('-')[0], settings), // aspect, resolution, duration, quality → pixels, frames, steps
+        ...knobInputs(knobsOf(ctx.preset), settings), // aspect, resolution, duration, quality → pixels, frames, steps
         ...pick(settings, ['strength']),
         ...ctx.uploads,
         prompt: ctx.prompt,
@@ -153,7 +159,9 @@ export async function collectOutput(ctx, next) {
     const bytes = await comfy.download(file);
     const mime = mimeFromName(file.filename);
     const mediaPath = await media.saveTake({ spaceId: ctx.node.space_id, nodeId: ctx.node.id, bytes, mime, seed: ctx.seed });
-    jobs.addTake({ nodeId: ctx.node.id, mediaPath, mime, preset: ctx.preset.id, seed: ctx.seed, params: { ...ctx.params, prompt: ctx.prompt } });
+    // The variant says which machine's model set made this take (bf16 on the 24 GB card, int8 on 12 GB…).
+    const params = { ...ctx.params, prompt: ctx.prompt, variant: ctx.preset.variant };
+    jobs.addTake({ nodeId: ctx.node.id, mediaPath, mime, preset: ctx.preset.id, seed: ctx.seed, params });
     spaces.setNodeResult(ctx.node.id, { status: 'done', media_path: mediaPath, media_mime: mime });
     spaces.updateNode(ctx.node.space_id, ctx.node.id, { settings: { seed: ctx.seed } });
     ctx.result = { media_path: mediaPath, media_mime: mime };

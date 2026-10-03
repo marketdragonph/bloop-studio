@@ -16,7 +16,7 @@ function jobFamily(job) {
 
 export class GenerationWorker {
     constructor(deps) {
-        this.deps = deps; // { jobs, spaces, presets, media, events, comfy() }
+        this.deps = deps; // { jobs, spaces, engine, media, events, comfy() }
         this.current = null;
         this.stopped = false;
         this.lastFamily = null; // model family of the last render (zimage, wan5b, h3)

@@ -1,6 +1,7 @@
 // Card knobs (aspect, resolution, duration, quality) as in MarketDragon Spaces. Options come from
-// the shared formats table for the card's model family. The last choice per card type is
-// remembered (sticky defaults) and applied to new cards of that type. The seed is never sticky.
+// the shared formats table the server names for the card's family on this machine (e.g. "h3" on
+// the 24 GB card, "h3-int8" on 12 GB). The last choice per card type is remembered (sticky
+// defaults) and applied to new cards of that type. The seed is never sticky.
 import { knobOptions, aspectCss, DEFAULT_KNOBS } from '/shared/formats.js';
 
 const STICKY_KEY = 'bloop-studio:card-defaults';
@@ -26,13 +27,16 @@ function writeSticky(type, key, value) {
 
 export const knobMethods = {
     knobsFor(node) {
-        return knobOptions(this.familyOf(node)) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
+        const family = this.families[node.type]?.find((f) => f.id === this.familyOf(node));
+        return knobOptions(family?.knobs) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
     },
 
     knobValue(node, key) {
         const value = node.settings?.[key];
-        if (value !== undefined && value !== null) return value;
         const options = this.knobsFor(node);
+        // A card made on another PC may hold a value this machine's table does not offer.
+        const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities }[key];
+        if (value !== undefined && value !== null && (!offered || offered.some((o) => String(o.value) === String(value)))) return value;
         if (key === 'resolution') return options.resolutions[0]?.value;
         if (key === 'quality') return options.qualities.at(-1)?.value;
         if (key === 'duration') return options.durations.at(-1)?.value;

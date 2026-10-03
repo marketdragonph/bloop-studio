@@ -6,7 +6,7 @@ import { familiesFor } from '../generation/presets.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, presets, reveal }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, engine, reveal }) {
     const routes = new Hono();
 
     routes.post('/spaces/:id/nodes/:nodeId/generate', (c) => {
@@ -46,7 +46,8 @@ export function generationRoutes({ spaces, jobs, worker, events, media, presets,
 
     routes.get('/spaces/:id/nodes/:nodeId/takes', (c) => c.json(jobs.takes(int(c.req.param('nodeId')))));
 
-    routes.get('/presets/:type', (c) => c.json(familiesFor(presets, c.req.param('type'))));
+    // Only the families this machine's ComfyUI can run (see EngineProfile).
+    routes.get('/presets/:type', async (c) => c.json(familiesFor((await engine.current()).presets, c.req.param('type'))));
 
     // One stream per open board; only that board's cards are sent.
     routes.get('/spaces/:id/events', (c) => {

@@ -34,16 +34,20 @@ test('a Words socket takes several text wires (shot + cast + location); a pictur
     for (const t of [shot, cast, place]) assert.equal(repo.connect(space.id, t.id, image.id).to_socket, 'prompt');
     const a = repo.createNode(space.id, { type: 'image' });
     const b = repo.createNode(space.id, { type: 'image' });
+    const c = repo.createNode(space.id, { type: 'image' });
     const clip = repo.createNode(space.id, { type: 'video' });
     repo.connect(space.id, a.id, clip.id);
-    assert.throws(() => repo.connect(space.id, b.id, clip.id), /full or do not match/);
+    repo.connect(space.id, b.id, clip.id);
+    assert.throws(() => repo.connect(space.id, c.id, clip.id), /full or do not match/);
 });
 
-test('an image card feeds a video card as its first frame', () => {
+test('an image card feeds a video card as its first frame, a second one as its last frame', () => {
     const { repo, space } = fresh();
     const still = repo.createNode(space.id, { type: 'image' });
+    const end = repo.createNode(space.id, { type: 'image' });
     const clip = repo.createNode(space.id, { type: 'video' });
     assert.equal(repo.connect(space.id, still.id, clip.id).to_socket, 'first_frame');
+    assert.equal(repo.connect(space.id, end.id, clip.id).to_socket, 'last_frame');
 });
 
 test('refuses loops, duplicates, self-wires and inputs on cards that take none', () => {

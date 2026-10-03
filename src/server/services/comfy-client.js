@@ -4,6 +4,9 @@ const TIMEOUT_MS = 5000;
 
 export class ComfyError extends Error {}
 
+/** "cuda:0 NVIDIA GeForce RTX 3080 Ti : cudaMallocAsync" → "NVIDIA GeForce RTX 3080 Ti" (also ROCm's ": native"). */
+export const gpuName = (raw = 'unknown') => raw.replace(/^cuda:\d+\s*/, '').replace(/\s*:\s*[\w-]+$/, '') || 'unknown';
+
 export class ComfyClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl.replace(/\/+$/, '');
@@ -22,18 +25,28 @@ export class ComfyClient {
         return text ? JSON.parse(text) : null;
     }
 
+    /** The machine behind ComfyUI: version, GPU, VRAM and the torch backend (CUDA or ROCm). */
+    async hardware() {
+        const stats = await this.#request('/system_stats');
+        const device = stats.devices?.[0] ?? {};
+        const torch = stats.system?.pytorch_version ?? '';
+        return {
+            version: stats.system?.comfyui_version ?? 'unknown',
+            gpu: gpuName(device.name),
+            backend: /rocm/i.test(torch) ? 'ROCm' : /\+cu\d/i.test(torch) ? 'CUDA' : device.type ?? 'unknown',
+            vramTotalGb: (device.vram_total ?? 0) / 1024 ** 3,
+            vramFreeGb: (device.vram_free ?? 0) / 1024 ** 3,
+        };
+    }
+
     /** Engine health for the status light: never throws. */
     async status() {
         try {
-            const stats = await this.#request('/system_stats');
-            const device = stats.devices?.[0] ?? {};
+            const hardware = await this.hardware();
             const queue = await this.#request('/queue');
             return {
                 online: true,
-                version: stats.system?.comfyui_version ?? 'unknown',
-                gpu: (device.name ?? 'unknown').replace(/^cuda:\d+\s*/, '').replace(/\s*:\s*native$/, ''),
-                vramTotalGb: (device.vram_total ?? 0) / 1024 ** 3,
-                vramFreeGb: (device.vram_free ?? 0) / 1024 ** 3,
+                ...hardware,
                 running: queue.queue_running?.length ?? 0,
                 pending: queue.queue_pending?.length ?? 0,
             };
@@ -46,8 +59,9 @@ export class ComfyClient {
         return this.#request(`/models/${encodeURIComponent(folder)}`);
     }
 
-    nodeClasses() {
-        return this.#request('/object_info', { timeout: 60_000 }).then((info) => new Set(Object.keys(info)));
+    /** Every installed node class with its inputs, including each loader's list of model files. */
+    objectInfo() {
+        return this.#request('/object_info', { timeout: 60_000 });
     }
 
     /** Uploads image bytes into ComfyUI's input folder; returns the name LoadImage should use. */

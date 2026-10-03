@@ -1,0 +1,39 @@
+{{-- What this PC's ComfyUI can run: hardware, and per workflow the variant in use or what is missing. --}}
+@if(!profile.detected)
+  @!component('components/alert', { tone: 'warn', message: `Could not read ComfyUI at ${profile.url}: ${profile.error}. Every workflow is offered unchecked until it answers.` })
+@else
+  <p class="plate-note">
+    {{ profile.hardware.gpu }} · {{ profile.hardware.vramTotalGb.toFixed(0) }} GB · {{ profile.hardware.backend }} · ComfyUI {{ profile.hardware.version }}
+  </p>
+  <ul class="engine-list">
+    @each(item in profile.report)
+      <li class="engine-list__item">
+        <span class="engine-list__name">{{ item.label }}</span>
+        @if(item.variant)
+          <span class="status-light status-light--ok">
+            <span class="status-light__dot" aria-hidden="true"></span>
+            <span class="ae-readout">Ready · {{ item.variant }}</span>
+          </span>
+        @else
+          <span class="status-light status-light--idle">
+            <span class="status-light__dot" aria-hidden="true"></span>
+            <span class="ae-readout">Hidden · not installed</span>
+          </span>
+          <details class="engine-list__missing">
+            <summary>Missing ({{ item.missing.length }})</summary>
+            <ul>
+              @each(line in item.missing)
+                <li>{{ line }}</li>
+              @end
+            </ul>
+          </details>
+        @end
+      </li>
+    @end
+  </ul>
+@end
+<div class="row">
+  <button type="button" class="ae-key ae-key--sm" hx-post="/engine/profile" hx-target="#engine-profile" hx-swap="innerHTML">
+    Re-detect models
+  </button>
+</div>

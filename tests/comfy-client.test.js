@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { ComfyClient } from '../src/server/services/comfy-client.js';
+import { ComfyClient, gpuName } from '../src/server/services/comfy-client.js';
 
 /** A fake ComfyUI: /free and /interrupt answer 200 with an empty body, like the real one. */
 async function fakeComfy() {
@@ -26,6 +26,12 @@ test('empty 200 bodies (/free) do not throw "Unexpected end of JSON input"', asy
     } finally {
         server.close();
     }
+});
+
+test('GPU names lose the device prefix and allocator suffix on ROCm and CUDA', () => {
+    assert.equal(gpuName('cuda:0 AMD Radeon RX 7900 XTX : native'), 'AMD Radeon RX 7900 XTX');
+    assert.equal(gpuName('cuda:0 NVIDIA GeForce RTX 3080 Ti : cudaMallocAsync'), 'NVIDIA GeForce RTX 3080 Ti');
+    assert.equal(gpuName(undefined), 'unknown');
 });
 
 test('status reports offline instead of throwing when ComfyUI is not there', async () => {

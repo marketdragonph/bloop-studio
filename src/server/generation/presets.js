@@ -1,24 +1,39 @@
 // Workflow presets: ComfyUI API graphs in workflows/*.json with named input bindings.
 // Bindings target nodes by their `_meta.title` marker (e.g. "@positive"), never by numeric id,
 // so a workflow re-exported from ComfyUI keeps working as long as the titles are kept.
+// One preset id can ship several variants (e.g. bf16 for a 24 GB card, int8 for 12 GB): the
+// engine profile picks, per machine, the first variant its ComfyUI can actually run.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const WORKFLOWS_DIR = fileURLToPath(new URL('../../../workflows/', import.meta.url));
+const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b' };
 
 /** A binding is [title, field] or a list of them; always return the list form. */
-const targetsOf = (binding) => (Array.isArray(binding[0]) ? binding : [binding]);
+export const targetsOf = (binding) => (Array.isArray(binding[0]) ? binding : [binding]);
 
-export function loadPresets(dir = WORKFLOWS_DIR) {
-    const presets = new Map();
+/** The model family of a preset id: "h3-fl2va" → "h3". */
+export const familyOf = (presetId) => presetId.split('-')[0];
+
+/** Every preset id with its variants, best first (lowest `priority`). */
+export function loadCatalog(dir = WORKFLOWS_DIR) {
+    const catalog = new Map();
     for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
         const preset = JSON.parse(readFileSync(join(dir, file), 'utf8'));
         validatePreset(preset, file);
-        presets.set(preset.id, preset);
+        preset.variant ??= 'default';
+        const variants = catalog.get(preset.id) ?? [];
+        if (variants.some((v) => v.variant === preset.variant)) throw new Error(`Preset ${file}: ${preset.id} already has a "${preset.variant}" variant.`);
+        variants.push(preset);
+        variants.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+        catalog.set(preset.id, variants);
     }
-    return presets;
+    return catalog;
 }
+
+/** The best variant of every preset, unchecked: what the app offers before ComfyUI has been seen. */
+export const firstVariants = (catalog) => new Map([...catalog].map(([id, variants]) => [id, variants[0]]));
 
 function validatePreset(preset, file) {
     for (const key of ['id', 'card', 'graph', 'bindings', 'output']) {
@@ -52,29 +67,32 @@ export function compileGraph(preset, inputs) {
 }
 
 /**
- * The preset a card renders with: the card's chosen family (settings.family, e.g. "h3")
- * narrowed by what is wired in (a first frame or reference picture selects the variant that needs it).
+ * The preset a card renders with: the card's chosen family (settings.family, e.g. "h3") when this
+ * engine has it, else the type's default, else whatever it has; narrowed by what is wired in
+ * (a first frame or reference picture selects the variant that needs it).
  */
 export function choosePreset(presets, { type, settings = {}, wired = [] }) {
     const candidates = [...presets.values()].filter((p) => p.card === type);
-    const family = settings.family ?? defaultFamily(type);
-    const inFamily = candidates.filter((p) => p.id.startsWith(`${family}-`));
-    const pool = inFamily.length ? inFamily : candidates;
+    const available = new Set(candidates.map((p) => familyOf(p.id)));
+    const family = [settings.family, DEFAULT_FAMILY[type]].find((f) => available.has(f)) ?? familyOf(candidates[0]?.id ?? '');
+    const pool = candidates.filter((p) => familyOf(p.id) === family);
     // Prefer the variant whose needs are all wired; among those, the one that uses the most.
     const usable = pool.filter((p) => (p.needs ?? []).every((need) => wired.includes(need)));
     usable.sort((a, b) => (b.needs?.length ?? 0) - (a.needs?.length ?? 0));
     return usable[0] ?? null;
 }
 
-const defaultFamily = (type) => ({ image: 'zimage', video: 'wan5b' })[type];
+/** The knob table (src/shared/formats.js) a preset renders with: its own, else its family's. */
+export const knobsOf = (preset) => preset.knobs ?? familyOf(preset.id);
 
-/** The families a card type offers, for the card's model picker. */
+/** The families a card type offers, the type's default first, for the card's model picker. */
 export function familiesFor(presets, type) {
     const seen = new Map();
     for (const p of presets.values()) {
-        if (p.card !== type) continue;
-        const family = p.id.split('-')[0];
-        if (!seen.has(family)) seen.set(family, p.label.replace(/\s*\(.*\)$/, ''));
+        const family = familyOf(p.id);
+        if (p.card !== type || seen.has(family)) continue;
+        seen.set(family, { id: family, label: p.label.replace(/\s*\(.*\)$/, ''), knobs: knobsOf(p) });
     }
-    return [...seen].map(([id, label]) => ({ id, label }));
+    const isDefault = (f) => (f.id === DEFAULT_FAMILY[type] ? 0 : 1);
+    return [...seen.values()].sort((a, b) => isDefault(a) - isDefault(b));
 }

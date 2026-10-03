@@ -1,6 +1,7 @@
 {
   "id": "zimage-i2i",
-  "variant": "bf16",
+  "variant": "int8",
+  "priority": 1,
   "label": "Z-Image Turbo (from picture)",
   "card": "image",
   "needs": ["reference"],
@@ -16,8 +17,8 @@
     "reference": ["@image", "image"]
   },
   "graph": {
-    "28": { "class_type": "UNETLoader", "_meta": { "title": "@model" }, "inputs": { "unet_name": "z_image_turbo_bf16.safetensors", "weight_dtype": "default" } },
-    "30": { "class_type": "CLIPLoader", "_meta": { "title": "@clip" }, "inputs": { "clip_name": "qwen_3_4b.safetensors", "type": "lumina2", "device": "default" } },
+    "28": { "class_type": "UNETLoader", "_meta": { "title": "@model" }, "inputs": { "unet_name": "z_image_turbo_int8_convrot.safetensors", "weight_dtype": "default" } },
+    "30": { "class_type": "CLIPLoader", "_meta": { "title": "@clip" }, "inputs": { "clip_name": "qwen_3_4b_fp8_mixed.safetensors", "type": "lumina2", "device": "default" } },
     "29": { "class_type": "VAELoader", "_meta": { "title": "@vae" }, "inputs": { "vae_name": "ae.safetensors" } },
     "11": { "class_type": "ModelSamplingAuraFlow", "_meta": { "title": "@shift" }, "inputs": { "model": ["28", 0], "shift": 3 } },
     "27": { "class_type": "CLIPTextEncode", "_meta": { "title": "@positive" }, "inputs": { "clip": ["30", 0], "text": "" } },

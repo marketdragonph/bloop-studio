@@ -69,8 +69,11 @@ export const generationMethods = {
         }
     },
 
+    /** The card's chosen family when this machine offers it, else the type's default (as the server picks). */
     familyOf(node) {
-        return node.settings?.family ?? this.families[node.type]?.[0]?.id ?? '';
+        const offered = this.families[node.type] ?? [];
+        const chosen = node.settings?.family;
+        return offered.some((f) => f.id === chosen) ? chosen : offered[0]?.id ?? '';
     },
 
     setFamily(node, family) {

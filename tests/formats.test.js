@@ -29,6 +29,14 @@ test('quality picks steps; unknown values fall back safely', () => {
     assert.deepEqual(knobInputs('unknown', {}), {});
 });
 
+test('the 12 GB tables: int8 H3 renders 4 steps up to 768p; LTX frames are 8n+1 at 25 fps', () => {
+    assert.deepEqual(knobInputs('h3-int8', { resolution: '768p' }), { width: 1344, height: 768, steps: 4, length: 124 });
+    assert.equal(knobInputs('h3-int8', { resolution: '576p' }).width, 864); // a 24 GB card's choice falls back
+    assert.equal(knobOptions('h3-int8').qualities.length, 1);
+    assert.equal(knobInputs('ltx', { duration: 5 }).length, 129);
+    for (const seconds of [3, 4, 5]) assert.equal((knobInputs('ltx', { duration: seconds }).length - 1) % 8, 0);
+});
+
 test('options and preview ratio for the card UI', () => {
     assert.equal(knobOptions('zimage').durations.length, 0);
     assert.deepEqual(knobOptions('h3').durations.map((d) => d.value), [3, 4, 5]);

@@ -1,18 +1,18 @@
 {
-  "id": "h3-fl2va",
-  "variant": "gguf",
-  "label": "MiniMax-H3 Turbo (animate picture + sound)",
+  "id": "h3-t2va",
+  "variant": "int8",
+  "priority": 1,
+  "knobs": "h3-int8",
+  "label": "MiniMax-H3 Turbo (video + sound)",
   "card": "video",
-  "needs": [
-    "first_frame"
-  ],
+  "needs": [],
   "output": "video",
   "dialect": "h3",
   "defaults": {
     "width": 864,
     "height": 480,
     "length": 124,
-    "steps": 8
+    "steps": 4
   },
   "bindings": {
     "prompt": [
@@ -28,32 +28,16 @@
       "steps"
     ],
     "width": [
-      [
-        "@positive",
-        "width"
-      ],
-      [
-        "@resize",
-        "width"
-      ]
+      "@positive",
+      "width"
     ],
     "height": [
-      [
-        "@positive",
-        "height"
-      ],
-      [
-        "@resize",
-        "height"
-      ]
+      "@positive",
+      "height"
     ],
     "length": [
       "@positive",
       "length"
-    ],
-    "first_frame": [
-      "@image",
-      "image"
     ]
   },
   "graph": {
@@ -88,7 +72,7 @@
       },
       "inputs": {
         "samples": [
-          "135",
+          "125",
           0
         ],
         "vae": [
@@ -104,7 +88,7 @@
       },
       "inputs": {
         "samples": [
-          "135",
+          "125",
           0
         ],
         "vae": [
@@ -133,7 +117,7 @@
           0
         ],
         "scheduler": "simple",
-        "steps": 8,
+        "steps": 4,
         "denoise": 1
       }
     },
@@ -160,8 +144,8 @@
           0
         ],
         "latent_image": [
-          "136",
-          0
+          "129",
+          1
         ]
       }
     },
@@ -225,31 +209,28 @@
         "prompt": "",
         "width": 864,
         "height": 480,
-        "length": 124,
-        "first_frame": [
-          "141",
-          0
-        ]
+        "length": 124
       }
     },
     "130": {
-      "class_type": "UnetLoaderGGUF",
+      "class_type": "UNETLoader",
       "_meta": {
         "title": "@model"
       },
       "inputs": {
-        "unet_name": "minimax_h3_fl2va_pruned-Q4_K_M.gguf"
+        "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        "weight_dtype": "default"
       }
     },
     "131": {
-      "class_type": "CCTechClipProjLoader",
+      "class_type": "CLIPLoader",
       "_meta": {
         "title": "@clip"
       },
       "inputs": {
-        "clip_name": "qwen3vl_8b_fp8_scaled.safetensors",
-        "type": "boogu",
-        "projection": "mmh3-8b-ClipProj-v3.1.safetensors"
+        "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+        "type": "minimax",
+        "device": "default"
       }
     },
     "132": {
@@ -258,56 +239,7 @@
         "title": "@vae"
       },
       "inputs": {
-        "vae_name": "minimax_h3_video_vae_fp16.safetensors"
-      }
-    },
-    "135": {
-      "class_type": "ForceUnloadBeforeDecode",
-      "_meta": {
-        "title": "@unload_before_decode"
-      },
-      "inputs": {
-        "samples": [
-          "125",
-          0
-        ]
-      }
-    },
-    "136": {
-      "class_type": "ForceUnloadBeforeDecode",
-      "_meta": {
-        "title": "@unload_before_sample"
-      },
-      "inputs": {
-        "samples": [
-          "129",
-          1
-        ]
-      }
-    },
-    "140": {
-      "class_type": "LoadImage",
-      "_meta": {
-        "title": "@image"
-      },
-      "inputs": {
-        "image": ""
-      }
-    },
-    "141": {
-      "class_type": "ImageScale",
-      "_meta": {
-        "title": "@resize"
-      },
-      "inputs": {
-        "image": [
-          "140",
-          0
-        ],
-        "upscale_method": "lanczos",
-        "width": 864,
-        "height": 480,
-        "crop": "center"
+        "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
       }
     },
     "150": {
@@ -320,7 +252,7 @@
           "130",
           0
         ],
-        "lora_name": "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors",
+        "lora_name": "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
         "strength_model": 1
       }
     }

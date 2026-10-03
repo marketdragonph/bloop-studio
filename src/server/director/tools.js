@@ -48,7 +48,7 @@ export const TOOL_DEFINITIONS = [
     },
     {
         name: 'connect',
-        description: 'Wire one card into another: a text card into an image or video card (its words), or an image card into a video card (its first frame). Use refs from this turn or ids of existing cards ("#12").',
+        description: 'Wire one card into another: a text card into an image or video card (its words), or an image card into a video card (its first frame; a second image card becomes its last frame). Use refs from this turn or ids of existing cards ("#12").',
         schema: {
             type: 'object',
             properties: {

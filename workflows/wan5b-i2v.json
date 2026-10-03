@@ -1,5 +1,6 @@
 {
   "id": "wan5b-i2v",
+  "variant": "fp16",
   "label": "Wan 2.2 5B (animate picture)",
   "card": "video",
   "needs": ["first_frame"],
@@ -14,11 +15,6 @@
     "length": ["@latent", "length"],
     "first_frame": ["@image", "image"]
   },
-  "models": [
-    ["diffusion_models", "wan2.2_ti2v_5B_fp16.safetensors"],
-    ["text_encoders", "umt5_xxl_fp8_e4m3fn_scaled.safetensors"],
-    ["vae", "wan2.2_vae.safetensors"]
-  ],
   "graph": {
     "37": { "class_type": "UNETLoader", "_meta": { "title": "@model" }, "inputs": { "unet_name": "wan2.2_ti2v_5B_fp16.safetensors", "weight_dtype": "default" } },
     "38": { "class_type": "CLIPLoader", "_meta": { "title": "@clip" }, "inputs": { "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "type": "wan", "device": "default" } },

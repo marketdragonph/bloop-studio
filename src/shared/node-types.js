@@ -21,6 +21,8 @@ export const SOCKETS = {
     video: [
         { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
         { key: 'first_frame', label: 'First frame', accepts: ['image'], icon: 'image' },
+        // With a first frame: the clip travels from one picture to the other (H3 and LTX).
+        { key: 'last_frame', label: 'Last frame', accepts: ['image'], icon: 'image' },
     ],
 };
 

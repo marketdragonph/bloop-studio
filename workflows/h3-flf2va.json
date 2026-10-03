@@ -1,10 +1,11 @@
 {
-  "id": "h3-fl2va",
+  "id": "h3-flf2va",
   "variant": "gguf",
-  "label": "MiniMax-H3 Turbo (animate picture + sound)",
+  "label": "MiniMax-H3 Turbo (first to last frame + sound)",
   "card": "video",
   "needs": [
-    "first_frame"
+    "first_frame",
+    "last_frame"
   ],
   "output": "video",
   "dialect": "h3",
@@ -35,6 +36,10 @@
       [
         "@resize",
         "width"
+      ],
+      [
+        "@last_resize",
+        "width"
       ]
     ],
     "height": [
@@ -45,6 +50,10 @@
       [
         "@resize",
         "height"
+      ],
+      [
+        "@last_resize",
+        "height"
       ]
     ],
     "length": [
@@ -53,6 +62,10 @@
     ],
     "first_frame": [
       "@image",
+      "image"
+    ],
+    "last_frame": [
+      "@last_image",
       "image"
     ]
   },
@@ -229,6 +242,10 @@
         "first_frame": [
           "141",
           0
+        ],
+        "last_frame": [
+          "143",
+          0
         ]
       }
     },
@@ -302,6 +319,31 @@
       "inputs": {
         "image": [
           "140",
+          0
+        ],
+        "upscale_method": "lanczos",
+        "width": 864,
+        "height": 480,
+        "crop": "center"
+      }
+    },
+    "142": {
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "@last_image"
+      },
+      "inputs": {
+        "image": ""
+      }
+    },
+    "143": {
+      "class_type": "ImageScale",
+      "_meta": {
+        "title": "@last_resize"
+      },
+      "inputs": {
+        "image": [
+          "142",
           0
         ],
         "upscale_method": "lanczos",

@@ -25,6 +25,11 @@
         </button>
       </div>
       <div id="engine-test" aria-live="polite"></div>
+      <h3 class="ae-stencil">Workflows on this PC</h3>
+      <p class="plate-note">Each family uses the first variant this ComfyUI has the nodes and models for. Families with none are hidden from cards.</p>
+      <div id="engine-profile" hx-get="/engine/profile" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        <p class="plate-note">Reading ComfyUI…</p>
+      </div>
     @end
 
     @component('components/plate', { heading: 'Media', labelledBy: 'media-h' })

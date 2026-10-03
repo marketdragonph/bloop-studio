@@ -1,0 +1,38 @@
+{
+  "id": "ltx-t2v",
+  "variant": "distilled-fp8",
+  "label": "LTX-2.3 Distilled (video + sound)",
+  "card": "video",
+  "needs": [],
+  "output": "video",
+  "knobs": "ltx",
+  "defaults": { "width": 864, "height": 480, "length": 121 },
+  "bindings": {
+    "prompt": ["@positive", "text"],
+    "seed": ["@noise", "noise_seed"],
+    "width": ["@latent", "width"],
+    "height": ["@latent", "height"],
+    "length": [["@latent", "length"], ["@audio_latent", "frames_number"]]
+  },
+  "graph": {
+    "1": { "class_type": "CheckpointLoaderSimple", "_meta": { "title": "@model" }, "inputs": { "ckpt_name": "ltx-2.3-22b-distilled-fp8.safetensors" } },
+    "2": { "class_type": "LTXVAudioVAELoader", "_meta": { "title": "@audio_vae" }, "inputs": { "ckpt_name": "ltx-2.3-22b-distilled-fp8.safetensors" } },
+    "3": { "class_type": "LTXAVTextEncoderLoader", "_meta": { "title": "@clip" }, "inputs": { "text_encoder": "gemma_3_12B_it_fp4_mixed.safetensors", "ckpt_name": "ltx-2.3-22b-distilled-fp8.safetensors", "device": "default" } },
+    "4": { "class_type": "CLIPTextEncode", "_meta": { "title": "@positive" }, "inputs": { "clip": ["3", 0], "text": "" } },
+    "5": { "class_type": "CLIPTextEncode", "_meta": { "title": "@negative" }, "inputs": { "clip": ["3", 0], "text": "blurry, out of focus, overexposed, underexposed, low contrast, washed out colors, excessive noise, flickering, distorted proportions, deformed faces, extra limbs, disfigured hands, unreadable text, inconsistent lighting, cartoonish rendering, uncanny valley effect, silent or muted audio, distorted voice, off-sync audio, jittery movement, unnatural transitions, AI artifacts." } },
+    "6": { "class_type": "LTXVConditioning", "_meta": { "title": "@conditioning" }, "inputs": { "positive": ["4", 0], "negative": ["5", 0], "frame_rate": 25 } },
+    "7": { "class_type": "EmptyLTXVLatentVideo", "_meta": { "title": "@latent" }, "inputs": { "width": 864, "height": 480, "length": 121, "batch_size": 1 } },
+    "8": { "class_type": "LTXVEmptyLatentAudio", "_meta": { "title": "@audio_latent" }, "inputs": { "frames_number": 121, "frame_rate": 25, "batch_size": 1, "audio_vae": ["2", 0] } },
+    "9": { "class_type": "LTXVConcatAVLatent", "_meta": { "title": "@av_latent" }, "inputs": { "video_latent": ["7", 0], "audio_latent": ["8", 0] } },
+    "10": { "class_type": "CFGGuider", "_meta": { "title": "@guider" }, "inputs": { "model": ["1", 0], "positive": ["6", 0], "negative": ["6", 1], "cfg": 1 } },
+    "11": { "class_type": "SamplerEulerAncestral", "_meta": { "title": "@sampler_select" }, "inputs": { "eta": 0, "s_noise": 1 } },
+    "12": { "class_type": "ManualSigmas", "_meta": { "title": "@sigmas" }, "inputs": { "sigmas": "1., 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0" } },
+    "13": { "class_type": "RandomNoise", "_meta": { "title": "@noise" }, "inputs": { "noise_seed": 0 } },
+    "14": { "class_type": "SamplerCustomAdvanced", "_meta": { "title": "@sampler" }, "inputs": { "noise": ["13", 0], "guider": ["10", 0], "sampler": ["11", 0], "sigmas": ["12", 0], "latent_image": ["9", 0] } },
+    "15": { "class_type": "LTXVSeparateAVLatent", "_meta": { "title": "@separate" }, "inputs": { "av_latent": ["14", 1] } },
+    "16": { "class_type": "VAEDecodeTiled", "_meta": { "title": "@decode" }, "inputs": { "samples": ["15", 0], "vae": ["1", 2], "tile_size": 768, "overlap": 64, "temporal_size": 4096, "temporal_overlap": 64 } },
+    "17": { "class_type": "LTXVAudioVAEDecode", "_meta": { "title": "@decode_audio" }, "inputs": { "samples": ["15", 1], "audio_vae": ["2", 0] } },
+    "18": { "class_type": "CreateVideo", "_meta": { "title": "@video" }, "inputs": { "images": ["16", 0], "fps": 25, "audio": ["17", 0] } },
+    "19": { "class_type": "SaveVideo", "_meta": { "title": "@output" }, "inputs": { "video": ["18", 0], "filename_prefix": "bloop-studio/video", "format": "auto", "codec": "auto" } }
+  }
+}
