@@ -31,7 +31,7 @@ const explorerReveal = async (fullPath) => {
     spawn('explorer.exe', [`/select,${fullPath}`], { detached: true, stdio: 'ignore' }).unref();
 };
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, updates = NO_UPDATES }) {
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, updates = NO_UPDATES, onThemeChange = () => {} }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -44,7 +44,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

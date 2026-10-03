@@ -96,6 +96,9 @@ After adding models, restart ComfyUI, then press **Re-detect models** in Setting
 
 ## Using the board
 
+The window opens maximized. Minimize, maximize and close are at the right end of the top bar, and you can
+drag the top bar to move the window. **F11** switches to full screen and back.
+
 1. Go to **Spaces** → **New space**.
 2. Add cards from the toolbar: **Text**, **Image**, **Video**, **Upload**, **Note**.
 3. Wire cards by dragging from a card's right-hand arrow onto another card, or onto one of its sockets:

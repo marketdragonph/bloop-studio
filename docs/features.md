@@ -55,7 +55,9 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 ## App
 
 - Electron desktop app; the server listens on 127.0.0.1 only, on a random port, with a CSRF token on every change.
-- F11 toggles full screen (remembered). Windows installer via `npm run dist` with automatic date versions.
+- Opens maximized; the top bar is the title bar (drag it to move the window) with Windows' own minimize /
+  maximize / close at its right end, coloured for the theme. F11 toggles true full screen (remembered).
+  Windows installer via `npm run dist` with automatic date versions.
 - **Self-update** from public GitHub Releases (`marketdragonph/bloop-studio-releases`): checks on launch and
   every 4 hours, downloads in the background, **Restart to update** in the top bar; Settings → App shows the
   version and *Check for updates*. Releases are built by the GitHub Actions *Release* workflow.

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from '../server/server.js';
 import { SettingsStore, settingsPath } from './settings-store.js';
 import { createUpdater } from './updater.js';
+import { attachWindowChrome, overlayFor } from './window-chrome.js';
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -11,11 +12,13 @@ let mainWindow = null;
 
 async function boot() {
     const settings = new SettingsStore(settingsPath(app.getPath('userData')));
+    let chrome = null;
     const { url } = await createServer({
         settings,
         dataDir: app.getPath('userData'),
         reveal: (fullPath) => shell.showItemInFolder(fullPath),
         updates: createUpdater(app),
+        onThemeChange: () => chrome?.themeChanged(),
     });
 
     mainWindow = new BrowserWindow({
@@ -26,26 +29,30 @@ async function boot() {
         show: false, // shown maximized once the first paint is ready (no flash of a small window)
         backgroundColor: '#09090b',
         title: 'Bloop Studio',
+        // No separate title bar: our top bar is the title bar, with Windows' own controls at its right end.
+        titleBarStyle: 'hidden',
+        titleBarOverlay: overlayFor(settings.get('theme')),
         // The installed app takes its icon from the .exe; a dev run (npm start) needs it set here.
         icon: app.isPackaged ? undefined : fileURLToPath(new URL('../../build/icon.ico', import.meta.url)),
         autoHideMenuBar: true,
         webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
     });
+    chrome = attachWindowChrome(mainWindow, () => settings.get('theme'));
     mainWindow.once('ready-to-show', () => {
         mainWindow.maximize();
-        if (settings.get('fullscreen')) mainWindow.setFullScreen(true);
+        if (settings.get('windowMode') === 'fullscreen') mainWindow.setFullScreen(true);
         mainWindow.show();
     });
 
-    // F11 toggles true full screen; the choice is remembered for the next launch.
+    // F11 toggles true full screen (no window controls); the choice is remembered for the next launch.
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.type === 'keyDown' && input.key === 'F11') {
             event.preventDefault();
             mainWindow.setFullScreen(!mainWindow.isFullScreen());
         }
     });
-    mainWindow.on('enter-full-screen', () => settings.update({ fullscreen: true }));
-    mainWindow.on('leave-full-screen', () => settings.update({ fullscreen: false }));
+    mainWindow.on('enter-full-screen', () => settings.update({ windowMode: 'fullscreen' }));
+    mainWindow.on('leave-full-screen', () => settings.update({ windowMode: 'maximized' }));
 
     // Only our own server may load in the window; anything else opens in the real browser.
     mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {

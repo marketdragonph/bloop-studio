@@ -37,10 +37,16 @@ a { color: var(--accent-text); }
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-4);
+    min-height: var(--topbar-height);
     padding: var(--space-3) var(--space-4);
+    /* In the desktop app Windows draws minimize / maximize / close over the right end: keep that corner
+       free (env() is 0 in a browser and in full screen, where there are no window controls). */
+    padding-right: calc(var(--space-4) + 100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
     border-bottom: 1px solid var(--ae-seam);
     background: var(--bg-secondary);
+    -webkit-app-region: drag; /* dragging the bar moves the window, like a title bar */
 }
+.topbar > * { -webkit-app-region: no-drag; }
 
 .topbar__brand { display: inline-flex; align-items: baseline; gap: var(--space-2); text-decoration: none; color: var(--text-primary); }
 .topbar__title { font-weight: 700; font-size: var(--fs-md); }

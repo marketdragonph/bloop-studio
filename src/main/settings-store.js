@@ -15,7 +15,9 @@ const DEFAULTS = {
     anthropicModel: 'claude-opus-5-5',
     openaiModel: 'gpt-5.5',
     theme: 'dark',
-    fullscreen: true, // the window's last full-screen state (F11), restored on launch
+    // 'maximized' (window controls in the top bar) or 'fullscreen' (F11), restored on launch. Replaces the
+    // old `fullscreen` key, which defaulted to true and left no visible way to minimize or close.
+    windowMode: 'maximized',
 };
 
 export class SettingsStore {

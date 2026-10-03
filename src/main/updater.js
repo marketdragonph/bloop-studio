@@ -5,6 +5,8 @@ import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000;
+// GitHub answers 500 for a few minutes after a release's files are uploaded: try again soon, not in 4 h.
+const RETRY_AFTER_ERROR_MS = 15 * 60 * 1000;
 
 /**
  * Returns { state(), check(), install() } for the server's routes.
@@ -25,10 +27,17 @@ export function createUpdater(app) {
     autoUpdater.on('download-progress', (p) => set({ status: 'downloading', progress: p.percent / 100 }));
     autoUpdater.on('update-downloaded', (info) => set({ status: 'ready', available: info.version, progress: 1 }));
     autoUpdater.on('update-not-available', () => set({ status: 'current' }));
+    let retry = null;
     autoUpdater.on('error', (error) => {
-        // Offline or no release yet: say so in Settings, never interrupt the work.
-        console.error('updater:', error.message);
+        // Offline, no release yet or a GitHub hiccup: say so in Settings, never interrupt the work.
+        console.error('updater:', error.message.split('\n')[0]);
         set({ status: state.status === 'ready' ? 'ready' : 'error', error: error.message.split('\n')[0] });
+        if (state.status === 'error' && !retry) {
+            retry = setTimeout(() => {
+                retry = null;
+                check();
+            }, RETRY_AFTER_ERROR_MS).unref();
+        }
     });
 
     const check = () => autoUpdater.checkForUpdates().catch(() => {}); // failures land in the 'error' handler

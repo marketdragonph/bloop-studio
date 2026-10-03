@@ -61,6 +61,9 @@
     --duration-base: 160ms;
     --ease-out: cubic-bezier(0.2, 0, 0, 1);
 
+    /* The top bar is also the window's title bar: src/main/window-chrome.js draws Windows' controls at this height. */
+    --topbar-height: 3.5rem;
+
     --z-sticky: 40;
     --z-modal: 50;
     --z-toast: 9999;

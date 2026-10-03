@@ -18,7 +18,7 @@ function validate(body) {
     return errors;
 }
 
-export function settingsRoutes({ views, settings }) {
+export function settingsRoutes({ views, settings, onThemeChange }) {
     const routes = new Hono();
 
     const page = async (c, extra = {}) =>
@@ -64,6 +64,7 @@ export function settingsRoutes({ views, settings }) {
         const { theme } = await c.req.json();
         if (!THEMES.includes(theme)) return c.json({ error: 'Unknown theme.' }, 422);
         settings.update({ theme });
+        onThemeChange(theme); // the window controls in the top bar follow the theme
         return c.json({ theme });
     });
 
