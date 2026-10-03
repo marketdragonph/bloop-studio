@@ -11,7 +11,8 @@ Anyone can download the installer (and could unpack its JavaScript); it contains
 ## How it works
 
 - `npm run dist` stamps each build with a date version (`2026.1004.1530`) that always compares higher.
-- `.github/workflows/release.yml` (manual *Run workflow* or a `release-*` tag) builds on `windows-latest`,
+- `.github/workflows/release.yml` (every push to `main` that changes the app, a manual *Run workflow*, or a
+  `release-*` tag; a newer push cancels an older run) builds on `windows-latest`,
   then uploads the installer, `latest.yml` and the blockmap with the GitHub CLI and the `RELEASES_TOKEN`
   secret: a draft release first, uploads retried up to 3 times, published as Latest only when all are up.
   Installed apps read the feed from `package.json` → `build.publish`.

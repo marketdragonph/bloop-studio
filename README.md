@@ -175,8 +175,11 @@ npm run dist           # Windows installer in dist/
 Installers are published to the **public** repo `marketdragonph/bloop-studio-releases`. The code stays in
 this private repo. Installed apps update from those releases (electron-updater, `package.json` → `build.publish`).
 
-1. Push your changes to `main`.
-2. GitHub → this repo → **Actions → Release → Run workflow**, or push a tag named `release-<anything>`.
+1. Push your changes to `main`. That's it: the **Release** workflow runs by itself for any push that
+   changes the app. Pushes that only touch docs, Markdown files or tests don't release. If you push again
+   while a release is building, the older run is cancelled and only the newest code is published.
+2. To release by hand anyway: GitHub → this repo → **Actions → Release → Run workflow**, or push a tag
+   named `release-<anything>`.
 3. The workflow builds on Windows and publishes `Bloop-Studio-Setup-<version>.exe`, `latest.yml` and the
    blockmap as a release. Within a few hours every installed app shows **Restart to update**.
 

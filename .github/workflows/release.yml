@@ -2,7 +2,8 @@
 # marketdragonph/bloop-studio-releases (package.json "build.publish" points installed apps there).
 # The code stays in this repo; only the installer, latest.yml and the blockmap are published.
 #
-# Run it: Actions → Release → Run workflow, or push a tag named release-<anything>.
+# Runs by itself on every push to main that changes the app (docs, README and tests alone don't
+# release), and on demand: Actions → Release → Run workflow, or a tag named release-<anything>.
 # Needs the secret RELEASES_TOKEN: a fine-grained token with Contents: read and write on
 # bloop-studio-releases only (see README → Releasing).
 name: Release
@@ -10,14 +11,22 @@ name: Release
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ['release-*']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'tests/**'
+      - '.gitignore'
 
 permissions:
   contents: read
 
+# Pushes in quick succession: the newer run cancels the older one, so only the latest code is
+# published. A cancelled run leaves at most a draft release, which installed apps never see.
 concurrency:
   group: release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
