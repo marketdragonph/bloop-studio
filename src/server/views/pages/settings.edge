@@ -80,6 +80,12 @@
       </div>
     @end
 
+    @component('components/plate', { heading: 'App', labelledBy: 'app-h' })
+      <p class="plate-note">Updates download in the background from the public Bloop Studio releases, then wait for you to restart.</p>
+      <div id="update-about" hx-get="/app/update/about" hx-trigger="load" hx-swap="innerHTML" aria-live="polite"></div>
+      <p class="plate-note">Open-source components and their licenses: THIRD-PARTY-NOTICES.txt in the install folder.</p>
+    @end
+
     <div class="row row--end">
       <button type="submit" class="ae-key ae-key--accent">Save settings</button>
     </div>

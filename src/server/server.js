@@ -21,6 +21,7 @@ import { engineRoutes } from './routes/engine.js';
 import { spacesRoutes } from './routes/spaces.js';
 import { generationRoutes } from './routes/generation.js';
 import { directorRoutes } from './routes/director.js';
+import { appUpdateRoutes, NO_UPDATES } from './routes/app-update.js';
 import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
 
@@ -30,7 +31,7 @@ const explorerReveal = async (fullPath) => {
     spawn('explorer.exe', [`/select,${fullPath}`], { detached: true, stdio: 'ignore' }).unref();
 };
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal }) {
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, updates = NO_UPDATES }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -43,7 +44,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -52,6 +53,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/', homeRoutes(deps));
     app.route('/settings', settingsRoutes(deps));
     app.route('/engine', engineRoutes(deps));
+    app.route('/app/update', appUpdateRoutes(deps));
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
     app.route('/', directorRoutes(deps));

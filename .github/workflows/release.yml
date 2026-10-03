@@ -1,0 +1,41 @@
+# Builds the Windows installer and publishes it as a GitHub Release in the PUBLIC repo
+# marketdragonph/bloop-studio-releases (package.json "build.publish"). Installed apps update from there.
+# The code stays in this private repo; only the installer, latest.yml and the blockmap are published.
+#
+# Run it: Actions → Release → Run workflow, or push a tag named release-<anything>.
+# Needs the secret RELEASES_TOKEN: a fine-grained token with Contents: read and write on
+# bloop-studio-releases only (see README → Releasing).
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['release-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build and publish
+        run: npm run dist
+        env:
+          PUBLISH: always
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          # Date versions use this clock: UTC+8, like the team's PCs.
+          TZ: Asia/Manila

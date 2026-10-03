@@ -3,6 +3,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { createServer } from '../server/server.js';
 import { SettingsStore, settingsPath } from './settings-store.js';
+import { createUpdater } from './updater.js';
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -10,7 +11,12 @@ let mainWindow = null;
 
 async function boot() {
     const settings = new SettingsStore(settingsPath(app.getPath('userData')));
-    const { url } = await createServer({ settings, dataDir: app.getPath('userData'), reveal: (fullPath) => shell.showItemInFolder(fullPath) });
+    const { url } = await createServer({
+        settings,
+        dataDir: app.getPath('userData'),
+        reveal: (fullPath) => shell.showItemInFolder(fullPath),
+        updates: createUpdater(app),
+    });
 
     mainWindow = new BrowserWindow({
         width: 1440,

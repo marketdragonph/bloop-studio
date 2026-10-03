@@ -1,29 +1,30 @@
-# Auto-update from GitHub — PLANNED
+# Auto-update from GitHub — PARTIAL
 
-Installed copies should update themselves instead of someone copying a new installer to each PC.
+Installed copies update themselves instead of someone copying a new installer to each PC.
 
-## How it would work
+## Decision
 
-- `npm run dist` already stamps each build with a date version (`2026.1004.1530`) that always compares
-  higher, which is what an updater needs.
-- **Build in GitHub Actions** on a Windows runner when a `v*` tag is pushed (or on demand), and publish the
-  installer plus `latest.yml` to a GitHub Release.
-- **electron-updater** in the app checks that release feed on launch, downloads in the background and offers
-  *Restart to update*.
+Releases are published to a separate **public** repo, `marketdragonph/bloop-studio-releases`, holding only
+installers. The code stays private in `marketdragonph/bloop-studio`; the app needs no GitHub token to update.
+Anyone can download the installer (and could unpack its JavaScript); it contains no secrets.
 
-## Decision needed: where the releases live
+## How it works
 
-`marketdragonph/bloop-studio` is private. electron-updater can read a private repo's releases only with a
-GitHub token built into the app, and anyone with the installer could extract that token.
-
-- [ ] **Option A (recommended)**: a separate *public* repo (e.g. `bloop-studio-releases`) holding only
-      installers; the code stays private.
-- [ ] **Option B**: a fine-grained read-only token in the app, scoped to the releases repo only.
-- [ ] **Option C**: a shared network folder or S3/R2 bucket as the update feed (no GitHub).
+- `npm run dist` stamps each build with a date version (`2026.1004.1530`) that always compares higher.
+- `.github/workflows/release.yml` (manual *Run workflow* or a `release-*` tag) builds on `windows-latest`
+  with `PUBLISH=always` and the `RELEASES_TOKEN` secret, and publishes the installer, `latest.yml` and the
+  blockmap as a GitHub Release in the public repo (`package.json` → `build.publish`, `releaseType: release`).
+- `src/main/updater.js` (electron-updater) checks on launch and every 4 hours, downloads in the background,
+  and installs on *Restart to update* (top bar) or when the app quits.
+- `scripts/third-party-notices.mjs` writes `THIRD-PARTY-NOTICES.txt` into every build.
 
 ## Checklist
 
-- [ ] Pick where releases live
-- [ ] `.github/workflows/release.yml`: build on `windows-latest`, publish installer + `latest.yml`
-- [ ] Add `electron-updater`; check on launch; *Restart to update* in the top bar
+- [x] Decide where releases live (public installers-only repo)
+- [x] `.github/workflows/release.yml`
+- [x] `electron-updater`: check on launch and every 4 h; *Restart to update* key; Settings → App
+- [x] Third-party notices generated into every build; license notes in the releases repo README
+- [ ] Create `marketdragonph/bloop-studio-releases` (public) with `docs/releases-repo/README.md` (owner)
+- [ ] Add the `RELEASES_TOKEN` secret (fine-grained, Contents read/write on the releases repo only) (owner)
+- [ ] First published release, and one update seen end to end on an installed PC
 - [ ] Code signing (optional; without it Windows SmartScreen warns on first install)

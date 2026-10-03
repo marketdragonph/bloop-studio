@@ -30,6 +30,7 @@
              hx-get="/engine/status" hx-trigger="load, every 5s" hx-swap="innerHTML" aria-live="polite">
             @include('partials/engine-status')
         </div>
+        <div id="app-update" hx-get="/app/update" hx-trigger="load, every 60s" hx-swap="innerHTML" aria-live="polite"></div>
         <button type="button" class="ae-key ae-key--square" x-data="ThemeToggle" @click="cycle()" :aria-label="label" :title="label">
             <span x-show="theme === 'dark'">{{{ icon('moon') }}}</span>
             <span x-show="theme === 'light'" x-cloak>{{{ icon('sun') }}}</span>

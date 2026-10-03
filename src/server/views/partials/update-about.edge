@@ -1,0 +1,18 @@
+{{-- Settings: this version and the updater's state. --}}
+@let(states = {
+  dev: 'Development run: updates come with installed builds.',
+  idle: 'Not checked yet.',
+  checking: 'Checking for updates…',
+  downloading: `Downloading version ${update.available} (${Math.round(update.progress * 100)}%).`,
+  ready: `Version ${update.available} is ready. Use Restart to update in the top bar.`,
+  current: 'Up to date.',
+  error: `Could not check for updates: ${update.error}`,
+})
+<p class="plate-note">Version {{ update.version }} · {{ states[update.status] ?? update.status }}</p>
+@if(update.status !== 'dev')
+  <div class="row">
+    <button type="button" class="ae-key ae-key--sm" hx-post="/app/update/check" hx-target="#update-about" hx-swap="innerHTML">
+      Check for updates
+    </button>
+  </div>
+@end

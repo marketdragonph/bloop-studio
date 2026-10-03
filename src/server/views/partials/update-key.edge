@@ -1,0 +1,9 @@
+{{-- Top bar: nothing until a new version has downloaded, then one orange key to restart into it. --}}
+@if(update.status === 'ready')
+  <button type="button" class="ae-key ae-key--sm ae-key--accent"
+          hx-post="/app/update/install" hx-target="#app-update" hx-swap="innerHTML"
+          hx-confirm="Restart Bloop Studio now to install version {{ update.available }}? Renders in progress are re-queued after the restart."
+          title="Version {{ update.available }} is downloaded">
+    Restart to update
+  </button>
+@end

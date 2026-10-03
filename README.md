@@ -23,11 +23,16 @@ MarketDragon.
 
 ## Install
 
-1. Get the latest `Bloop-Studio-Setup-<version>.exe` from your team.
-2. Run it. You can choose the install folder; it adds Desktop and Start menu shortcuts.
-3. To update, run a newer installer over the old one. Your boards, settings and renders are kept.
+1. Download the latest `Bloop-Studio-Setup-<version>.exe` from
+   [github.com/marketdragonph/bloop-studio-releases/releases](https://github.com/marketdragonph/bloop-studio-releases/releases/latest).
+2. Run it. The installer is not code-signed yet, so Windows may say *"Windows protected your PC"*:
+   choose **More info → Run anyway**. You can choose the install folder; it adds Desktop and Start menu shortcuts.
+3. **Updates are automatic.** The app checks for a new version when it starts and every few hours,
+   downloads it in the background, and shows **Restart to update** in the top bar. Restart when it suits
+   you; closing the app also installs it. Settings → App shows your version and has **Check for updates**.
 
-Versions are dates: `2026.1004.1530` was built on 4 October 2026 at 15:30.
+Your boards, settings and renders are kept across updates. Versions are dates: `2026.1004.1530` was built
+on 4 October 2026 at 15:30.
 
 ## Set up ComfyUI and models
 
@@ -143,6 +148,7 @@ model file for, and uses the best of those. So:
 | "…cannot use the last frame picture" | The chosen model has no first→last mode (Wan), or there is no first frame wired. |
 | Renders are very slow or the PC stalls | Use 480p and shorter clips. Close other GPU-heavy apps. 768p H3 nearly fills 12 GB. |
 | "Workflow rejected" | ComfyUI or a model changed since the last check. Press Re-detect models and try again. |
+| Settings → App says it could not check for updates | You're offline, or no release is published yet. The app keeps working; it tries again later. |
 
 ## For developers
 
@@ -160,3 +166,24 @@ npm run dist           # Windows installer in dist/
   [docs/plans/engine-variants.md](docs/plans/engine-variants.md).
 - `node scripts/try-preset.mjs <id> "<prompt>" [first.png[,last.png]]` renders one workflow straight
   against ComfyUI.
+
+### Releasing
+
+Installers are published to the **public** repo `marketdragonph/bloop-studio-releases`. The code stays in
+this private repo. Installed apps update from those releases (electron-updater, `package.json` → `build.publish`).
+
+1. Push your changes to `main`.
+2. GitHub → this repo → **Actions → Release → Run workflow**, or push a tag named `release-<anything>`.
+3. The workflow builds on Windows and publishes `Bloop-Studio-Setup-<version>.exe`, `latest.yml` and the
+   blockmap as a release. Within a few hours every installed app shows **Restart to update**.
+
+One-time setup:
+
+- Create the public repo `marketdragonph/bloop-studio-releases` and put
+  [docs/releases-repo/README.md](docs/releases-repo/README.md) in it as its README.
+- Create a fine-grained personal access token: resource owner **marketdragonph**, repository access
+  **only `bloop-studio-releases`**, permission **Contents: Read and write**. Save it in this repo under
+  **Settings → Secrets and variables → Actions** as `RELEASES_TOKEN`.
+
+Every build writes `THIRD-PARTY-NOTICES.txt` (all shipped open-source packages and their license texts)
+next to the app. `npm run dist` alone builds locally without publishing.
