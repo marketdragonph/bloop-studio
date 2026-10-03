@@ -77,9 +77,15 @@ export class JobsRepository {
      * After a crash or restart, work that was mid-flight is queued again rather than lost.
      * Returns the ComfyUI prompt ids those jobs had, so the caller can drop the orphaned runs.
      */
+    /**
+     * Running jobs a restart cut off go back to the queue. A ComfyUI prompt is an orphan to cancel; a
+     * bloop cloud render ("bloop:<id>") is kept, so the re-run polls it instead of paying for it twice.
+     */
     requeueInterrupted() {
-        const orphans = this.db.prepare("SELECT comfy_prompt_id AS id FROM jobs WHERE status = 'running' AND comfy_prompt_id IS NOT NULL").all().map((row) => row.id);
-        const changes = this.db.prepare("UPDATE jobs SET status = 'queued', comfy_prompt_id = NULL, progress = 0 WHERE status = 'running'").run().changes;
+        const orphans = this.db.prepare("SELECT comfy_prompt_id AS id FROM jobs WHERE status = 'running' AND comfy_prompt_id IS NOT NULL AND comfy_prompt_id NOT LIKE 'bloop:%'").all().map((row) => row.id);
+        const changes = this.db.prepare(`UPDATE jobs SET status = 'queued', progress = 0,
+            comfy_prompt_id = CASE WHEN comfy_prompt_id LIKE 'bloop:%' THEN comfy_prompt_id ELSE NULL END
+            WHERE status = 'running'`).run().changes;
         return { changes, orphans };
     }
 

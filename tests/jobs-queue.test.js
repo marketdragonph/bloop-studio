@@ -74,3 +74,12 @@ test('a restart re-queues running work and hands back its orphaned ComfyUI promp
     assert.deepEqual(jobs.requeueInterrupted(), { changes: 1, orphans: ['prompt-abc'] });
     assert.equal(jobs.find(job.id).status, 'queued');
 });
+
+test('a restart keeps a bloop cloud render id, so the re-run polls it instead of paying again', () => {
+    const { spaces, jobs, space, queue } = fresh();
+    queue(spaces.createNode(space.id, { type: 'video' }));
+    const job = jobs.claimNext();
+    jobs.setPromptId(job.id, 'bloop:77');
+    assert.deepEqual(jobs.requeueInterrupted(), { changes: 1, orphans: [] });
+    assert.equal(jobs.find(job.id).comfy_prompt_id, 'bloop:77');
+});

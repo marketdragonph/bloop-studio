@@ -1,6 +1,8 @@
 // The single GPU worker: claims queued jobs one at a time and runs them through the pipeline.
 import { runPipeline } from './pipeline.js';
 import { GENERATION_STAGES } from './stages.js';
+import { CLOUD_STAGES } from './cloud-stages.js';
+import { cloudModelKey, isCloudFamily } from './cloud-models.js';
 
 const IDLE_POLL_MS = 1000;
 const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b' };
@@ -16,7 +18,7 @@ function jobFamily(job) {
 
 export class GenerationWorker {
     constructor(deps) {
-        this.deps = deps; // { jobs, spaces, engine, media, events, comfy() }
+        this.deps = deps; // { jobs, spaces, engine, media, events, comfy(), account }
         this.current = null;
         this.stopped = false;
         this.lastFamily = null; // model family of the last render (zimage, wan5b, h3)
@@ -59,7 +61,10 @@ export class GenerationWorker {
         events.queue(jobs.activeQueue());
 
         try {
-            await runPipeline(GENERATION_STAGES, ctx);
+            // A bloop model renders on bloop; one this PC is no longer offered falls back to the
+            // card's local default, exactly as the card's Model list shows it.
+            ctx.cloud = await this.#offersCloud(node);
+            await runPipeline(ctx.cloud ? CLOUD_STAGES : GENERATION_STAGES, ctx);
             jobs.finish(job.id, 'succeeded');
             report({ status: 'done', progress: 1, ...ctx.result });
         } catch (error) {
@@ -87,7 +92,15 @@ export class GenerationWorker {
             this.deps.events.queue(jobs.activeQueue());
             return true;
         }
-        if (this.current?.job.id === job.id && this.current.promptId) await this.current.deps.comfy.cancel(this.current.promptId);
+        if (this.current?.job.id === job.id && this.current.cloud) this.current.canceled = true; // stop waiting; bloop keeps it
+        else if (this.current?.job.id === job.id && this.current.promptId) await this.current.deps.comfy.cancel(this.current.promptId);
         return true;
+    }
+
+    async #offersCloud(node) {
+        const family = node.settings?.family;
+        if (!isCloudFamily(family) || !this.deps.account) return false;
+        const models = await this.deps.account.models();
+        return Boolean(models?.[node.type]?.some((m) => m.key === cloudModelKey(family)));
     }
 }

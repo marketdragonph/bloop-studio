@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 
-const SECRET_KEYS = new Set(['anthropicApiKey', 'openaiApiKey']);
+const SECRET_KEYS = new Set(['anthropicApiKey', 'openaiApiKey', 'bloopToken']);
 
 const DEFAULTS = {
     comfyUrl: 'http://127.0.0.1:8188',
@@ -18,6 +18,10 @@ const DEFAULTS = {
     // 'maximized' (window controls in the top bar) or 'fullscreen' (F11), restored on launch. Replaces the
     // old `fullscreen` key, which defaulted to true and left no visible way to minimize or close.
     windowMode: 'maximized',
+    // Optional bloop account (cloud models on credits). The token is a secret; the account is the
+    // last name/plan/credits bloop reported, shown while offline.
+    bloopUrl: 'https://marketdragon.ph',
+    bloopAccount: null,
 };
 
 export class SettingsStore {

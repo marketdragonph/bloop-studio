@@ -1,0 +1,42 @@
+{{-- Settings → Bloop account. While the browser sign-in is open it re-polls itself every 2 s
+     (without asking bloop each time) until the account arrives, the person cancels, or it times out. --}}
+@if(status === 'waiting')
+  <p class="plate-note">
+    Finish signing in in your browser, then press Allow.
+    <span class="ae-sensor-dot update-pulse" aria-hidden="true"></span>
+  </p>
+  <span hx-get="/account?refresh=0" hx-trigger="load delay:2s" hx-target="#bloop-account" hx-swap="innerHTML"></span>
+  <div class="row">
+    <button type="button" class="ae-key ae-key--sm" hx-post="/account/cancel" hx-target="#bloop-account" hx-swap="innerHTML">Cancel</button>
+  </div>
+@elseif(status === 'signed-in')
+  <p class="plate-note">
+    Signed in as <strong>{{ account.name }}</strong> ({{ account.email }})
+    · {{ account.plan ?? 'No plan' }} · {{ account.credits ?? 0 }} credits
+  </p>
+  @if(account.paid)
+    <p class="plate-note">Bloop models are on your cards' Model list, marked with their credit price.</p>
+  @else
+    <p class="plate-note">
+      Bloop models need Lite or above. Your own GPU keeps working as before.
+      @if(account.upgrade_url)
+        <a href="{{ account.upgrade_url }}" target="_blank" rel="noopener">See plans</a>
+      @end
+    </p>
+  @end
+  @if(error)
+    @!component('components/alert', { tone: 'warn', message: error })
+  @end
+  <div class="row">
+    <button type="button" class="ae-key ae-key--sm" hx-get="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Refresh</button>
+    <button type="button" class="ae-key ae-key--sm" hx-delete="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-confirm="Sign out of bloop on this PC?">Sign out</button>
+  </div>
+@else
+  <p class="plate-note">Optional. Sign in to add bloop's cloud models to your cards (Lite plan and up, paid with your bloop credits).</p>
+  @if(error)
+    @!component('components/alert', { tone: 'warn', message: error })
+  @end
+  <div class="row">
+    <button type="button" class="ae-key ae-key--accent ae-key--sm" hx-post="/account/sign-in" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Sign in</button>
+  </div>
+@end

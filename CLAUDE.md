@@ -3,7 +3,9 @@
 Offline desktop version of bloop's **Spaces** and **Director/Forge**. Private project, not open source.
 Electron + Node (plain JavaScript, ESM) + Hono + Edge.js templates + HTMX + Alpine.js + SQLite.
 All generation runs on a local **ComfyUI** (default `http://127.0.0.1:8188`). The Director's LLM is
-**Claude or OpenAI**, chosen in Settings with the user's own key. No credits, no Kie, no teams, no payments.
+**Claude or OpenAI**, chosen in Settings with the user's own key. No teams, no payments in the app.
+The one exception is the **optional bloop account** (docs/plans/bloop-account.md): signed in on Lite and up,
+bloop's cloud models render on bloop with the person's bloop credits. Everything else stays local and free.
 
 ## Behavior
 

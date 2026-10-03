@@ -80,6 +80,16 @@
       </div>
     @end
 
+    @component('components/plate', { heading: 'Bloop account', labelledBy: 'bloop-h' })
+      <div id="bloop-account" hx-get="/account" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        <p class="plate-note">Reading your bloop account…</p>
+      </div>
+      @!component('components/field', {
+        name: 'bloopUrl', label: 'bloop address', value: old?.bloopUrl ?? settings.bloopUrl,
+        hint: 'Where you sign in. Changing it signs this PC out.', error: errors.bloopUrl
+      })
+    @end
+
     @component('components/plate', { heading: 'App', labelledBy: 'app-h' })
       <p class="plate-note">Updates download in the background from the public Bloop Studio releases, then wait for you to restart.</p>
       <div id="update-about" hx-get="/app/update/about" hx-trigger="load" hx-swap="innerHTML" aria-live="polite"></div>

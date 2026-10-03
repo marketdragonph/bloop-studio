@@ -8,6 +8,7 @@ MarketDragon.
 - [Install](#install)
 - [Set up ComfyUI and models](#set-up-comfyui-and-models)
 - [First run](#first-run)
+- [Bloop account (optional)](#bloop-account-optional)
 - [Using the board](#using-the-board)
 - [Which models your PC uses](#which-models-your-pc-uses)
 - [Troubleshooting](#troubleshooting)
@@ -93,6 +94,20 @@ After adding models, restart ComfyUI, then press **Re-detect models** in Setting
 4. **Director** (optional): pick Claude or OpenAI and paste your API key. Keys are encrypted with Windows
    and only ever sent to that provider.
 5. Press **Save settings**.
+
+## Bloop account (optional)
+
+Bloop Studio is free and renders on your own GPU. If you have a bloop account on **Lite or above**,
+you can also use bloop's cloud models, paid with your bloop credits:
+
+1. **Settings → Bloop account → Sign in.** Your browser opens bloop. Log in the way you always do
+   (Google, TikTok, Facebook or email) and press **Allow**.
+2. Back in Bloop Studio, Settings shows your plan and credits.
+3. On any Image or Video card, the **Model** list now ends with bloop's models, marked
+   *bloop cloud · from N credits*. Pick one and press **Generate**. The result is saved like any other take.
+
+If a cloud render fails, the card says why and whether your credits were returned. *Sign out* removes
+the sign-in from this PC; you can also remove it on bloop.
 
 ## Using the board
 

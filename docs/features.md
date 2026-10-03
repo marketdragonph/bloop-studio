@@ -48,10 +48,19 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - A chat panel per board that builds the board for you with Claude or OpenAI (your own key): cast cards and
   character sheets, locations, then shots left to right, all wired. It never renders; you press Generate.
 
+## Bloop account (optional)
+
+- **Sign in** through the browser (any bloop login: Google, TikTok, Facebook, email); the app never
+  sees a password. Settings shows the name, plan and credits; *Refresh* and *Sign out*.
+- On **Lite and up**, bloop's curated cloud models join every card's Model list after the local ones,
+  marked "bloop cloud · from N credits", each with only the knobs it takes. Renders run on bloop with
+  the person's credits and come back as ordinary takes; a failed one says whether the credits came back.
+- Plan: [docs/plans/bloop-account.md](plans/bloop-account.md).
+
 ## Settings
 
 - ComfyUI address with *Test connection*, media folder, Director provider, model names and API keys
-  (encrypted with Windows; only ever sent to their provider), light/dark/system theme.
+  (encrypted with Windows; only ever sent to their provider), bloop address, light/dark/system theme.
 
 ## App
 
