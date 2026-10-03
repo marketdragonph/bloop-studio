@@ -1,8 +1,7 @@
 // Builds the Windows installer with an automatic date version, so nobody manages version numbers.
 // The version is YEAR.MONTHDAY.HOURMINUTE (e.g. 2026.1002.1435): later builds always compare higher,
 // which is all the auto-updater needs. package.json's own "version" is left alone.
-// Usage: npm run dist                     (local installer in dist/)
-//        PUBLISH=always GH_TOKEN=… npm run dist   (CI: also publishes a GitHub Release, see package.json "publish")
+// Usage: npm run dist   (installer, blockmap and latest.yml in dist/; the Release workflow uploads them)
 import { writeFileSync } from 'node:fs';
 import { build, Platform } from 'electron-builder';
 import { NOTICES_PATH, productionPackages, renderNotices } from './third-party-notices.mjs';
@@ -16,13 +15,12 @@ export function dateVersion(at = new Date()) {
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
     const version = dateVersion();
-    const publish = process.env.PUBLISH === 'always' ? 'always' : 'never';
     writeFileSync(NOTICES_PATH, renderNotices(productionPackages()));
-    console.log(`Building Bloop Studio ${version} (publish: ${publish})`);
+    console.log(`Building Bloop Studio ${version}`);
     await build({
         targets: Platform.WINDOWS.createTarget(),
         config: { extraMetadata: { version } },
-        publish,
+        publish: 'never', // .github/workflows/release.yml publishes (draft first, with retries)
     });
     console.log(`Done: dist/Bloop-Studio-Setup-${version}.exe`);
 }

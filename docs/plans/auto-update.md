@@ -11,9 +11,12 @@ Anyone can download the installer (and could unpack its JavaScript); it contains
 ## How it works
 
 - `npm run dist` stamps each build with a date version (`2026.1004.1530`) that always compares higher.
-- `.github/workflows/release.yml` (manual *Run workflow* or a `release-*` tag) builds on `windows-latest`
-  with `PUBLISH=always` and the `RELEASES_TOKEN` secret, and publishes the installer, `latest.yml` and the
-  blockmap as a GitHub Release in the public repo (`package.json` → `build.publish`, `releaseType: release`).
+- `.github/workflows/release.yml` (manual *Run workflow* or a `release-*` tag) builds on `windows-latest`,
+  then uploads the installer, `latest.yml` and the blockmap with the GitHub CLI and the `RELEASES_TOKEN`
+  secret: a draft release first, uploads retried up to 3 times, published as Latest only when all are up.
+  Installed apps read the feed from `package.json` → `build.publish`.
+- Run #1 (electron-builder publishing directly) created `v2026.1004.534` but uploaded only the blockmap;
+  hence the draft-first upload.
 - `src/main/updater.js` (electron-updater) checks on launch and every 4 hours, downloads in the background,
   and installs on *Restart to update* (top bar) or when the app quits.
 - `scripts/third-party-notices.mjs` writes `THIRD-PARTY-NOTICES.txt` into every build.
