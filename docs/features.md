@@ -10,7 +10,8 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   - Image card: **Words** (any number of text cards) and **Picture** (one reference image).
   - Video card: **Words**, **First frame** and **Last frame** (one picture each).
   - Words are folded in order: the shot text first, then `Cast · …` cards, then `Location · …` cards.
-- **Upload cards** take a PNG, JPEG or WebP picture or an MP4 or WebM clip (up to 500 MB) to wire onward.
+- **Upload cards** take a PNG, JPEG or WebP picture or an MP4 or WebM clip (up to 500 MB) to wire onward:
+  drop a file on the card, or click it to choose one.
 - **Media**: full-screen viewer, download under the card's name, and *Show in folder* (File Explorer).
 
 ## Rendering
