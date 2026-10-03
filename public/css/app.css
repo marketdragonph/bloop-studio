@@ -78,6 +78,18 @@ a { color: var(--accent-text); }
 .status-light--fault .status-light__dot { background: var(--status-alert); }
 .status-light--fault .ae-readout { color: var(--status-alert-text); }
 
+/* ── App updates (Settings): blue = in progress ── */
+.update-pulse {
+    display: inline-block;
+    width: 0.4375rem;
+    height: 0.4375rem;
+    margin-left: var(--space-1);
+    border-radius: 999px;
+    background: var(--sensor);
+    vertical-align: middle;
+}
+.update-progress { width: min(20rem, 100%); accent-color: var(--sensor); }
+
 /* ── Engine profile (Settings) ── */
 .engine-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .engine-list__item {

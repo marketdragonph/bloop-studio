@@ -1,17 +1,31 @@
-{{-- Settings: this version and the updater's state. --}}
+{{-- Settings: this version and the updater's state. While checking or downloading it re-polls
+     itself every 2 s, so the line moves on its own until the update is ready (or fails). --}}
+@let(busy = ['checking', 'downloading'].includes(update.status))
+@let(percent = Math.round(update.progress * 100))
 @let(states = {
   dev: 'Development run: updates come with installed builds.',
   idle: 'Not checked yet.',
   checking: 'Checking for updates…',
-  downloading: `Downloading version ${update.available} (${Math.round(update.progress * 100)}%).`,
-  ready: `Version ${update.available} is ready. Use Restart to update in the top bar.`,
+  downloading: `Downloading version ${update.available}${percent > 0 ? ` (${percent}%)` : '…'}`,
+  ready: `Version ${update.available} is ready. Use Restart to update in the top bar, or close the app to install it.`,
   current: 'Up to date.',
   error: `Could not check for updates: ${update.error}`,
 })
-<p class="plate-note">Version {{ update.version }} · {{ states[update.status] ?? update.status }}</p>
-@if(update.status !== 'dev')
+<p class="plate-note">
+  Version {{ update.version }} · {{ states[update.status] ?? update.status }}
+  @if(busy)
+    <span class="ae-sensor-dot update-pulse" aria-hidden="true"></span>
+  @end
+</p>
+@if(update.status === 'downloading' && percent > 0)
+  <progress class="update-progress" max="100" value="{{ percent }}" aria-label="Update download">{{ percent }}%</progress>
+@end
+@if(busy)
+  <span hx-get="/app/update/about" hx-trigger="load delay:2s" hx-target="#update-about" hx-swap="innerHTML"></span>
+@end
+@if(!['dev', 'checking', 'downloading'].includes(update.status))
   <div class="row">
-    <button type="button" class="ae-key ae-key--sm" hx-post="/app/update/check" hx-target="#update-about" hx-swap="innerHTML">
+    <button type="button" class="ae-key ae-key--sm" hx-post="/app/update/check" hx-target="#update-about" hx-swap="innerHTML" hx-disabled-elt="this">
       Check for updates
     </button>
   </div>

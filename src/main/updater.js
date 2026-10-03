@@ -40,7 +40,11 @@ export function createUpdater(app) {
         }
     });
 
-    const check = () => autoUpdater.checkForUpdates().catch(() => {}); // failures land in the 'error' handler
+    const check = () => {
+        // Say "checking" at once (the event comes later), but never step back from a download in hand.
+        if (!['downloading', 'ready'].includes(state.status)) set({ status: 'checking', error: null });
+        return autoUpdater.checkForUpdates().catch(() => {}); // failures land in the 'error' handler
+    };
     check();
     setInterval(check, CHECK_EVERY_MS).unref();
 

@@ -16,8 +16,9 @@ export function appUpdateRoutes({ views, updates }) {
     routes.get('/', (c) => render(c, 'partials/update-key'));
     routes.get('/about', (c) => render(c, 'partials/update-about'));
 
-    routes.post('/check', async (c) => {
-        await updates.check();
+    // Answers at once with "Checking…"; the line then polls itself until the check or download settles.
+    routes.post('/check', (c) => {
+        updates.check();
         return render(c, 'partials/update-about');
     });
 
