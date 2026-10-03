@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
-  <!-- Small cut (16–32 px): the plate edge to edge, two cards and one thick wire, so it still reads in the taskbar. -->
-  <path d="M0 0 H160 V124 L124 160 H0 Z" fill="#111113"/>
-  <path d="M18 18 H76 V58 L64 70 H18 Z" fill="#F97316"/>
-  <path d="M80 92 H142 V124 L130 136 H80 Z" fill="#2563EB"/>
-  <path d="M47 70 V113 H80" stroke="#F4F4F5" stroke-width="14" fill="none"/>
+  <!-- Small cut (16–32 px): the plate edge to edge and a heavier B with wider counters, no stencil bridge
+       or socket, so it still reads in the taskbar. -->
+  <path d="M0 0 H160 V124 L124 160 H0 Z" fill="#F97316"/>
+  <path fill="#111113" fill-rule="evenodd" d="
+    M36 22 H104 L122 40 V64 L110 76 L126 92 V118 L106 138 H36 Z
+    M62 44 V66 H94 L98 62 V48 L94 44 Z
+    M62 86 V116 H98 L102 112 V90 L98 86 Z"/>
 </svg>

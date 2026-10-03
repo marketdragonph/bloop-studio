@@ -5,18 +5,16 @@
   <rect width="164" height="314" fill="#09090b"/>
   <path d="M0 0 H164 V286 L136 314 H0 Z" fill="#111113"/>
   <path d="M8 8 H156 V282 L132 306 H8 Z" fill="none" stroke="#27272a" stroke-width="1"/>
+  <!-- The app icon (icon.svg), 100 px. -->
   <g transform="translate(32 44) scale(0.625)">
-    <path d="M14 14 H146 V118 L118 146 H14 Z" fill="#18181b"/>
-    <path d="M32 34 H70 V60 L62 68 H32 Z" fill="#F97316"/>
-    <path d="M90 34 H128 V60 L120 68 H90 Z" fill="none" stroke="#F4F4F5" stroke-width="5"/>
-    <path d="M58 96 H104 V122 L96 130 H58 Z" fill="none" stroke="#2563EB" stroke-width="5"/>
-    <path d="M70 51 H90" stroke="#F4F4F5" stroke-width="4" fill="none"/>
-    <path d="M51 68 V82 H76 V96" stroke="#F97316" stroke-width="4" fill="none"/>
-    <path d="M109 68 V82 H86 V96" stroke="#F4F4F5" stroke-width="4" fill="none"/>
+    <path d="M8 8 H152 V120 L120 152 H8 Z" fill="#F97316"/>
+    <path fill="#111113" fill-rule="evenodd" d="M44 32 H100 L114 46 V66 L106 74 L118 86 V112 L102 128 H44 Z M64 50 V66 H90 L94 62 V54 L90 50 Z M64 84 V110 H94 L98 106 V88 L94 84 Z"/>
+    <path d="M44 74 H64" stroke="#F97316" stroke-width="6"/>
+    <rect x="122" y="22" width="16" height="16" fill="#2563EB"/>
   </g>
-  <text x="82" y="178" text-anchor="middle" font-size="11" letter-spacing="4" fill="#F97316">BLOOP</text>
-  <text x="82" y="200" text-anchor="middle" font-size="17" letter-spacing="2" fill="#F4F4F5">STUDIO</text>
-  <path d="M40 214 H124" stroke="#F97316" stroke-width="2"/>
+  <!-- One wordmark, like the app's top bar. -->
+  <text x="82" y="190" text-anchor="middle" font-size="12" letter-spacing="2" fill="#F4F4F5">BLOOP STUDIO</text>
+  <path d="M40 206 H124" stroke="#F97316" stroke-width="2"/>
   <text x="82" y="262" text-anchor="middle" font-size="7" letter-spacing="2" fill="#8a8a93">SPACES · DIRECTOR</text>
   <circle cx="82" cy="278" r="3" fill="#2563EB"/>
 </svg>

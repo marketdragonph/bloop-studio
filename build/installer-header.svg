@@ -3,12 +3,10 @@
   <style>@font-face { font-family: Stencil; src: url(data:font/woff2;base64,__ORBITRON__) format('woff2'); font-weight: 700; }
     text { font-family: Stencil, sans-serif; font-weight: 700; }</style>
   <path d="M0 0 H150 V45 L138 57 H0 Z" fill="#111113"/>
+  <!-- The app icon's small cut (icon-small.svg), 40 px, then the wordmark on one line. -->
   <g transform="translate(8 8.5) scale(0.25)">
-    <path d="M0 0 H160 V124 L124 160 H0 Z" fill="#18181b"/>
-    <path d="M18 18 H76 V58 L64 70 H18 Z" fill="#F97316"/>
-    <path d="M80 92 H142 V124 L130 136 H80 Z" fill="#2563EB"/>
-    <path d="M47 70 V113 H80" stroke="#F4F4F5" stroke-width="14" fill="none"/>
+    <path d="M0 0 H160 V124 L124 160 H0 Z" fill="#F97316"/>
+    <path fill="#111113" fill-rule="evenodd" d="M36 22 H104 L122 40 V64 L110 76 L126 92 V118 L106 138 H36 Z M62 44 V66 H94 L98 62 V48 L94 44 Z M62 86 V116 H98 L102 112 V90 L98 86 Z"/>
   </g>
-  <text x="56" y="25" font-size="7" letter-spacing="2.5" fill="#F97316">BLOOP</text>
-  <text x="56" y="39" font-size="10" letter-spacing="1" fill="#F4F4F5">STUDIO</text>
+  <text x="56" y="32" font-size="8" letter-spacing="1" fill="#F4F4F5">BLOOP STUDIO</text>
 </svg>

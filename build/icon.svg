@@ -1,11 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
-  <!-- Bloop Studio app icon (B · wired cards): a cut-corner hangar plate holding three wired cards.
+  <!-- Bloop Studio app icon (stencil B): a dark, angular B on the orange cut-corner plate, matching the
+       BLOOP STUDIO wordmark. A stencil bridge splits the spine; the blue square is a card socket.
        Used at 48 px and up; icon-small.svg is the simplified cut for the taskbar and tray. -->
-  <path d="M14 14 H146 V118 L118 146 H14 Z" fill="#111113"/>
-  <path d="M32 34 H70 V60 L62 68 H32 Z" fill="#F97316"/>
-  <path d="M90 34 H128 V60 L120 68 H90 Z" fill="none" stroke="#F4F4F5" stroke-width="5"/>
-  <path d="M58 96 H104 V122 L96 130 H58 Z" fill="none" stroke="#2563EB" stroke-width="5"/>
-  <path d="M70 51 H90" stroke="#F4F4F5" stroke-width="4" fill="none"/>
-  <path d="M51 68 V82 H76 V96" stroke="#F97316" stroke-width="4" fill="none"/>
-  <path d="M109 68 V82 H86 V96" stroke="#F4F4F5" stroke-width="4" fill="none"/>
+  <path d="M8 8 H152 V120 L120 152 H8 Z" fill="#F97316"/>
+  <path fill="#111113" fill-rule="evenodd" d="
+    M44 32 H100 L114 46 V66 L106 74 L118 86 V112 L102 128 H44 Z
+    M64 50 V66 H90 L94 62 V54 L90 50 Z
+    M64 84 V110 H94 L98 106 V88 L94 84 Z"/>
+  <path d="M44 74 H64" stroke="#F97316" stroke-width="6"/>
+  <rect x="122" y="22" width="16" height="16" fill="#2563EB"/>
 </svg>
