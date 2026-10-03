@@ -13,12 +13,20 @@ function validate(body) {
     } catch {
         errors.comfyUrl = 'Enter a full address, e.g. http://127.0.0.1:8188';
     }
+    try {
+        const url = new URL(body.bloopUrl);
+        // The sign-in token goes here: plain http only for this PC (a local bloop for development).
+        const local = ['localhost', '127.0.0.1'].includes(url.hostname);
+        if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) errors.bloopUrl = 'Use an https:// address.';
+    } catch {
+        errors.bloopUrl = 'Enter a full address, e.g. https://marketdragon.ph';
+    }
     if (!body.mediaDir?.trim()) errors.mediaDir = 'Choose a folder for generated media.';
     if (!PROVIDERS.includes(body.llmProvider)) errors.llmProvider = 'Pick Claude or OpenAI.';
     return errors;
 }
 
-export function settingsRoutes({ views, settings, onThemeChange }) {
+export function settingsRoutes({ views, settings, account, onThemeChange }) {
     const routes = new Hono();
 
     const page = async (c, extra = {}) =>
@@ -40,7 +48,12 @@ export function settingsRoutes({ views, settings, onThemeChange }) {
         if (llmProvider === 'anthropic' && !claudeKey && openaiKey) llmProvider = 'openai';
         if (llmProvider === 'openai' && !openaiKey && claudeKey) llmProvider = 'anthropic';
 
+        // A sign-in belongs to the bloop it was made on.
+        const bloopUrl = body.bloopUrl.trim().replace(/\/+$/, '');
+        if (bloopUrl !== settings.get('bloopUrl')) await account.signOut();
+
         settings.update({
+            bloopUrl,
             comfyUrl: body.comfyUrl.trim(),
             mediaDir: body.mediaDir.trim(),
             llmProvider,

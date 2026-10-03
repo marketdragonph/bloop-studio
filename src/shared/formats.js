@@ -96,6 +96,9 @@ export function knobInputs(family, settings = {}) {
 
 /** CSS aspect-ratio for a card's preview frame. */
 export function aspectCss(aspectId) {
-    const aspect = ASPECTS.find((a) => a.id === aspectId) ?? ASPECTS[0];
-    return `${aspect.w} / ${aspect.h}`;
+    const aspect = ASPECTS.find((a) => a.id === aspectId);
+    if (aspect) return `${aspect.w} / ${aspect.h}`;
+    // A bloop cloud model may offer any "w:h" (4:3, 3:2…); anything else ("auto") previews wide.
+    const [, w, h] = /^(\d+):(\d+)$/.exec(String(aspectId)) ?? [];
+    return w ? `${w} / ${h}` : `${ASPECTS[0].w} / ${ASPECTS[0].h}`;
 }

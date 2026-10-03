@@ -17,6 +17,7 @@ async function boot() {
         settings,
         dataDir: app.getPath('userData'),
         reveal: (fullPath) => shell.showItemInFolder(fullPath),
+        openExternal: (target) => shell.openExternal(target), // bloop sign-in opens in the real browser
         updates: createUpdater(app),
         onThemeChange: () => chrome?.themeChanged(),
     });

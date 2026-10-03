@@ -19,24 +19,29 @@
     <div class="card__knob card__knob--wide">
       @!component('components/select', {
         label: 'Model',
-        options: "families[node.type].map(f => ({ value: f.id, label: f.label }))",
+        options: "families[node.type].map(f => ({ value: f.id, label: f.label, description: f.description }))",
         value: 'familyOf(node)',
         change: 'setFamily(node, v)',
         disabled: 'isBusy(node)'
       })
     </div>
-    <div class="card__knob">
-      @!component('components/select', {
-        label: 'Aspect', options: 'knobsFor(node).aspects', value: "knobValue(node, 'aspect')",
-        change: "setKnob(node, 'aspect', v)", disabled: 'isBusy(node)'
-      })
-    </div>
-    <div class="card__knob">
-      @!component('components/select', {
-        label: 'Resolution', options: 'knobsFor(node).resolutions', value: "knobValue(node, 'resolution')",
-        change: "setKnob(node, 'resolution', v)", disabled: 'isBusy(node)'
-      })
-    </div>
+    {{-- A bloop cloud model offers only the knobs it takes; an empty list hides that knob. --}}
+    <template x-if="knobsFor(node).aspects.length">
+      <div class="card__knob">
+        @!component('components/select', {
+          label: 'Aspect', options: 'knobsFor(node).aspects', value: "knobValue(node, 'aspect')",
+          change: "setKnob(node, 'aspect', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
+    <template x-if="knobsFor(node).resolutions.length">
+      <div class="card__knob">
+        @!component('components/select', {
+          label: 'Resolution', options: 'knobsFor(node).resolutions', value: "knobValue(node, 'resolution')",
+          change: "setKnob(node, 'resolution', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
     <template x-if="knobsFor(node).durations.length">
       <div class="card__knob">
         @!component('components/select', {

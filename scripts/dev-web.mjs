@@ -8,12 +8,25 @@ const store = {
     llmProvider: 'anthropic',
     anthropicModel: 'claude-sonnet-5-5',
     openaiModel: 'gpt-5',
+    // The local bloop (Sail) by default; BLOOP_URL=https://… for another one.
+    bloopUrl: process.env.BLOOP_URL ?? 'http://localhost',
+    bloopAccount: null,
+    bloopToken: null, // in memory only, gone when this dev server stops
 };
 const settings = {
-    all: () => ({ ...store, configured: { anthropicApiKey: false, openaiApiKey: false } }),
+    all: () => {
+        const { bloopToken, ...rest } = store;
+        return { ...rest, configured: { anthropicApiKey: false, openaiApiKey: false, bloopToken: Boolean(bloopToken) } };
+    },
     get: (key) => store[key],
-    update: (values) => Object.assign(store, Object.fromEntries(Object.entries(values).filter(([k]) => !k.endsWith('ApiKey')))),
-    clearSecret() {},
+    update: (values) => {
+        if (process.env.DEBUG_SETTINGS) console.log('settings.update', Object.keys(values).map((k) => `${k}=${values[k] == null ? values[k] : typeof values[k]}`).join(' '));
+        Object.assign(store, Object.fromEntries(Object.entries(values).filter(([k]) => !k.endsWith('ApiKey'))));
+    },
+    clearSecret(key) {
+        if (process.env.DEBUG_SETTINGS) console.log('settings.clearSecret', key, new Error().stack.split('\n').slice(2, 5).join(' | '));
+        store[key] = null;
+    },
 };
 
 import { tmpdir } from 'node:os';
@@ -21,6 +34,8 @@ import { join } from 'node:path';
 
 // Dev data lives in the temp folder, never in the repo.
 const dataDir = join(tmpdir(), 'bloop-studio-dev');
-const { url } = await createServer({ settings, dataDir, port: Number(process.env.PORT ?? 5199) });
+// NO_BROWSER=1 prints the bloop sign-in link instead of opening it (to open it somewhere else).
+const openExternal = process.env.NO_BROWSER ? (link) => console.log(`bloop sign-in: ${link}`) : undefined;
+const { url } = await createServer({ settings, dataDir, port: Number(process.env.PORT ?? 5199), openExternal });
 console.log(`dev data: ${dataDir}`);
 console.log(`dev web server on ${url}`);

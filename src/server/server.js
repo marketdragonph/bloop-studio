@@ -24,6 +24,8 @@ import { directorRoutes } from './routes/director.js';
 import { appUpdateRoutes, NO_UPDATES } from './routes/app-update.js';
 import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
+import { BloopAccount } from './services/bloop-account.js';
+import { accountRoutes } from './routes/account.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -31,7 +33,13 @@ const explorerReveal = async (fullPath) => {
     spawn('explorer.exe', [`/select,${fullPath}`], { detached: true, stdio: 'ignore' }).unref();
 };
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, updates = NO_UPDATES, onThemeChange = () => {} }) {
+/** Default for browser-only dev: the default browser. Electron passes shell.openExternal. */
+const startBrowser = async (url) => {
+    const { spawn } = await import('node:child_process');
+    spawn('rundll32', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
+};
+
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, openExternal = startBrowser, updates = NO_UPDATES, onThemeChange = () => {} }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -41,10 +49,11 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const events = new BoardEvents();
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
     const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
-    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy });
+    const account = new BloopAccount({ settings, openExternal });
+    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -54,6 +63,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/settings', settingsRoutes(deps));
     app.route('/engine', engineRoutes(deps));
     app.route('/app/update', appUpdateRoutes(deps));
+    app.route('/account', accountRoutes(deps));
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
     app.route('/', directorRoutes(deps));

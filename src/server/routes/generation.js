@@ -3,10 +3,11 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { mimeFromName, UPLOADABLE, MAX_UPLOAD_BYTES } from '../generation/media-store.js';
 import { familiesFor } from '../generation/presets.js';
+import { cloudFamilies } from '../generation/cloud-models.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, engine, reveal }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, reveal }) {
     const routes = new Hono();
 
     routes.post('/spaces/:id/nodes/:nodeId/generate', (c) => {
@@ -46,8 +47,13 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
 
     routes.get('/spaces/:id/nodes/:nodeId/takes', (c) => c.json(jobs.takes(int(c.req.param('nodeId')))));
 
-    // Only the families this machine's ComfyUI can run (see EngineProfile).
-    routes.get('/presets/:type', async (c) => c.json(familiesFor((await engine.current()).presets, c.req.param('type'))));
+    // The families this machine's ComfyUI can run (see EngineProfile), then bloop's cloud models
+    // when a paid bloop account is signed in.
+    routes.get('/presets/:type', async (c) => {
+        const type = c.req.param('type');
+        const local = familiesFor((await engine.current()).presets, type);
+        return c.json([...local, ...cloudFamilies(await account?.models(), type)]);
+    });
 
     // One stream per open board; only that board's cards are sent.
     routes.get('/spaces/:id/events', (c) => {

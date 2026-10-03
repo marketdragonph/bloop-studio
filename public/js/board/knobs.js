@@ -26,9 +26,14 @@ function writeSticky(type, key, value) {
 }
 
 export const knobMethods = {
+    familyFor(node) {
+        return this.families[node.type]?.find((f) => f.id === this.familyOf(node));
+    },
+
     knobsFor(node) {
-        const family = this.families[node.type]?.find((f) => f.id === this.familyOf(node));
-        return knobOptions(family?.knobs) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
+        const family = this.familyFor(node);
+        // A bloop cloud model brings its own options (its params); a local family names a formats table.
+        return family?.options ?? knobOptions(family?.knobs) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
     },
 
     knobValue(node, key) {
@@ -36,7 +41,12 @@ export const knobMethods = {
         const options = this.knobsFor(node);
         // A card made on another PC may hold a value this machine's table does not offer.
         const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities }[key];
-        if (value !== undefined && value !== null && (!offered || offered.some((o) => String(o.value) === String(value)))) return value;
+        const match = (v) => offered?.find((o) => String(o.value) === String(v))?.value;
+        if (value !== undefined && value !== null && (!offered?.length || match(value) !== undefined)) return offered?.length ? match(value) : value;
+        // A cloud model's own default (e.g. 5 s, not its longest and dearest).
+        const own = this.familyFor(node)?.defaults?.[key];
+        if (own !== undefined && match(own) !== undefined) return match(own);
+        if (key === 'aspect' && offered?.length && match(DEFAULT_KNOBS.aspect) === undefined) return offered[0].value;
         if (key === 'resolution') return options.resolutions[0]?.value;
         if (key === 'quality') return options.qualities.at(-1)?.value;
         if (key === 'duration') return options.durations.at(-1)?.value;
