@@ -48,8 +48,17 @@ a { color: var(--accent-text); }
 }
 .topbar > * { -webkit-app-region: no-drag; }
 
-.topbar__brand { display: inline-flex; align-items: baseline; gap: var(--space-2); text-decoration: none; color: var(--text-primary); }
-.topbar__title { font-weight: 700; font-size: var(--fs-md); }
+/* One wordmark: Orbitron like the stencils, at a size that reads as the app's name. */
+.topbar__brand {
+    font-family: var(--font-stencil);
+    font-size: var(--fs-base);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-decoration: none;
+    color: var(--text-primary);
+}
 .topbar__nav { display: flex; gap: var(--space-1); }
 [x-cloak] { display: none; }
 
