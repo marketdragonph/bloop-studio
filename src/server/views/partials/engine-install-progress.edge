@@ -1,0 +1,48 @@
+{{-- The install as it runs: one bar per download, the step it is on, and Cancel. Polls itself
+     every second while it runs. Closing the modal does not stop it. --}}
+@let(running = ['comfy', 'unpacking', 'models', 'starting'].includes(install.phase))
+@let(steps = install.steps ?? [])
+@let(gb = (bytes) => (bytes / 1e9).toFixed(1))
+@let(phases = {
+  comfy: 'Downloading ComfyUI…',
+  unpacking: 'Unpacking ComfyUI…',
+  models: 'Downloading the models…',
+  starting: 'Starting the engine…',
+  done: 'Installed. The engine is starting: the light in the top bar turns green when it is ready.',
+  added: 'The models are in your ComfyUI. Restart it (Stop, then Start), then press Re-detect models in Settings.',
+  failed: `The install stopped: ${install.error}`,
+  canceled: 'Install canceled. What was downloaded is kept for next time.',
+})
+@component('components/modal', { title: 'Install offline engine' })
+  <div class="stack-sm install">
+    @if(install.phase === 'failed')
+      @!component('components/alert', { tone: 'alert', message: phases.failed })
+    @else
+      <p class="plate-note" aria-live="polite">{{ phases[install.phase] ?? '' }}</p>
+    @end
+    <ul class="install__steps" role="list">
+      @each(step in steps)
+        @let(percent = step.total ? Math.floor((step.done / step.total) * 100) : 0)
+        <li class="install__step">
+          <span class="install__step-name">{{ step.label }}</span>
+          <span class="ae-readout">{{ percent === 100 ? 'Done' : `${gb(step.done)} of ${gb(step.total)} GB` }}</span>
+          <progress class="update-progress" max="100" value="{{ percent }}" aria-label="{{ step.label }}">{{ percent }}%</progress>
+        </li>
+      @end
+    </ul>
+    <div class="row row--end">
+      @if(running)
+        <button type="button" class="ae-key" hx-post="/engine/install/cancel" hx-target="#modal" hx-swap="innerHTML">Cancel install</button>
+        <button type="button" class="ae-key ae-key--accent" @click="close()">Keep going in the background</button>
+      @else
+        @if(['failed', 'canceled'].includes(install.phase))
+          <button type="button" class="ae-key" hx-get="/engine/install" hx-target="#modal" hx-swap="innerHTML">Try again</button>
+        @end
+        <button type="button" class="ae-key ae-key--accent" @click="close()">Close</button>
+      @end
+    </div>
+    @if(running)
+      <span hx-get="/engine/install/progress" hx-trigger="load delay:1s" hx-target="#modal" hx-swap="innerHTML"></span>
+    @end
+  </div>
+@end

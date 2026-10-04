@@ -27,6 +27,8 @@ import { DirectorService } from './director/service.js';
 import { BloopAccount } from './services/bloop-account.js';
 import { accountRoutes } from './routes/account.js';
 import { ComfyLauncher } from './services/comfy-launcher.js';
+import { EngineInstaller } from './engine-install/installer.js';
+import { engineInstallRoutes } from './routes/engine-install.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -52,10 +54,11 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
     const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
     const launcher = new ComfyLauncher({ settings }); // the person's own ComfyUI, started from the top bar
+    const installer = new EngineInstaller({ settings, launcher }); // "Install offline engine"
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account, launcher };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account, launcher, installer };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -63,6 +66,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.use('/shared/*', staticFiles('/shared/', '../../shared/')); // src/shared
     app.route('/', homeRoutes(deps));
     app.route('/settings', settingsRoutes(deps));
+    app.route('/engine/install', engineInstallRoutes(deps));
     app.route('/engine', engineRoutes(deps));
     app.route('/app/update', appUpdateRoutes(deps));
     app.route('/account', accountRoutes(deps));

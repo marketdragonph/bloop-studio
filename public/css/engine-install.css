@@ -1,0 +1,15 @@
+/* "Install offline engine" (partials/engine-install*.edge). */
+.install { min-width: min(36rem, 100%); }
+.install__pc { display: grid; gap: var(--space-1); padding: var(--space-3); background: var(--bg-primary); }
+.install__gpu { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+.install__families { display: grid; gap: var(--space-3); margin: 0; padding: 0; border: 0; }
+.install__family { display: grid; grid-template-columns: auto 1fr; gap: var(--space-3); align-items: start; cursor: pointer; }
+.install__family input { margin-top: 0.25rem; accent-color: var(--accent); }
+.install__family-text { display: grid; gap: var(--space-1); }
+.install__family-name { font-weight: 600; }
+.install__family a { color: var(--sensor-text); }
+.install__steps { display: grid; gap: var(--space-3); margin: 0; padding: 0; list-style: none; max-height: 50vh; overflow: auto; }
+.install__step { display: grid; grid-template-columns: 1fr auto; gap: var(--space-1) var(--space-3); align-items: center; }
+.install__step progress { grid-column: 1 / -1; width: 100%; }
+.install__step-name { min-width: 0; overflow-wrap: anywhere; font-size: var(--fs-sm); }
+.install__link { padding: 0; border: 0; background: none; color: var(--sensor-text); font: inherit; text-decoration: underline; cursor: pointer; }

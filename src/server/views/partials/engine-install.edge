@@ -1,0 +1,82 @@
+{{-- Install offline engine: this PC, the model families it can run (suggested ones ticked), the
+     folder, the licenses. Posts to /engine/install; the answer is the progress view. --}}
+@let(have = installed ?? [])
+@let(picked = old?.families ?? plan.families.filter((f) => f.suggested && !have.includes(f.id)).map((f) => f.id))
+@component('components/modal', { title: 'Install offline engine' })
+  <form hx-post="/engine/install" hx-target="#modal" hx-swap="innerHTML" class="stack-sm install">
+    <section class="install__pc" aria-label="This PC">
+      <p class="ae-stencil ae-stencil--sensor">This PC</p>
+      <p class="install__gpu">{{ plan.gpu ? `${plan.gpu.name} · ${plan.gpu.vramGb} GB` : 'Graphics card not recognised' }}</p>
+      <p class="plate-note">{{ plan.verdict }}</p>
+    </section>
+
+    @if(pending)
+      @!component('components/alert', { tone: 'info', message: 'An earlier install did not finish. Install again: what is already downloaded is kept.' })
+    @end
+
+    @if(plan.tooSmall)
+      <p class="plate-note">Sign in with bloop to render on bloop's cloud models instead: nothing to install.</p>
+      <div class="row row--end">
+        <button type="button" class="ae-key" @click="close()">Close</button>
+      </div>
+    @else
+      <fieldset class="install__families">
+        <legend class="field__label ae-stencil">What to install</legend>
+        @each(family in plan.families)
+          <label class="install__family">
+            <input type="checkbox" name="families" value="{{ family.id }}" {{ picked.includes(family.id) ? 'checked' : '' }}>
+            <span class="install__family-text">
+              <span class="install__family-name">
+                {{ family.label }}{{ have.includes(family.id) ? ' · already on this PC' : family.suggested ? ' · suggested' : '' }}
+              </span>
+              <span class="plate-note">
+                {{ family.what }} · {{ family.sizeGb.toFixed(1) }} GB · license:
+                @each(license in family.licenses)
+                  <a href="{{ license.link }}" target="_blank" rel="noopener">{{ license.name }}</a>
+                @end
+              </span>
+            </span>
+          </label>
+        @end
+        @if(errors.families)
+          <p class="field__error">{{ errors.families }}</p>
+        @end
+      </fieldset>
+      <p class="plate-note">
+        The suggested set is about {{ Math.ceil(plan.suggestedGb) }} GB with ComfyUI {{ plan.comfy.version }}.
+        Everything comes straight from its publisher (GitHub, Hugging Face); files already there are not fetched again.
+      </p>
+
+      @if(existing)
+        <fieldset class="choice-row">
+          <legend class="field__label ae-stencil">Where</legend>
+          <label class="choice">
+            <input type="radio" name="target" value="existing" {{ (old?.target ?? 'existing') === 'existing' ? 'checked' : '' }}>
+            <span>Add to my ComfyUI ({{ existing.root }})</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="target" value="new" {{ old?.target === 'new' ? 'checked' : '' }}>
+            <span>Install a new engine in the folder below</span>
+          </label>
+        </fieldset>
+      @end
+      @!component('components/field', {
+        name: 'folder', label: 'Install folder', value: old?.folder ?? plan.folder ?? '',
+        hint: plan.drives.map((d) => `${d.letter}: ${d.freeGb} GB free`).join(' · '), error: errors.folder
+      })
+
+      <label class="choice">
+        <input type="checkbox" name="consent" value="1">
+        <span>I accept the license of each model I install (linked above).</span>
+      </label>
+      @if(errors.consent)
+        <p class="field__error">{{ errors.consent }}</p>
+      @end
+
+      <div class="row row--end">
+        <button type="button" class="ae-key" @click="close()">Cancel</button>
+        <button type="submit" class="ae-key ae-key--accent" hx-disabled-elt="this">Install</button>
+      </div>
+    @end
+  </form>
+@end

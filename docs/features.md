@@ -42,6 +42,12 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - **Settings → Engine → Workflows on this PC** shows the GPU, VRAM, backend (CUDA/ROCm), ComfyUI version,
   the variant each workflow uses, and the exact missing files for the others. *Re-detect models* refreshes it.
 - A wired picture the chosen workflow cannot use (e.g. a last frame on Wan) stops the render with a clear message.
+- **Install offline engine** (Settings → Engine, and *Download missing models* under Workflows on this PC):
+  reads the graphics card from the registry and the free disk per drive, suggests the model families the card
+  can run (`engine-install/plan.js`), and downloads ComfyUI portable v0.38.0 plus the picked model files from
+  their publishers (`src/shared/model-sources.js`: URL, size, SHA-256, license). Resumable, checksum-checked,
+  unpacked with Windows' own tar, then started by the launcher. *Add to my ComfyUI* puts the same models into
+  an existing install. Licenses are linked and accepted per install.
 - **Cloud only:** no ComfyUI answering, none on this PC to start, and signed in to bloop: the engine light
   says *Cloud only* (blue), a card's Model list puts bloop's models first, and an untouched card renders on
   the first one (`routes/generation.js` → `offered()`). A ComfyUI that is only switched off keeps local first.

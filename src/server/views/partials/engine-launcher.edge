@@ -39,6 +39,23 @@
   @end
   <button type="button" class="ae-key" hx-post="/engine/launcher/find" hx-target="#engine-launcher" hx-swap="innerHTML">Find again</button>
 </div>
+{{-- Install offline engine: ComfyUI + the models this PC can run, no .bat or models folder to learn. --}}
+@if(['comfy', 'unpacking', 'models', 'starting'].includes(install.phase))
+  <div class="row">
+    <span class="ae-sensor-dot update-pulse" aria-hidden="true"></span>
+    <span class="plate-note">Installing the offline engine…</span>
+    <button type="button" class="ae-key" hx-get="/engine/install" hx-target="#modal" hx-swap="innerHTML">Show progress</button>
+  </div>
+@elseif(!launch.path || install.pending)
+  <div class="row">
+    <button type="button" class="ae-key ae-key--accent" hx-get="/engine/install" hx-target="#modal" hx-swap="innerHTML">
+      {{ install.pending ? 'Finish installing the offline engine' : 'Install offline engine' }}
+    </button>
+    <span class="plate-note">ComfyUI and the models for your graphics card, set up for you.</span>
+  </div>
+@else
+  <p class="plate-note"><button type="button" class="install__link" hx-get="/engine/install" hx-target="#modal" hx-swap="innerHTML">Add models or install a fresh engine</button></p>
+@end
 @if(log.length && (launch.error || launch.starting))
   <details class="engine-log">
     <summary class="ae-stencil">Engine log</summary>

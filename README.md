@@ -37,6 +37,12 @@ on 4 October 2026 at 15:30.
 
 ## Set up ComfyUI and models
 
+**The easy way:** Settings → Engine → **Install offline engine**. Bloop Studio checks your graphics card,
+ticks the models it can run, and downloads ComfyUI and those models for you from their publishers (GitHub,
+Hugging Face). Already have ComfyUI? Choose *Add to my ComfyUI*, or press *Download missing models* under
+Workflows on this PC. Downloads resume after an interruption, and every file is checked against its
+publisher's checksum. The tables below are for setting it up by hand.
+
 Bloop Studio sends every render to ComfyUI at `http://127.0.0.1:8188`. If ComfyUI is installed on this PC
 (the portable build, or a git install with a venv), Bloop Studio finds it: press **Start** next to the engine
 light in the top bar, or tick *Start ComfyUI when Bloop Studio opens* in Settings → Engine. It is stopped

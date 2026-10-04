@@ -3,7 +3,7 @@
 // this PC) and the launcher panel shown in Settings.
 import { Hono } from 'hono';
 
-export function engineRoutes({ views, comfy, engine, launcher, account }) {
+export function engineRoutes({ views, comfy, engine, launcher, account, installer }) {
     const routes = new Hono();
 
     const light = async (c) => {
@@ -32,7 +32,8 @@ export function engineRoutes({ views, comfy, engine, launcher, account }) {
 
     const panel = async (c, extra = {}) => {
         const status = await comfy().status();
-        return c.html(await views.render('partials/engine-launcher', { status, launch: launcher.state({ online: status.online }), log: launcher.log(), ...extra }));
+        const install = installer?.state() ?? { phase: 'idle' };
+        return c.html(await views.render('partials/engine-launcher', { status, launch: launcher.state({ online: status.online }), log: launcher.log(), install, ...extra }));
     };
 
     // Settings → Engine → ComfyUI on this PC.

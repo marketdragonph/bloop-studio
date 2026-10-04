@@ -92,10 +92,18 @@ cloud models and the app is fully usable with no ComfyUI at all.
       bloop models first in a card's list and an untouched card renders on one (2026-10-05). A PC whose
       ComfyUI is only off keeps local first, so nothing spends credits by surprise.
 - [ ] Launch / Settings choice: *Install offline engine* or *Stay online*
-- [ ] Model manifest with sources, sizes, SHA-256 and licenses; test: every workflow file is listed
-- [ ] GPU check step (VRAM, disk, vendor) and the per-tier preselection
-- [ ] Download queue: resume, checksum, free-space check, progress over the event stream
-- [ ] ComfyUI portable install (NVIDIA), pinned version, `7zr.exe` bundled + notices
+- [x] Model manifest `src/shared/model-sources.js` (built by `scripts/build-model-sources.mjs` from the
+      publishers: URL, size, SHA-256, license); test: every shipped workflow file is listed
+- [x] GPU check (registry: name, vendor, real VRAM) and free disk per drive; per-tier suggestions
+      (`engine-install/plan.js`): NVIDIA 20 GB+ bf16 set, 11 GB+ int8 set, 8 GB pictures + Wan, AMD 16 GB+
+      pictures + Wan (beta), smaller → bloop cloud. Default folder: C: when it has room, else the roomiest drive
+- [x] Downloads: HTTP Range resume onto `.part`, SHA-256 check, 3 retries, free-space check up front;
+      the page polls the progress (`engine-install/download.js`, `installer.js`)
+- [x] ComfyUI portable install, pinned v0.38.0 (GitHub release SHA-256), unpacked with Windows' own
+      `tar.exe` (bsdtar reads .7z): no extractor shipped
+- [x] *Add to my ComfyUI*: the same picked models into an existing install's models folders;
+      Settings → Workflows on this PC → *Download missing models*
+- [ ] Parallel ranged connections (GitHub gives ~7 MB/s on one)
 - [ ] Custom nodes as pinned archives + requirements
 - [x] Start / stop the person's OWN ComfyUI (2026-10-05): found on this PC (portable or git+venv, flags read
       from its run_*.bat), top-bar Start/Stop, Settings → ComfyUI on this PC (folder, start with the app,
@@ -103,12 +111,14 @@ cloud models and the app is fully usable with no ComfyUI at all.
       `services/comfy-launcher.js`). Runs with UTF-8 output: piped, an emoji in a node's log crashed it.
 - [ ] Engine process manager for the INSTALLED engine: free port, health check, restart once on crash
 - [ ] Start modes (with the app / when I render + idle stop / manual) and the top-bar Start/Stop/Free switch
-- [ ] Wizard UI (modal steps), Settings → Engine: install / add family / repair / remove / disk used
+- [x] Install modal: this PC + verdict, families (suggested ticked, installed marked), folder, licenses
+      consent; progress per file, Cancel, carries on after a restart (2026-10-05)
+- [ ] Settings → Engine: repair / remove / disk used
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint
 - [ ] AMD (ROCm) path, behind beta
 - [ ] Tested end to end on a clean Windows PC (12 GB NVIDIA) and the 24 GB AMD desktop
 
-## Open questions for the owner
+## Open questions for the owner (defaults chosen 2026-10-05, change if wanted)
 
-- Default install drive when C: is small: ask, or pick the drive with the most room?
-- Ship the int8 (12 GB) family set as the default for unknown GPUs, or ask every time?
+- Default install drive when C: is small: **the roomiest drive, shown and editable** in the modal.
+- Unknown or small GPUs: **no local install suggested**; the modal points to bloop cloud.

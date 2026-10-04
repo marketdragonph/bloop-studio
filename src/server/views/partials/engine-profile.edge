@@ -36,4 +36,10 @@
   <button type="button" class="ae-key ae-key--sm" hx-post="/engine/profile" hx-target="#engine-profile" hx-swap="innerHTML">
     Re-detect models
   </button>
+  @if(profile.detected && profile.report.some((item) => !item.variant))
+    {{-- The models this card can run, fetched from their publishers into this ComfyUI (engine-install). --}}
+    <button type="button" class="ae-key ae-key--sm ae-key--accent" hx-get="/engine/install" hx-target="#modal" hx-swap="innerHTML">
+      Download missing models
+    </button>
+  @end
 </div>
