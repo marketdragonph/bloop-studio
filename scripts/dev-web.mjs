@@ -12,6 +12,7 @@ const store = {
     bloopUrl: process.env.BLOOP_URL ?? 'http://localhost',
     bloopAccount: null,
     bloopToken: null, // in memory only, gone when this dev server stops
+    launchSeen: Boolean(process.env.SKIP_LAUNCH), // SKIP_LAUNCH=1 opens straight on Spaces
 };
 const settings = {
     all: () => {

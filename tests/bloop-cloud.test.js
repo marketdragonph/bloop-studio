@@ -80,16 +80,35 @@ test('canceling in the browser leaves the app signed out with a reason', async (
     assert.deepEqual(account.state(), { status: 'signed-out', error: 'Sign-in was canceled.' });
 });
 
-test('a revoked token signs the app out; a free plan offers no cloud models', async () => {
+test('a revoked token signs the app out; signed out offers no cloud models', async () => {
     const expired = Object.assign(new Error('Unauthenticated.'), { status: 401 });
     const settings = memorySettings({ bloopToken: 'old', bloopAccount: { paid: true } });
     const account = new BloopAccount({ settings, openExternal: () => {}, clientFor: () => ({ me: async () => { throw expired; } }) });
     await account.refresh();
     assert.equal(settings.store.bloopToken, null);
     assert.equal(account.state().status, 'signed-out');
+    assert.equal(await account.models(), null);
+});
 
-    const free = new BloopAccount({ settings: memorySettings({ bloopToken: 't', bloopAccount: { paid: false } }), openExternal: () => {} });
-    assert.equal(await free.models(), null);
+test('bloop decides what a plan sees: a free account gets its list, a refused one is not asked again', async () => {
+    let asked = 0;
+    const cheap = { image: [], video: [{ key: 'runway/gen4', name: 'Runway Gen-4', credits: 13, params: {} }] };
+    const free = new BloopAccount({
+        settings: memorySettings({ bloopToken: 't', bloopAccount: { paid: false } }),
+        openExternal: () => {},
+        clientFor: () => ({ models: async () => { asked++; return cheap; } }),
+    });
+    assert.deepEqual(await free.models(), cheap);
+
+    const refused = Object.assign(new Error('Needs Lite.'), { status: 402 });
+    const older = new BloopAccount({
+        settings: memorySettings({ bloopToken: 't', bloopAccount: { paid: false } }),
+        openExternal: () => {},
+        clientFor: () => ({ models: async () => { asked++; throw refused; }, me: async () => ({ paid: false }) }),
+    });
+    assert.equal(await older.models(), null);
+    assert.equal(await older.models(), null);
+    assert.equal(asked, 2); // one for the free list, one refusal, then the cache answers
 });
 
 /** A card wired with a first and a last frame, rendered through the cloud stages against a fake bloop. */

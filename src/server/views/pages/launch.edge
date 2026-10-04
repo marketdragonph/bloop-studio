@@ -1,0 +1,49 @@
+{{-- The launch screen: shown when the app opens, until the person signs in to bloop or continues
+     without an account (routes/home.js). The bloop sign-in is optional; the app is free without it. --}}
+@component('layouts/app', { title: 'Welcome', bodyClass: 'is-launch' })
+<div class="launch">
+  <header class="launch__head">
+    <p class="ae-stencil ae-stencil--sensor">Welcome to</p>
+    <h1 class="launch__title">Bloop Studio</h1>
+    <p class="plate-note">Lay out a story as cards and render stills and video with sound on your own GPU. Free, offline, yours.</p>
+    <div class="launch__engine" hx-get="/engine/status" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+      @include('partials/engine-status')
+    </div>
+  </header>
+
+  <div class="launch__choices">
+    @component('components/plate', { heading: 'Sign in with bloop', labelledBy: 'launch-bloop-h' })
+      <p class="plate-note">Optional. Adds bloop's cloud models to your cards, paid with your bloop credits. New accounts get 60 free credits.</p>
+      <div id="bloop-account" hx-get="/account?from=launch" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        <p class="plate-note">Checking for a bloop sign-in…</p>
+      </div>
+    @end
+
+    @component('components/plate', { heading: 'Continue without an account', labelledBy: 'launch-local-h' })
+      <p class="plate-note">Everything renders on this PC through ComfyUI. You can sign in later from Settings.</p>
+      <div class="row">
+        <button type="button" class="ae-key" hx-post="/launch/continue">Continue without an account</button>
+      </div>
+    @end
+  </div>
+
+  @if(recent.length)
+    <section class="stack-sm" aria-labelledby="launch-recent-h">
+      <h2 id="launch-recent-h" class="ae-stencil">Recent spaces</h2>
+      <ul class="tile-grid" role="list">
+        @each(space in recent)
+          <li>
+            {{-- Opening a board also counts as continuing: the launch screen will not show again. --}}
+            <a class="ae-plate tile" href="/spaces/{{ space.id }}" hx-post="/launch/continue" hx-vals='{"to": "/spaces/{{ space.id }}"}'>
+              <span class="ae-plate__inner tile__inner">
+                <span class="tile__name">{{ space.name }}</span>
+                <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
+              </span>
+            </a>
+          </li>
+        @end
+      </ul>
+    </section>
+  @end
+</div>
+@end

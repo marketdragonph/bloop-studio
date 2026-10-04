@@ -1,0 +1,13 @@
+/* The launch screen (pages/launch.edge): the optional bloop sign-in beside "continue without",
+   shown when the app opens until one is chosen. */
+.launch { display: grid; gap: var(--space-8); max-width: 56rem; margin: 0 auto; padding-block: var(--space-6); }
+
+.launch__head { display: grid; gap: var(--space-2); justify-items: start; }
+.launch__title { margin: 0; font-family: var(--font-stencil); font-size: var(--fs-2xl); line-height: 1.1; letter-spacing: 0.04em; }
+.launch__engine { margin-top: var(--space-2); }
+
+.launch__choices { display: grid; gap: var(--space-4); }
+
+@media (min-width: 48rem) {
+    .launch__choices { grid-template-columns: 1fr 1fr; align-items: start; }
+}

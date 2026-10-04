@@ -22,6 +22,8 @@ const DEFAULTS = {
     // last name/plan/credits bloop reported, shown while offline.
     bloopUrl: 'https://marketdragon.ph',
     bloopAccount: null,
+    // The launch screen (optional bloop sign-in) shows until the person signs in or continues without.
+    launchSeen: false,
 };
 
 export class SettingsStore {

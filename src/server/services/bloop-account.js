@@ -82,16 +82,24 @@ export class BloopAccount {
         this.#forget(null);
     }
 
-    /** bloop's model list for a paid account, cached a few minutes; null when there is none to offer. */
+    /**
+     * bloop's model list for the signed-in account, cached a few minutes; null when there is none to
+     * offer. bloop decides what a plan sees (free plans: the lower-cost models), not this app.
+     */
     async models({ refresh = false } = {}) {
-        const account = this.settings.get('bloopAccount');
-        if (!this.signedIn || !account?.paid) return null;
+        if (!this.signedIn) return null;
         if (!refresh && this.#models && this.now() - this.#models.at < MODELS_MAX_AGE_MS) return this.#models.data;
         try {
             this.#models = { at: this.now(), data: await this.client().models() };
         } catch (error) {
             if (error.status === 401) this.#forget('Your bloop sign-in expired. Sign in again to use bloop models.');
-            if (error.status === 402) await this.refresh(); // the plan lapsed: the account says so now
+            if (error.status === 402) {
+                // This plan gets no bloop models: remember that for the cache window, and refresh
+                // the account so Settings shows the plan bloop now reports.
+                this.#models = { at: this.now(), data: null };
+                await this.refresh();
+                return null;
+            }
             return this.#models?.data ?? null; // offline: keep offering what we last saw
         }
         return this.#models.data;

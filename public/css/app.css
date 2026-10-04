@@ -4,6 +4,7 @@
 @import url('./board.css');
 @import url('./loaders.css');
 @import url('./director.css');
+@import url('./launch.css');
 
 *, *::before, *::after { box-sizing: border-box; }
 
