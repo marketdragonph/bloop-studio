@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1004.938
+
 - Changed: signing out of bloop brings back the launch screen, to sign in again or continue without.
 
 ## 2026.1004.927
