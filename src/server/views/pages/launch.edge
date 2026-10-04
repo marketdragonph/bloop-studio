@@ -1,12 +1,17 @@
 {{-- The launch screen: shown when the app opens, until the person signs in to bloop or continues
      without an account (routes/home.js). The bloop sign-in is optional; the app is free without it. --}}
 @component('layouts/app', { title: 'Welcome', bodyClass: 'is-launch' })
+{{-- Full-screen art behind everything; the content sits on its dark left side. Decorative only. --}}
+<div class="launch-art" x-data="LaunchArt" aria-hidden="true">
+  <img class="launch-art__img" src="/assets/img/launch-hangar.jpg" alt="" width="2560" height="1437" decoding="async" fetchpriority="high">
+</div>
 <div class="launch">
   <header class="launch__hero">
     <img class="launch__mark" src="/assets/img/bloop-studio-mark.svg" alt="" width="96" height="96">
     <div class="launch__intro">
       <p class="ae-stencil ae-stencil--sensor">Welcome to</p>
       <h1 class="launch__title">Bloop Studio</h1>
+      <p class="ae-stencil launch__byline">by MarketDragon</p>
       <p class="launch__tagline">Lay out a story as cards. Render stills and video with sound on your own GPU.</p>
       <div class="launch__engine" hx-get="/engine/status" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
         @include('partials/engine-status')

@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the launch screen is full screen, with new MarketDragon hangar art behind it.
+
 ## 2026.1004.902
 
 - New: release notes. Settings → App → *What's new* opens the notes for your version.
