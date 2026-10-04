@@ -9,10 +9,10 @@ setup step or brings a bloop tool to where their renders already are.
 | # | What | Where | Status | Plan |
 |---|---|---|---|---|
 | 0 | Optional bloop account, cloud models, launch screen, account menu, model search | both | **COMPLETE** (released 2026-10-04) | [bloop-account.md](bloop-account.md) |
-| 0b | Free plan sees the lower-cost models (≤ 5 credits image, ≤ 15 video) instead of "needs Lite" | bloop | PLANNED | [bloop-account.md](bloop-account.md) |
-| 1 | `/bloop-studio` download page (always the latest installer) + footer, nav and in-app links | bloop | PLANNED | below |
-| 2 | Cloud-only mode: no ComfyUI needed when signed in | Bloop Studio | PLANNED | [engine-setup.md](engine-setup.md) |
-| 3 | **Engine setup wizard**: installs ComfyUI and the right models for the GPU, runs it for you | Bloop Studio | PLANNED | [engine-setup.md](engine-setup.md) |
+| 0b | Free plan sees the lower-cost models (≤ 5 credits image, ≤ 15 video) instead of "needs Lite" | bloop | COMPLETE (2026-10-05) | [bloop-account.md](bloop-account.md) |
+| 1 | `/bloop-studio` download page (always the latest installer) + footer, nav and in-app links | bloop | PARTIAL: live 2026-10-05; app clip, comparison, gallery, email-me-the-link still open | below |
+| 2 | Cloud-only mode: no ComfyUI needed when signed in | Bloop Studio | COMPLETE (2026-10-05) | [engine-setup.md](engine-setup.md) |
+| 3 | **Engine setup wizard**: installs ComfyUI and the right models for the GPU, runs it for you | Bloop Studio | PARTIAL: shipped 2026-10-05; AMD path and a clean-PC run left | [engine-setup.md](engine-setup.md) |
 | 4 | Katana (video editor) in the app: board takes onto a timeline, export with bundled ffmpeg | Bloop Studio | PLANNED | survey first |
 | 5 | Kaiga (canvas editor) in the app: edit a still, send it back to a card | Bloop Studio | PLANNED | survey first |
 | 6 | Forge (filmmaker): storyboard → scenes → renders → finished film, on the app's Director | Bloop Studio | PLANNED | survey first |
