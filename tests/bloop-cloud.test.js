@@ -90,14 +90,6 @@ test('a revoked token signs the app out; signed out offers no cloud models', asy
     assert.equal(await account.models(), null);
 });
 
-test('signing out on purpose brings the launch screen back', async () => {
-    const settings = memorySettings({ bloopToken: 't', bloopAccount: { paid: true }, launchSeen: true });
-    const account = new BloopAccount({ baseUrl: 'http://bloop.test', settings, openExternal: () => {}, clientFor: () => ({ signOut: async () => {} }) });
-    await account.signOut();
-    assert.equal(settings.store.bloopToken, null);
-    assert.equal(settings.store.launchSeen, false);
-});
-
 test('bloop decides what a plan sees: a free account gets its list, a refused one is not asked again', async () => {
     let asked = 0;
     const cheap = { image: [], video: [{ key: 'runway/gen4', name: 'Runway Gen-4', credits: 13, params: {} }] };

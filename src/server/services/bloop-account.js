@@ -84,7 +84,6 @@ export class BloopAccount {
     async signOut() {
         if (this.signedIn) await this.client().signOut().catch(() => {}); // revoke on bloop too, if it can be reached
         this.#forget(null);
-        this.settings.update({ launchSeen: false }); // signing out on purpose brings the launch screen back
     }
 
     /**

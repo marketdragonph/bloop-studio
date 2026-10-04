@@ -21,8 +21,6 @@ const DEFAULTS = {
     // Optional bloop account (cloud models on credits), always at bloop itself (BLOOP_URL in development).
     // The token is a secret; the account is the last name/plan/credits bloop reported, shown offline.
     bloopAccount: null,
-    // The launch screen (optional bloop sign-in) shows until the person signs in or continues without.
-    launchSeen: false,
 };
 
 export class SettingsStore {
