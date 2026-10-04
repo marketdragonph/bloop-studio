@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.651
+
 - New: **Install offline engine** (Settings → Engine). Bloop Studio checks your graphics card, suggests the models it can run, and downloads ComfyUI and those models for you, straight from their publishers. Downloads resume if interrupted and every file is checked.
 - New: already have ComfyUI? *Download missing models* adds the models your card can run to it.
 
