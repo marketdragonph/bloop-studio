@@ -1,11 +1,15 @@
-// Upload cards: drop or pick a picture/clip; it becomes the card's media, ready to wire onward.
-const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/webm'];
+// Upload cards: drop or pick a picture, clip or voice; it becomes the card's media, ready to wire onward.
+const ACCEPTED = [
+    'image/png', 'image/jpeg', 'image/webp', 'video/mp4', 'video/webm',
+    'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/flac', 'audio/mp4',
+];
+const KINDS_MESSAGE = 'Use a PNG, JPEG or WebP picture, an MP4 or WebM clip, or an MP3, WAV, OGG, FLAC or M4A voice.';
 const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 export const uploadMethods = {
     async uploadFile(node, file) {
         if (!file) return;
-        if (!ACCEPTED.includes(file.type)) return this.toast('Use a PNG, JPEG or WebP picture, or an MP4 or WebM clip.', 'warn');
+        if (!ACCEPTED.includes(file.type)) return this.toast(KINDS_MESSAGE, 'warn');
 
         const form = new FormData();
         form.append('file', file);
@@ -33,5 +37,9 @@ export const uploadMethods = {
 
     isVideo(node) {
         return node.media_mime?.startsWith('video/');
+    },
+
+    isAudio(node) {
+        return node.media_mime?.startsWith('audio/');
     },
 };

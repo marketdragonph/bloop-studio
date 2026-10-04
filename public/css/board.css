@@ -148,6 +148,8 @@ body:has(.board-page) { display: flex; flex-direction: column; height: 100vh; ov
 .card__close { display: inline-grid; place-items: center; }
 .card--image .card__head .ae-stencil { color: var(--accent-text); }
 .card--video .card__head .ae-stencil { color: var(--sensor-text); }
+.card--audio .card__head .ae-stencil { color: var(--sensor-text); }
+.card--audio .card__media audio, .card__drop audio { width: 100%; }
 
 .card__close {
     width: 1.5rem;

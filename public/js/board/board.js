@@ -33,7 +33,7 @@ export default function SpaceBoard() {
         canRedo: false,
         toasts: [],
         nodeTypes: NODE_TYPES,
-        families: { image: [], video: [] },
+        families: { image: [], video: [], audio: [] },
         streamDown: false,
         renderQueue: [],
         directorOpen: false,

@@ -27,7 +27,7 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
     routes.post('/spaces/:id/nodes/:nodeId/generate', async (c) => {
         let node = spaces.findNode(int(c.req.param('id')), int(c.req.param('nodeId')));
         if (!node) return c.json({ error: 'That card no longer exists.' }, 404);
-        if (!['image', 'video'].includes(node.type)) return c.json({ error: 'Only Image and Video cards render.' }, 422);
+        if (!['image', 'video', 'audio'].includes(node.type)) return c.json({ error: 'Only Image, Video and Audio cards render.' }, 422);
         if (jobs.activeForNode(node.id)) return c.json({ error: 'This card is already rendering.' }, 409);
 
         // A card with no pick renders on what its Model list shows first, so the press matches the card.
@@ -55,7 +55,7 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
         if (!node || node.type !== 'upload') return c.json({ error: 'Only Upload cards take files.' }, 422);
         const { file } = await c.req.parseBody();
         if (!(file instanceof File)) return c.json({ error: 'Choose a file to upload.' }, 422);
-        if (!UPLOADABLE.has(file.type)) return c.json({ error: 'Use a PNG, JPEG or WebP picture, or an MP4 or WebM clip.' }, 422);
+        if (!UPLOADABLE.has(file.type)) return c.json({ error: 'Use a PNG, JPEG or WebP picture, an MP4 or WebM clip, or an MP3, WAV, OGG, FLAC or M4A voice.' }, 422);
         if (file.size > MAX_UPLOAD_BYTES) return c.json({ error: 'That file is over 500 MB.' }, 422);
 
         const bytes = Buffer.from(await file.arrayBuffer());

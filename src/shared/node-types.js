@@ -8,6 +8,8 @@ export const NODE_TYPES = {
     note: { label: 'Note', icon: 'note', tone: 'warn', creatable: true },
     image: { label: 'Image', icon: 'image', tone: 'accent', creatable: true, generates: 'image' },
     video: { label: 'Video', icon: 'video', tone: 'sensor', creatable: true, generates: 'video' },
+    // A voice, a sound effect or music from its words, on bloop's audio models (signed in).
+    audio: { label: 'Audio', icon: 'voice', tone: 'sensor', creatable: true, generates: 'audio' },
 };
 
 /** Input sockets per type, top to bottom. `accepts` lists the kinds a wire may carry in. */
@@ -23,6 +25,11 @@ export const SOCKETS = {
         { key: 'first_frame', label: 'First frame', accepts: ['image'], icon: 'image' },
         // With a first frame: the clip travels from one picture to the other (H3 and LTX).
         { key: 'last_frame', label: 'Last frame', accepts: ['image'], icon: 'image' },
+        // With a first frame: lip sync, the picture animated to this voice or song (LTX, ltx-ia2v).
+        { key: 'audio', label: 'Voice / audio', accepts: ['audio'], icon: 'voice' },
+    ],
+    audio: [
+        { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
     ],
 };
 
@@ -51,7 +58,7 @@ export function sourceKinds(node) {
     if (node.type === 'text' || node.text_content) kinds.add('text');
     if (node.type === 'image' || mime.startsWith('image/')) kinds.add('image');
     if (node.type === 'video' || mime.startsWith('video/')) kinds.add('video');
-    if (mime.startsWith('audio/')) kinds.add('audio');
+    if (node.type === 'audio' || mime.startsWith('audio/')) kinds.add('audio');
     return [...kinds];
 }
 

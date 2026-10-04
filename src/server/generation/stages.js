@@ -23,6 +23,9 @@ export async function resolvePreset(ctx, next) {
     if (!ctx.preset) throw new StageError('No workflow on this PC fits this card and its wires. Settings → Engine lists what is missing.');
     // A wired picture the workflow cannot take (a last frame on Wan, or without a first frame) must not be dropped silently.
     const ignored = wired.find((socket) => !(ctx.preset.needs ?? []).includes(socket));
+    if (ignored === 'audio') {
+        throw new StageError('Lip sync to a voice needs LTX-2.3 and a picture in First frame. Settings → Engine shows if LTX is installed.');
+    }
     if (ignored) {
         throw new StageError(`${ctx.preset.label.replace(/\s*\(.*\)$/, '')} cannot use the ${ignored.replace('_', ' ')} picture${ignored === 'last_frame' ? ' (it needs a first frame too)' : ''}. Remove that wire or pick another model.`);
     }
@@ -43,7 +46,7 @@ export async function uploadInputs(ctx, next) {
     ctx.uploads = {};
     for (const need of ctx.preset.needs ?? []) {
         const source = ctx.upstream.find((n) => n.to_socket === need && n.media_path);
-        if (!source) throw new StageError(`Connect a picture to the ${need.replace('_', ' ')} socket.`);
+        if (!source) throw new StageError(`Connect ${need === 'audio' ? 'a voice or song' : 'a picture'} to the ${need.replace('_', ' ')} socket.`);
         const bytes = await media.read(source.media_path);
         ctx.uploads[need] = await comfy.uploadImage(bytes, `bloop-${ctx.node.id}-${need}-${basename(source.media_path)}`, source.media_mime);
     }

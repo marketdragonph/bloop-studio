@@ -30,7 +30,7 @@ test('quality picks steps; unknown values fall back safely', () => {
 });
 
 test('the 12 GB tables: int8 H3 renders 4 steps up to 768p; LTX frames are 8n+1 at 25 fps', () => {
-    assert.deepEqual(knobInputs('h3-int8', { resolution: '768p' }), { width: 1344, height: 768, steps: 4, length: 124 });
+    assert.deepEqual(knobInputs('h3-int8', { resolution: '768p' }), { width: 1344, height: 768, steps: 4, length: 124, seconds: 5.125 }); // seconds: (124 - 1) / 24, the length a wired voice is trimmed to
     assert.equal(knobInputs('h3-int8', { resolution: '576p' }).width, 864); // a 24 GB card's choice falls back
     assert.equal(knobOptions('h3-int8').qualities.length, 1);
     assert.equal(knobInputs('ltx', { duration: 5 }).length, 129);

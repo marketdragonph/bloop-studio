@@ -90,6 +90,8 @@ export function knobInputs(family, settings = {}) {
     if (f.frames) {
         const seconds = f.durations.includes(Number(settings.duration)) ? Number(settings.duration) : f.durations.at(-1);
         inputs.length = f.frames(seconds);
+        // The clip's exact length in seconds: a wired audio track is trimmed to it (lip sync, ltx-ia2v).
+        if (f.fps) inputs.seconds = (inputs.length - 1) / f.fps;
     }
     return inputs;
 }

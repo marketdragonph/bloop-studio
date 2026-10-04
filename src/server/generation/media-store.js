@@ -2,7 +2,11 @@
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { extname, join, normalize, relative, sep } from 'node:path';
 
-const EXTENSIONS = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'video/mp4': '.mp4', 'video/webm': '.webm' };
+const EXTENSIONS = {
+    'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'video/mp4': '.mp4', 'video/webm': '.webm',
+    // Voices and songs: uploaded for lip sync, or rendered by an Audio card.
+    'audio/mpeg': '.mp3', 'audio/x-wav': '.wav', 'audio/wav': '.wav', 'audio/ogg': '.ogg', 'audio/flac': '.flac', 'audio/mp4': '.m4a',
+};
 const MIME_BY_EXT = Object.fromEntries(Object.entries(EXTENSIONS).map(([mime, ext]) => [ext, mime]));
 
 export const mimeFromName = (name) => MIME_BY_EXT[extname(name).toLowerCase()] ?? 'application/octet-stream';

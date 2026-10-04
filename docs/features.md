@@ -42,6 +42,14 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - **Settings → Engine → Workflows on this PC** shows the GPU, VRAM, backend (CUDA/ROCm), ComfyUI version,
   the variant each workflow uses, and the exact missing files for the others. *Re-detect models* refreshes it.
 - A wired picture the chosen workflow cannot use (e.g. a last frame on Wan) stops the render with a clear message.
+- **Lip sync** (2026-10-05): a Video card's **Voice / audio** socket takes a voice or song (Upload or Audio
+  card). With a First frame it renders `workflows/ltx-ia2v.json` (built from ltx-i2v by
+  `scripts/build-ltx-ia2v.mjs`): the audio is trimmed to the clip (`seconds` knob input) and frozen
+  (noise mask 0), so LTX animates the picture to it. A wired voice picks LTX whatever the card's model, on
+  this PC even for a cloud pick. Tried on the RTX 3080 Ti: 4 s at 480p in 65–80 s.
+- **Audio card** (2026-10-05): voices, sound effects and music from its words on bloop's audio models
+  (`kind=audio`, bloop's StudioAudioModels); a **Voice** knob reads `voice` / `voice_id` / `speaker`.
+  No local audio models: signed out, the card says to sign in.
 - **Install offline engine** (Settings → Engine, and *Download missing models* under Workflows on this PC):
   reads the graphics card from the registry and the free disk per drive, suggests the model families the card
   can run (`engine-install/plan.js`), and downloads ComfyUI portable v0.38.0 plus the picked model files from

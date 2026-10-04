@@ -74,7 +74,10 @@ export function compileGraph(preset, inputs) {
 export function choosePreset(presets, { type, settings = {}, wired = [] }) {
     const candidates = [...presets.values()].filter((p) => p.card === type);
     const available = new Set(candidates.map((p) => familyOf(p.id)));
-    const family = [settings.family, DEFAULT_FAMILY[type]].find((f) => available.has(f)) ?? familyOf(candidates[0]?.id ?? '');
+    // A voice wired in is lip sync, which only some families do (LTX): that one renders it.
+    const lipSync = wired.includes('audio') ? candidates.find((p) => p.needs?.includes('audio')) : null;
+    const family = (lipSync && familyOf(lipSync.id))
+        ?? [settings.family, DEFAULT_FAMILY[type]].find((f) => available.has(f)) ?? familyOf(candidates[0]?.id ?? '');
     const pool = candidates.filter((p) => familyOf(p.id) === family);
     // Prefer the variant whose needs are all wired; among those, the one that uses the most.
     const usable = pool.filter((p) => (p.needs ?? []).every((need) => wired.includes(need)));

@@ -1,5 +1,5 @@
 // The single GPU worker: claims queued jobs one at a time and runs them through the pipeline.
-import { runPipeline } from './pipeline.js';
+import { runPipeline, StageError } from './pipeline.js';
 import { GENERATION_STAGES } from './stages.js';
 import { CLOUD_STAGES } from './cloud-stages.js';
 import { cloudModelKey, isCloudFamily } from './cloud-models.js';
@@ -64,6 +64,10 @@ export class GenerationWorker {
             // A bloop model renders on bloop; one this PC is no longer offered falls back to the
             // card's local default, exactly as the card's Model list shows it.
             ctx.cloud = await this.#offersCloud(node);
+            // No local audio models: an Audio card renders on bloop or not at all.
+            if (!ctx.cloud && node.type === 'audio') {
+                throw new StageError('Audio cards use bloop’s voice, sound and music models. Sign in to bloop, then pick one in Model.');
+            }
             await runPipeline(ctx.cloud ? CLOUD_STAGES : GENERATION_STAGES, ctx);
             jobs.finish(job.id, 'succeeded');
             report({ status: 'done', progress: 1, ...ctx.result });
@@ -100,6 +104,8 @@ export class GenerationWorker {
     async #offersCloud(node) {
         const family = node.settings?.family;
         if (!isCloudFamily(family) || !this.deps.account) return false;
+        // A voice wired into a Video card is lip sync, which runs on this PC (LTX), whatever the card's pick.
+        if (node.type === 'video' && this.deps.spaces.upstreamOf(node.space_id, node.id).some((n) => n.to_socket === 'audio')) return false;
         const models = await this.deps.account.models();
         return Boolean(models?.[node.type]?.some((m) => m.key === cloudModelKey(family)));
     }

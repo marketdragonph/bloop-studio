@@ -31,6 +31,8 @@ export async function resolveCloudModel(ctx, next) {
     if (wired.has('last_frame') && !wired.has('first_frame')) throw new StageError('A last frame needs a first frame too.');
     if (wired.has('last_frame') && !ctx.model.has_end_frame) throw new StageError(`${ctx.model.name} cannot use a last frame. Remove that wire or pick another model.`);
     if (!wired.size && ctx.model.requires_image && !ctx.model.image_variant) throw new StageError(`${ctx.model.name} needs a picture. Wire one in, then press Generate.`);
+    // Lip sync to a wired voice runs on this PC (LTX); bloop's video models are not sent audio.
+    if (wired.has('audio')) throw new StageError('Lip sync to a voice runs on the offline engine: pick LTX-2.3 in Model, or remove the audio wire.');
     await next();
 }
 
@@ -84,7 +86,7 @@ export async function awaitCloud(ctx, next) {
 
         const status = await client.status(ctx.renderId).catch((error) => (error.status === 404 ? { status: 'failed', error: 'bloop no longer has this render.' } : null));
         if (status?.status === 'success') {
-            ctx.resultUrl = status.video_url ?? status.image_url;
+            ctx.resultUrl = status.video_url ?? status.image_url ?? status.audio_url;
             if (!ctx.resultUrl) throw new StageError('bloop finished but sent no file.');
             break;
         }

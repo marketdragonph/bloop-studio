@@ -21,7 +21,7 @@ export const generationMethods = {
     },
 
     async loadFamilies() {
-        for (const type of ['image', 'video']) {
+        for (const type of ['image', 'video', 'audio']) {
             try {
                 this.families[type] = await api('GET', `/presets/${type}`);
             } catch {
@@ -72,6 +72,8 @@ export const generationMethods = {
     /** The card's chosen family when this machine offers it, else the type's default (as the server picks). */
     familyOf(node) {
         const offered = this.families[node.type] ?? [];
+        // A voice wired into a Video card is lip sync, which LTX renders whatever the card's pick (presets.js choosePreset).
+        if (node.type === 'video' && this.isSocketConnected(node, { key: 'audio' }) && offered.some((f) => f.id === 'ltx')) return 'ltx';
         const chosen = node.settings?.family;
         return offered.some((f) => f.id === chosen) ? chosen : offered[0]?.id ?? '';
     },

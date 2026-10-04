@@ -6,9 +6,17 @@ export const CLOUD_PREFIX = 'bloop:';
 export const isCloudFamily = (family) => typeof family === 'string' && family.startsWith(CLOUD_PREFIX);
 export const cloudModelKey = (family) => family.slice(CLOUD_PREFIX.length);
 
-// Card knob → the bloop model param it sets, and the knob's list name in the card's options.
-const KNOB_PARAMS = { aspect: 'aspect_ratio', resolution: 'resolution', duration: 'duration', quality: 'quality' };
-const OPTION_LISTS = { aspect: 'aspects', resolution: 'resolutions', duration: 'durations', quality: 'qualities' };
+// Card knob → the bloop model params it may set (the first one the model declares), and the knob's
+// list name in the card's options. A voice is named differently per vendor: ElevenLabs `voice`,
+// MiniMax `voice_id`, Qwen `speaker`.
+const KNOB_PARAMS = {
+    aspect: ['aspect_ratio'], resolution: ['resolution'], duration: ['duration'], quality: ['quality'],
+    voice: ['voice', 'voice_id', 'speaker'],
+};
+const OPTION_LISTS = { aspect: 'aspects', resolution: 'resolutions', duration: 'durations', quality: 'qualities', voice: 'voices' };
+
+/** The param a knob sets on this model, or undefined when the model takes none of its names. */
+const paramFor = (knob, params) => KNOB_PARAMS[knob].find((name) => params[name]);
 
 /** A select's options, or a number param's min…max by step (a duration slider becomes choices). */
 function choicesOf(param) {
@@ -30,10 +38,12 @@ export function cloudFamilies(models, type) {
     return (models?.[type] ?? []).map((model) => {
         const params = { ...(model.image_variant?.params ?? {}), ...(model.params ?? {}) };
         const options = Object.fromEntries(
-            Object.entries(KNOB_PARAMS).map(([knob, param]) => [OPTION_LISTS[knob], labelled(knob, choicesOf(params[param]))]),
+            Object.keys(KNOB_PARAMS).map((knob) => [OPTION_LISTS[knob], labelled(knob, choicesOf(params[paramFor(knob, params)]))]),
         );
         const defaults = Object.fromEntries(
-            Object.entries(KNOB_PARAMS).filter(([, param]) => params[param]?.default != null).map(([knob, param]) => [knob, params[param].default]),
+            Object.keys(KNOB_PARAMS)
+                .map((knob) => [knob, params[paramFor(knob, params)]?.default])
+                .filter(([, value]) => value != null),
         );
         return {
             id: `${CLOUD_PREFIX}${model.key}`,
@@ -53,9 +63,10 @@ export function cloudFamilies(models, type) {
 export function cloudParams(model, settings = {}) {
     const params = { ...(model.image_variant?.params ?? {}), ...(model.params ?? {}) };
     const out = {};
-    for (const [knob, param] of Object.entries(KNOB_PARAMS)) {
+    for (const knob of Object.keys(KNOB_PARAMS)) {
+        const param = paramFor(knob, params);
         const value = settings[knob];
-        if (value === undefined || value === null || value === '' || !params[param]) continue;
+        if (value === undefined || value === null || value === '' || !param) continue;
         const offered = choicesOf(params[param]);
         if (!offered.length || offered.some((o) => String(o) === String(value))) out[param] = value;
     }

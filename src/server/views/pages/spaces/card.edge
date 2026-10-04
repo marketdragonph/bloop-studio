@@ -33,7 +33,7 @@
                   :value="node.text_content ?? ''" @input="editText(node, 'text_content', $event.target.value)"></textarea>
       </template>
 
-      <template x-if="node.type === 'image' || node.type === 'video'">
+      <template x-if="node.type === 'image' || node.type === 'video' || node.type === 'audio'">
         @include('pages/spaces/card-render')
       </template>
 
@@ -43,16 +43,19 @@
         <label class="card__drop" :class="{ 'has-media': mediaUrl(node) }" :for="'upload-file-' + node.id"
                @dragover.prevent @drop="onUploadDrop($event, node)" @dblclick.prevent="openViewer(node)">
           @include('pages/spaces/media-actions')
-          <input type="file" class="visually-hidden" :id="'upload-file-' + node.id" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+          <input type="file" class="visually-hidden" :id="'upload-file-' + node.id" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/flac,audio/mp4"
                  @change="uploadFile(node, $event.target.files[0]); $event.target.value = ''">
-          <template x-if="mediaUrl(node) && !isVideo(node)">
+          <template x-if="mediaUrl(node) && !isVideo(node) && !isAudio(node)">
             <img :src="mediaUrl(node)" :alt="node.label || 'Uploaded picture'">
+          </template>
+          <template x-if="mediaUrl(node) && isAudio(node)">
+            <audio :src="mediaUrl(node)" controls preload="metadata"></audio>
           </template>
           <template x-if="mediaUrl(node) && isVideo(node)">
             <video :src="mediaUrl(node)" controls preload="metadata"></video>
           </template>
           <span class="card__drop-hint" x-show="!mediaUrl(node)">
-            {{{ icon('upload') }}}<span x-text="node.status === 'generating' ? 'Uploading…' : 'Drop a picture or clip, or click to choose'"></span>
+            {{{ icon('upload') }}}<span x-text="node.status === 'generating' ? 'Uploading…' : 'Drop a picture, clip or voice, or click to choose'"></span>
           </span>
         </label>
         <p class="ae-readout card__filename" x-show="node.label" x-text="node.label"></p>

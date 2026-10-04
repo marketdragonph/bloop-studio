@@ -5,7 +5,7 @@
 import { knobOptions, aspectCss, DEFAULT_KNOBS } from '/shared/formats.js';
 
 const STICKY_KEY = 'bloop-studio:card-defaults';
-const KNOBS = ['family', 'aspect', 'resolution', 'duration', 'quality'];
+const KNOBS = ['family', 'aspect', 'resolution', 'duration', 'quality', 'voice'];
 
 function readSticky() {
     try {
@@ -33,14 +33,15 @@ export const knobMethods = {
     knobsFor(node) {
         const family = this.familyFor(node);
         // A bloop cloud model brings its own options (its params); a local family names a formats table.
-        return family?.options ?? knobOptions(family?.knobs) ?? { aspects: [], resolutions: [], durations: [], qualities: [] };
+        const none = { aspects: [], resolutions: [], durations: [], qualities: [], voices: [] };
+        return { ...none, ...(family?.options ?? knobOptions(family?.knobs)) };
     },
 
     knobValue(node, key) {
         const value = node.settings?.[key];
         const options = this.knobsFor(node);
         // A card made on another PC may hold a value this machine's table does not offer.
-        const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities }[key];
+        const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities, voice: options.voices }[key];
         const match = (v) => offered?.find((o) => String(o.value) === String(v))?.value;
         if (value !== undefined && value !== null && (!offered?.length || match(value) !== undefined)) return offered?.length ? match(value) : value;
         // A cloud model's own default (e.g. 5 s, not its longest and dearest).
@@ -50,13 +51,14 @@ export const knobMethods = {
         if (key === 'resolution') return options.resolutions[0]?.value;
         if (key === 'quality') return options.qualities.at(-1)?.value;
         if (key === 'duration') return options.durations.at(-1)?.value;
+        if (key === 'voice') return options.voices[0]?.value;
         return DEFAULT_KNOBS[key];
     },
 
     setKnob(node, key, value) {
         const settings = { ...node.settings, [key]: value };
-        // A new model family may not offer the old resolution/duration/quality: drop them.
-        if (key === 'family') for (const k of ['resolution', 'duration', 'quality']) delete settings[k];
+        // A new model family may not offer the old resolution/duration/quality/voice: drop them.
+        if (key === 'family') for (const k of ['resolution', 'duration', 'quality', 'voice']) delete settings[k];
         this.updateCard(node, { settings });
         writeSticky(node.type, key, value);
     },
@@ -64,12 +66,13 @@ export const knobMethods = {
     /** Applies remembered knob choices to a freshly created card. */
     applyStickyDefaults(node) {
         const sticky = readSticky()[node.type];
-        if (!sticky || !['image', 'video'].includes(node.type)) return;
+        if (!sticky || !['image', 'video', 'audio'].includes(node.type)) return;
         const settings = Object.fromEntries(KNOBS.filter((k) => sticky[k] !== undefined).map((k) => [k, sticky[k]]));
         if (Object.keys(settings).length) this.updateCard(node, { settings: { ...node.settings, ...settings } });
     },
 
     previewAspect(node) {
+        if (node.type === 'audio') return '4 / 1'; // a strip for the player, not a frame
         return aspectCss(this.knobValue(node, 'aspect'));
     },
 };

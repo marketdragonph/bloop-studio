@@ -125,13 +125,14 @@ The window opens maximized. Minimize, maximize and close are at the right end of
 drag the top bar to move the window. **F11** switches to full screen and back.
 
 1. Go to **Spaces** → **New space**.
-2. Add cards from the toolbar: **Text**, **Image**, **Video**, **Upload**, **Note**.
+2. Add cards from the toolbar: **Text**, **Image**, **Video**, **Audio**, **Upload**, **Note**.
 3. Wire cards by dragging from a card's right-hand arrow onto another card, or onto one of its sockets:
 
    | Card | Sockets |
    |---|---|
    | Image | **Words** (any number of text cards) · **Picture** (start from a picture) |
-   | Video | **Words** · **First frame** (animate a picture) · **Last frame** (travel from the first picture to this one) |
+   | Video | **Words** · **First frame** (animate a picture) · **Last frame** (travel from the first picture to this one) · **Voice / audio** (lip sync: the picture talks or sings to it) |
+   | Audio | **Words**: a voice, sound effect or music from them, on bloop's models (signed in) |
 
 4. Pick the card's **Model**, **Aspect**, **Resolution** and **Duration**, then press **Generate**.
    Progress, time left and the queue show on the card. **Cancel** stops it.
@@ -142,7 +143,10 @@ Tips:
 - Name text cards `Cast · <Name>` and `Location · <Place>` and wire them into every shot. Their text is
   added after the shot text, so characters and places look the same in every shot.
 - For video with sound, describe the sound in the words too, for example
-  *"Sound: rain on the roof, distant thunder."*
+  *"Sound: rain on the roof, distant thunder."* Dialogue in quotes is spoken, with matching lips.
+- **Lip sync to your own voice or song:** an Upload card with the audio (or an Audio card) into the Video
+  card's **Voice / audio** socket, and the picture into **First frame**. It renders on LTX-2.3 whatever the
+  card's model; the clip is as long as the card's Duration, and the audio is cut to it.
 - **Seed** on a card: lock it to re-render the same take with small changes.
 - The **Director** (top right on a board) can lay out cast, locations and shots for you. You still press
   Generate.

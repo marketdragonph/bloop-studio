@@ -1,4 +1,4 @@
-{{-- Body of an Image or Video card: preview (with the loader while it renders), model + seed, Generate.
+{{-- Body of an Image, Video or Audio card: preview (with the loader while it renders), model + seed, Generate.
      No prompt box: its words come only from Text cards wired into the Words socket. --}}
 <div class="card__render">
   <div class="card__media" :style="{ aspectRatio: previewAspect(node) }" @dblclick="openViewer(node)">
@@ -9,9 +9,13 @@
     <template x-if="mediaUrl(node) && node.type === 'video'">
       <video :src="mediaUrl(node)" controls preload="metadata"></video>
     </template>
+    <template x-if="mediaUrl(node) && node.type === 'audio'">
+      <audio :src="mediaUrl(node)" controls preload="metadata"></audio>
+    </template>
     @include('pages/spaces/card-loader')
     <template x-if="!mediaUrl(node) && !isBusy(node)">
-      <span class="ae-readout card__placeholder" x-text="hasWords(node) ? 'Press Generate to make it' : 'Wire a Text card into Words'"></span>
+      <span class="ae-readout card__placeholder"
+            x-text="node.type === 'audio' && !families.audio?.length ? 'Sign in to bloop for voices, sound and music' : hasWords(node) ? 'Press Generate to make it' : 'Wire a Text card into Words'"></span>
     </template>
   </div>
 
@@ -50,6 +54,15 @@
         })
       </div>
     </template>
+    {{-- A bloop voice model's voices (ElevenLabs `voice`, MiniMax `voice_id`, Qwen `speaker`). --}}
+    <template x-if="knobsFor(node).voices.length">
+      <div class="card__knob card__knob--wide">
+        @!component('components/select', {
+          label: 'Voice', options: 'knobsFor(node).voices', value: "knobValue(node, 'voice')",
+          change: "setKnob(node, 'voice', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
     <template x-if="knobsFor(node).qualities.length > 1">
       <div class="card__knob">
         @!component('components/select', {
@@ -60,7 +73,7 @@
     </template>
   </div>
 
-  <div class="card__controls">
+  <div class="card__controls" x-show="node.type !== 'audio'">
     <button type="button" class="ae-key ae-key--sm" @click="toggleSeedLock(node)" :aria-pressed="!!node.settings?.seedLocked"
             :title="node.settings?.seed != null ? 'Seed ' + node.settings.seed : 'No seed yet'">
       <span x-show="node.settings?.seedLocked">{{{ icon('lock') }}}</span>
