@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.623
+
 - New: Bloop Studio finds ComfyUI on your PC and starts it for you. Press **Start** next to the engine light in the top bar, or turn on *Start ComfyUI when Bloop Studio opens* in Settings → Engine. No more .bat files.
 
 ## 2026.1004.945
