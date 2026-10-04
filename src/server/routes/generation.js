@@ -7,14 +7,34 @@ import { cloudFamilies } from '../generation/cloud-models.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, reveal }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, launcher, reveal }) {
     const routes = new Hono();
 
-    routes.post('/spaces/:id/nodes/:nodeId/generate', (c) => {
-        const node = spaces.findNode(int(c.req.param('id')), int(c.req.param('nodeId')));
+    /**
+     * A card's Model list, in order; the first is what a card with no pick renders on.
+     * Local families first. CLOUD ONLY — no ComfyUI answering and none on this PC to start — bloop's
+     * models come first, so a signed-in PC without a GPU setup renders out of the box. A PC whose
+     * ComfyUI is merely off keeps local first: an untouched card never spends credits by surprise.
+     */
+    const offered = async (type) => {
+        const profile = await engine.current();
+        const local = familiesFor(profile.presets, type);
+        const cloud = cloudFamilies(await account?.models(), type);
+        const cloudOnly = cloud.length && !profile.detected && !launcher?.state().available;
+        return cloudOnly ? [...cloud, ...local] : [...local, ...cloud];
+    };
+
+    routes.post('/spaces/:id/nodes/:nodeId/generate', async (c) => {
+        let node = spaces.findNode(int(c.req.param('id')), int(c.req.param('nodeId')));
         if (!node) return c.json({ error: 'That card no longer exists.' }, 404);
         if (!['image', 'video'].includes(node.type)) return c.json({ error: 'Only Image and Video cards render.' }, 422);
         if (jobs.activeForNode(node.id)) return c.json({ error: 'This card is already rendering.' }, 409);
+
+        // A card with no pick renders on what its Model list shows first, so the press matches the card.
+        if (!node.settings?.family) {
+            const first = (await offered(node.type))[0]?.id;
+            if (first) node = spaces.updateNode(node.space_id, node.id, { settings: { family: first } });
+        }
 
         const job = jobs.enqueue({ nodeId: node.id, preset: node.settings.family ?? 'auto' });
         spaces.setNodeResult(node.id, { status: 'queued' });
@@ -49,11 +69,7 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
 
     // The families this machine's ComfyUI can run (see EngineProfile), then bloop's cloud models
     // when a paid bloop account is signed in.
-    routes.get('/presets/:type', async (c) => {
-        const type = c.req.param('type');
-        const local = familiesFor((await engine.current()).presets, type);
-        return c.json([...local, ...cloudFamilies(await account?.models(), type)]);
-    });
+    routes.get('/presets/:type', async (c) => c.json(await offered(c.req.param('type'))));
 
     // One stream per open board; only that board's cards are sent.
     routes.get('/spaces/:id/events', (c) => {

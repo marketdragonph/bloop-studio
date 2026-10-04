@@ -88,7 +88,10 @@ cloud models and the app is fully usable with no ComfyUI at all.
 
 ## Checklist
 
-- [ ] Cloud-only mode: engine light, card defaults, launch/Settings choice
+- [x] Cloud-only mode: engine light *Cloud only* (no engine answering, none on this PC to start, signed in);
+      bloop models first in a card's list and an untouched card renders on one (2026-10-05). A PC whose
+      ComfyUI is only off keeps local first, so nothing spends credits by surprise.
+- [ ] Launch / Settings choice: *Install offline engine* or *Stay online*
 - [ ] Model manifest with sources, sizes, SHA-256 and licenses; test: every workflow file is listed
 - [ ] GPU check step (VRAM, disk, vendor) and the per-tier preselection
 - [ ] Download queue: resume, checksum, free-space check, progress over the event stream

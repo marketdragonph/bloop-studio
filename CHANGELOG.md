@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: free bloop accounts can use bloop's lower-cost cloud models too, on their free credits.
+- New: no ComfyUI on this PC? Signed in to bloop, Bloop Studio works cloud only: the engine light says *Cloud only* and cards use bloop's models first.
+
 ## 2026.1005.623
 
 - New: Bloop Studio finds ComfyUI on your PC and starts it for you. Press **Start** next to the engine light in the top bar, or turn on *Start ComfyUI when Bloop Studio opens* in Settings → Engine. No more .bat files.

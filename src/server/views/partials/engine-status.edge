@@ -21,6 +21,11 @@
       </button>
     @end
   </span>
+@elseif(cloudOnly)
+  <a href="/settings" class="status-light status-light--busy" title="No ComfyUI on this PC: cards render on bloop's cloud models, with your credits.">
+    <span class="status-light__dot" aria-hidden="true"></span>
+    <span class="ae-readout">Cloud only</span>
+  </a>
 @elseif(sw.starting)
   <span class="status-light status-light--busy" title="Starting ComfyUI from {{ sw.path }}">
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span>

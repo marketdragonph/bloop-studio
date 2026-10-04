@@ -3,12 +3,15 @@
 // this PC) and the launcher panel shown in Settings.
 import { Hono } from 'hono';
 
-export function engineRoutes({ views, comfy, engine, launcher }) {
+export function engineRoutes({ views, comfy, engine, launcher, account }) {
     const routes = new Hono();
 
     const light = async (c) => {
         const status = await comfy().status();
-        return c.html(await views.render('partials/engine-status', { status, launch: launcher.state({ online: status.online }) }));
+        // Cloud only: no engine answering, none on this PC to start, and bloop's models are there instead.
+        const launch = launcher.state({ online: status.online });
+        const cloudOnly = !status.online && !launch.available && Boolean(account?.signedIn);
+        return c.html(await views.render('partials/engine-status', { status, launch, cloudOnly }));
     };
 
     routes.get('/status', light);

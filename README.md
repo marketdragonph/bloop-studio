@@ -99,8 +99,10 @@ After adding models, restart ComfyUI, then press **Re-detect models** in Setting
 
 ## Bloop account (optional)
 
-Bloop Studio is free and renders on your own GPU. If you have a bloop account on **Lite or above**,
-you can also use bloop's cloud models, paid with your bloop credits:
+Bloop Studio is free and renders on your own GPU. Signed in to a bloop account, you can also use bloop's
+cloud models, paid with your bloop credits. **Lite and above** get every model; a **free account** gets the
+lower-cost ones (new accounts start with 60 free credits). No GPU setup at all? Signed in, the app works
+**cloud only**: the engine light says *Cloud only* and cards use bloop's models first.
 
 1. **Settings → Bloop account → Sign in.** Your browser opens bloop. Log in the way you always do
    (Google, TikTok, Facebook or email) and press **Allow**.
