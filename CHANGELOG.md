@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1004.927
+
 - Changed: the launch screen is full screen, with new MarketDragon hangar art behind it.
 
 ## 2026.1004.902
