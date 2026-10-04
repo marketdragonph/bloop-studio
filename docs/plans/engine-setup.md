@@ -38,6 +38,13 @@ on a card when no engine is installed. Removing the engine never touches boards 
       render" opens a sample board.
 3. From then on Bloop Studio **starts ComfyUI with itself and stops it on quit**. The top bar light
    reads Engine starting → online. Nobody opens ComfyUI or runs a `.bat`.
+   - **Settings → Engine → "Start the offline engine":** *With Bloop Studio* (default) · *When I
+     render* (starts on the first local render, stops after 15 min idle to give the GPU back) · *Only
+     when I press Start*.
+   - **Top-bar switch:** clicking the engine light opens *Start engine* / *Stop engine* and *Free GPU
+     memory* (ComfyUI `/free`) — for a game or another GPU app.
+   - A local render while the engine is stopped starts it (first two modes; the card shows "Engine
+     starting…") or says to press Start (manual). Cloud models work either way.
 4. **Repair / add more:** Settings → Engine lists installed families, *Add a family*, *Repair* (re-check
    files and fetch what is missing), *Remove*, and the disk space used.
 
@@ -88,6 +95,7 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [ ] ComfyUI portable install (NVIDIA), pinned version, `7zr.exe` bundled + notices
 - [ ] Custom nodes as pinned archives + requirements
 - [ ] Engine process manager: start with the app, stop on quit, health check, log
+- [ ] Start modes (with the app / when I render + idle stop / manual) and the top-bar Start/Stop/Free switch
 - [ ] Wizard UI (modal steps), Settings → Engine: install / add family / repair / remove / disk used
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint
 - [ ] AMD (ROCm) path, behind beta
