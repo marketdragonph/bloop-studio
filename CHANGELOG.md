@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1004.945
+
 - Changed: while signed out, the launch screen shows every time the app opens.
 
 ## 2026.1004.938
