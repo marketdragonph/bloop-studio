@@ -22,6 +22,26 @@ setup step or brings a bloop tool to where their renders already are.
 `/studio` is taken (the public showcase), so the page is `/bloop-studio`. Follows bloop's rules
 (CLAUDE.md: design-system.css tokens, atomic Blade components, hx-boost, docs).
 
+**It has to sell, not just link.** The pitch is "make films with AI without learning ComfyUI".
+Sections, most persuasive first:
+
+1. Hero: "Make films with AI. No node spaghetti." A short looping clip of the real app (wire a Text card
+   into a Video card, Generate, the clip plays). **Download for Windows** with version + size, and
+   "Free · runs on your GPU · or render on bloop cloud".
+2. ComfyUI vs Bloop Studio: a real ComfyUI graph beside the same shot as three wired cards (shown
+   plainly, not mocked).
+3. "Made with Bloop Studio": a gallery of stills and clips rendered in the app (the Kiri assets fit).
+4. Online / Offline / Both tiles (from engine-setup.md), "60 free credits when you sign in".
+5. Three steps: download → choose online or *Install offline engine* → first shot.
+6. Feature tiles: wired story board, first → last frame video, video with sound, Director chat;
+   coming soon: Katana (video editor), Kaiga (canvas).
+7. Requirements + FAQ, then the download button again.
+8. On a phone or Mac: "Bloop Studio is for Windows" + *Email me the link*. After the download starts:
+   a "What next" panel that shows the SmartScreen screen and where to click.
+
+Clips and screenshots are made under `F:\MarketDragon-Media\` (bloop's media rule), never in the repo.
+Built from bloop's marketing components (`marketing-hero`, `marketing-section`, `marketing-feature-card`).
+
 - Hero: "Bloop Studio for Windows — free, renders on your own GPU"; **Download for Windows**.
 - The button resolves the latest release server-side (GitHub API for
   `marketdragonph/bloop-studio-releases`, cached 10 minutes) and shows version + size; if GitHub
