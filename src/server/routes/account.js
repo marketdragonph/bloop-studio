@@ -31,6 +31,11 @@ export function accountRoutes({ views, account }) {
 
     routes.delete('/', async (c) => {
         await account.signOut();
+        // From the top-bar menu: straight to the launch screen, to sign in again or go on without.
+        if (c.req.query('from') === 'menu') {
+            c.header('HX-Redirect', '/');
+            return c.body(null, 204);
+        }
         return panel(c, account.state());
     });
 
