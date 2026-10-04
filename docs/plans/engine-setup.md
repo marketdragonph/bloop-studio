@@ -8,11 +8,25 @@ the person presses one button and ends with a working engine sized to their GPU.
 Decided 2026-10-04 with the owner: this is priority 2 of the roadmap ([roadmap.md](roadmap.md)),
 after the small cloud-only polish, and before the editor ports.
 
+## The person decides: online, offline, or both
+
+Installing is a choice, never a requirement, and it can change at any time:
+
+| Mode | What it takes | What they get |
+|---|---|---|
+| **Online** (bloop cloud) | Sign in. Nothing installed | bloop's models on every card, paid with credits |
+| **Offline** (installed engine) | *Install offline engine*: ComfyUI + the models for their GPU (~40 GB on 12 GB) | Free renders on their GPU; no internet or account needed |
+| **Both** | Both of the above | Local and cloud models side by side on each card |
+
+Where the choice lives: the launch screen (first run), **Settings → Engine** at any time (*Install
+offline engine*, *Add a model family*, *Repair*, *Remove offline engine* — frees the disk), and a hint
+on a card when no engine is installed. Removing the engine never touches boards or renders.
+
 ## What the person sees
 
-1. **Launch screen / Settings → Engine:** "No engine on this PC yet." Two buttons:
-   **Set up my GPU** (recommended when a capable GPU is found) and **Use bloop cloud only**.
-2. **Set up my GPU** opens a wizard (an HTMX modal, steps as partials):
+1. **Launch screen / Settings → Engine:** "No offline engine on this PC yet." Two buttons:
+   **Install offline engine** (recommended when a capable GPU is found) and **Stay online (bloop cloud)**.
+2. **Install offline engine** opens a wizard (an HTMX modal, steps as partials):
    1. **Your PC** — GPU name, VRAM, free disk space, NVIDIA/AMD. A plain verdict: "Ready for images
       and video", "Images only (8 GB)", or "Too small for local renders — use bloop cloud".
    2. **What to install** — model families with sizes, preselected for the card (e.g. 12 GB: Z-Image
@@ -74,7 +88,8 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [ ] ComfyUI portable install (NVIDIA), pinned version, `7zr.exe` bundled + notices
 - [ ] Custom nodes as pinned archives + requirements
 - [ ] Engine process manager: start with the app, stop on quit, health check, log
-- [ ] Wizard UI (modal steps), Settings → Engine: add family / repair / remove / disk used
+- [ ] Wizard UI (modal steps), Settings → Engine: install / add family / repair / remove / disk used
+- [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint
 - [ ] AMD (ROCm) path, behind beta
 - [ ] Tested end to end on a clean Windows PC (12 GB NVIDIA) and the 24 GB AMD desktop
 
