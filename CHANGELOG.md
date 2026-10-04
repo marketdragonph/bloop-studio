@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.756
+
 - New: **lip sync**. Wire a picture into a Video card's First frame and a voice or song into its new **Voice / audio** socket: the picture talks or sings to it, on your own GPU (LTX-2.3).
 - New: **Audio card** for voices, sound effects and music from your words, on bloop's models (ElevenLabs, MiniMax, Qwen voices; Suno music). Sign in to bloop; free accounts get the lower-cost ones.
 - New: Upload cards take voices and songs too (MP3, WAV, OGG, FLAC, M4A).
