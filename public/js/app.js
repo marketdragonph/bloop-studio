@@ -4,10 +4,12 @@ import Modal from './components/modal.js';
 import SpaceBoard from './board/board.js';
 import ThemeToggle from './components/theme-toggle.js';
 import MechaSelect from './components/mecha-select.js';
+import AccountMenu from './components/account-menu.js';
 
 Alpine.data('Modal', Modal);
 Alpine.data('MechaSelect', MechaSelect);
 Alpine.data('ThemeToggle', ThemeToggle);
+Alpine.data('AccountMenu', AccountMenu);
 Alpine.data('SpaceBoard', SpaceBoard);
 
 window.Alpine = Alpine;

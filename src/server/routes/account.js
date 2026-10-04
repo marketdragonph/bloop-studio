@@ -1,9 +1,17 @@
-// Settings → Bloop account: sign in through the browser, see the plan and credits, sign out.
+// Bloop account panel (Settings, and the launch screen with ?from=launch): sign in through the
+// browser, see the plan and credits, sign out.
 import { Hono } from 'hono';
 
 export function accountRoutes({ views, account }) {
     const routes = new Hono();
-    const panel = async (c, state) => c.html(await views.render('partials/bloop-account', state));
+    // On the launch screen the panel keeps its ?from=launch on every request it makes, and a
+    // finished sign-in offers "Open Bloop Studio" instead of Refresh / Sign out.
+    // ?from=menu answers with the top-bar account menu instead of the panel.
+    const panel = async (c, state) => {
+        if (c.req.query('from') === 'menu') return c.html(await views.render('partials/account-menu', state));
+        const launch = c.req.query('from') === 'launch';
+        return c.html(await views.render('partials/bloop-account', { ...state, launch, from: launch ? 'from=launch' : '' }));
+    };
 
     routes.get('/', async (c) => panel(c, c.req.query('refresh') === '0' ? account.state() : await account.refresh()));
 

@@ -6,6 +6,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { BloopClient } from './bloop-client.js';
 
+// Where people sign in: always bloop itself. BLOOP_URL points a development run at a local bloop.
+export const BLOOP_URL = process.env.BLOOP_URL ?? 'https://marketdragon.ph';
+
 const SIGN_IN_TIMEOUT_MS = 5 * 60_000;
 const MODELS_MAX_AGE_MS = 5 * 60_000;
 
@@ -21,7 +24,8 @@ export class BloopAccount {
     #models = null; // { at, data }
 
     /** @param {{ settings, openExternal: (url: string) => unknown, clientFor?: Function, now?: () => number }} deps */
-    constructor({ settings, openExternal, clientFor = (url, token) => new BloopClient(url, token), now = Date.now }) {
+    constructor({ settings, openExternal, baseUrl = BLOOP_URL, clientFor = (url, token) => new BloopClient(url, token), now = Date.now }) {
+        this.baseUrl = baseUrl;
         this.settings = settings;
         this.openExternal = openExternal;
         this.clientFor = clientFor;
@@ -29,7 +33,7 @@ export class BloopAccount {
     }
 
     client() {
-        return this.clientFor(this.settings.get('bloopUrl'), this.settings.get('bloopToken'));
+        return this.clientFor(this.baseUrl, this.settings.get('bloopToken'));
     }
 
     get signedIn() {
@@ -55,7 +59,7 @@ export class BloopAccount {
         this.#pending = { server, state, verifier, timer };
 
         const challenge = base64url(createHash('sha256').update(verifier).digest());
-        const url = this.clientFor(this.settings.get('bloopUrl')).connectUrl({ port: server.address().port, state, challenge });
+        const url = this.clientFor(this.baseUrl).connectUrl({ port: server.address().port, state, challenge });
         await this.openExternal(url);
         return url;
     }
@@ -82,16 +86,24 @@ export class BloopAccount {
         this.#forget(null);
     }
 
-    /** bloop's model list for a paid account, cached a few minutes; null when there is none to offer. */
+    /**
+     * bloop's model list for the signed-in account, cached a few minutes; null when there is none to
+     * offer. bloop decides what a plan sees (free plans: the lower-cost models), not this app.
+     */
     async models({ refresh = false } = {}) {
-        const account = this.settings.get('bloopAccount');
-        if (!this.signedIn || !account?.paid) return null;
+        if (!this.signedIn) return null;
         if (!refresh && this.#models && this.now() - this.#models.at < MODELS_MAX_AGE_MS) return this.#models.data;
         try {
             this.#models = { at: this.now(), data: await this.client().models() };
         } catch (error) {
             if (error.status === 401) this.#forget('Your bloop sign-in expired. Sign in again to use bloop models.');
-            if (error.status === 402) await this.refresh(); // the plan lapsed: the account says so now
+            if (error.status === 402) {
+                // This plan gets no bloop models: remember that for the cache window, and refresh
+                // the account so Settings shows the plan bloop now reports.
+                this.#models = { at: this.now(), data: null };
+                await this.refresh();
+                return null;
+            }
             return this.#models?.data ?? null; // offline: keep offering what we last saw
         }
         return this.#models.data;
@@ -114,7 +126,7 @@ export class BloopAccount {
             return;
         }
         try {
-            const { token, account } = await this.clientFor(this.settings.get('bloopUrl')).exchange({
+            const { token, account } = await this.clientFor(this.baseUrl).exchange({
                 code: url.searchParams.get('code'),
                 verifier: pending.verifier,
                 deviceName: hostname().slice(0, 60),

@@ -4,7 +4,11 @@
 // stays in sync with whatever state owns them.
 //
 //   x-data="MechaSelect({ options: () => [...], value: () => current, onChange: (v) => save(v) })"
+//
+// A long list (the Model list with bloop's cloud models) gets a search box: it filters on the
+// label and the description, so "cloud", "kling" or "credits" all narrow it.
 let uid = 0;
+const SEARCH_FROM = 9; // options before the search box appears
 
 export default function MechaSelect({ options, value, onChange, placeholder = 'Choose…' }) {
     return {
@@ -13,13 +17,33 @@ export default function MechaSelect({ options, value, onChange, placeholder = 'C
         active: -1,
         placeholder,
         panelStyle: {},
+        query: '',
 
-        get items() {
+        get allItems() {
             return options() ?? [];
         },
 
+        get searchable() {
+            return this.allItems.length >= SEARCH_FROM;
+        },
+
+        /** The options shown: all of them, or those matching every word typed. */
+        get items() {
+            const words = this.query.toLowerCase().split(/\s+/).filter(Boolean);
+            if (!words.length) return this.allItems;
+            return this.allItems.filter((o) => {
+                const text = `${o.label} ${o.description ?? ''}`.toLowerCase();
+                return words.every((w) => text.includes(w));
+            });
+        },
+
         get selected() {
-            return this.items.find((o) => o.value === value()) ?? null;
+            return this.allItems.find((o) => o.value === value()) ?? null;
+        },
+
+        /** Typing narrows the list and highlights its first match. */
+        search() {
+            this.active = this.items.length ? 0 : -1;
         },
 
         optionId(index) {
@@ -33,13 +57,17 @@ export default function MechaSelect({ options, value, onChange, placeholder = 'C
         show() {
             if (this.$refs.trigger.disabled) return;
             this.place();
+            this.query = '';
             this.open = true;
             this.active = Math.max(0, this.items.findIndex((o) => o.value === value()));
+            // By id: the box lives in the teleported panel, where $refs does not reach.
+            if (this.searchable) this.$nextTick(() => document.getElementById(`${this.id}-search`)?.focus());
         },
 
         close() {
             this.open = false;
             this.active = -1;
+            this.query = '';
         },
 
         closeAndFocus() {
@@ -47,11 +75,15 @@ export default function MechaSelect({ options, value, onChange, placeholder = 'C
             this.$refs.trigger.focus();
         },
 
-        /** Fixed coordinates from the trigger's on-screen rect; flips upward near the bottom. */
+        /**
+         * Fixed coordinates from the trigger's on-screen rect; flips upward near the bottom. A searchable
+         * list is wider (long model names and their prices), and is kept inside the window.
+         */
         place() {
             const rect = this.$refs.trigger.getBoundingClientRect();
             const below = window.innerHeight - rect.bottom;
-            const style = { left: `${Math.min(rect.left, window.innerWidth - 168)}px`, minWidth: `${rect.width}px` };
+            const width = this.searchable ? Math.min(Math.max(rect.width, 320), window.innerWidth - 16) : Math.max(rect.width, 160);
+            const style = { left: `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`, minWidth: `${width}px` };
             if (below < 200 && rect.top > below) style.bottom = `${window.innerHeight - rect.top + 4}px`;
             else style.top = `${rect.bottom + 4}px`;
             this.panelStyle = style;

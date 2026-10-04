@@ -1,26 +1,28 @@
-{{-- Settings → Bloop account. While the browser sign-in is open it re-polls itself every 2 s
-     (without asking bloop each time) until the account arrives, the person cancels, or it times out. --}}
+{{-- Bloop account panel (Settings, and the launch screen when `launch`). While the browser sign-in
+     is open it re-polls itself every 2 s (without asking bloop each time) until the account arrives,
+     the person cancels, or it times out. `from` carries ?from=launch on every request it makes. --}}
+@let(q = from ? `?${from}` : '')
 @if(status === 'waiting')
   <p class="plate-note">
     Finish signing in in your browser, then press Allow.
     <span class="ae-sensor-dot update-pulse" aria-hidden="true"></span>
   </p>
-  <span hx-get="/account?refresh=0" hx-trigger="load delay:2s" hx-target="#bloop-account" hx-swap="innerHTML"></span>
+  <span hx-get="/account?refresh=0{{ from ? `&${from}` : '' }}" hx-trigger="load delay:2s" hx-target="#bloop-account" hx-swap="innerHTML"></span>
   <div class="row">
-    <button type="button" class="ae-key ae-key--sm" hx-post="/account/cancel" hx-target="#bloop-account" hx-swap="innerHTML">Cancel</button>
+    <button type="button" class="ae-key ae-key--sm" hx-post="/account/cancel{{ q }}" hx-target="#bloop-account" hx-swap="innerHTML">Cancel</button>
   </div>
 @elseif(status === 'signed-in')
   <p class="plate-note">
     Signed in as <strong>{{ account.name }}</strong> ({{ account.email }})
-    · {{ account.plan ?? 'No plan' }} · {{ account.credits ?? 0 }} credits
+    · {{ account.plan ?? 'Starter' }} · {{ account.credits ?? 0 }} credits
   </p>
   @if(account.paid)
     <p class="plate-note">Bloop models are on your cards' Model list, marked with their credit price.</p>
   @else
     <p class="plate-note">
-      Bloop models need Lite or above. Your own GPU keeps working as before.
+      On the free plan your cards get bloop's lower-cost models, paid with your credits.
       @if(account.upgrade_url)
-        <a href="{{ account.upgrade_url }}" target="_blank" rel="noopener">See plans</a>
+        <a href="{{ account.upgrade_url }}" target="_blank" rel="noopener">See plans</a> for all of them.
       @end
     </p>
   @end
@@ -28,15 +30,21 @@
     @!component('components/alert', { tone: 'warn', message: error })
   @end
   <div class="row">
-    <button type="button" class="ae-key ae-key--sm" hx-get="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Refresh</button>
-    <button type="button" class="ae-key ae-key--sm" hx-delete="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-confirm="Sign out of bloop on this PC?">Sign out</button>
+    @if(launch)
+      <button type="button" class="ae-key ae-key--accent ae-key--block" hx-post="/launch/continue">Open Bloop Studio</button>
+    @else
+      <button type="button" class="ae-key ae-key--sm" hx-get="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Refresh</button>
+      <button type="button" class="ae-key ae-key--sm" hx-delete="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-confirm="Sign out of bloop on this PC?">Sign out</button>
+    @end
   </div>
 @else
-  <p class="plate-note">Optional. Sign in to add bloop's cloud models to your cards (Lite plan and up, paid with your bloop credits).</p>
+  @if(!launch)
+    <p class="plate-note">Optional. Sign in to add bloop's cloud models to your cards, paid with your bloop credits. New accounts get 60 free credits.</p>
+  @end
   @if(error)
     @!component('components/alert', { tone: 'warn', message: error })
   @end
   <div class="row">
-    <button type="button" class="ae-key ae-key--accent ae-key--sm" hx-post="/account/sign-in" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Sign in</button>
+    <button type="button" class="ae-key ae-key--accent{{ launch ? ' ae-key--block' : ' ae-key--sm' }}" hx-post="/account/sign-in{{ q }}" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Sign in with bloop</button>
   </div>
 @end

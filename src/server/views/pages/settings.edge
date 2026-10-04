@@ -84,10 +84,6 @@
       <div id="bloop-account" hx-get="/account" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
         <p class="plate-note">Reading your bloop account…</p>
       </div>
-      @!component('components/field', {
-        name: 'bloopUrl', label: 'bloop address', value: old?.bloopUrl ?? settings.bloopUrl,
-        hint: 'Where you sign in. Changing it signs this PC out.', error: errors.bloopUrl
-      })
     @end
 
     @component('components/plate', { heading: 'App', labelledBy: 'app-h' })
