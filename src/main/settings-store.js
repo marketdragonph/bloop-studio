@@ -18,9 +18,8 @@ const DEFAULTS = {
     // 'maximized' (window controls in the top bar) or 'fullscreen' (F11), restored on launch. Replaces the
     // old `fullscreen` key, which defaulted to true and left no visible way to minimize or close.
     windowMode: 'maximized',
-    // Optional bloop account (cloud models on credits). The token is a secret; the account is the
-    // last name/plan/credits bloop reported, shown while offline.
-    bloopUrl: 'https://marketdragon.ph',
+    // Optional bloop account (cloud models on credits), always at bloop itself (BLOOP_URL in development).
+    // The token is a secret; the account is the last name/plan/credits bloop reported, shown offline.
     bloopAccount: null,
     // The launch screen (optional bloop sign-in) shows until the person signs in or continues without.
     launchSeen: false,

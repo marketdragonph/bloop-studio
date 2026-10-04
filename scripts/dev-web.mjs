@@ -8,8 +8,6 @@ const store = {
     llmProvider: 'anthropic',
     anthropicModel: 'claude-sonnet-5-5',
     openaiModel: 'gpt-5',
-    // The local bloop (Sail) by default; BLOOP_URL=https://… for another one.
-    bloopUrl: process.env.BLOOP_URL ?? 'http://localhost',
     bloopAccount: null,
     bloopToken: null, // in memory only, gone when this dev server stops
     launchSeen: Boolean(process.env.SKIP_LAUNCH), // SKIP_LAUNCH=1 opens straight on Spaces
@@ -37,6 +35,8 @@ import { join } from 'node:path';
 const dataDir = join(tmpdir(), 'bloop-studio-dev');
 // NO_BROWSER=1 prints the bloop sign-in link instead of opening it (to open it somewhere else).
 const openExternal = process.env.NO_BROWSER ? (link) => console.log(`bloop sign-in: ${link}`) : undefined;
-const { url } = await createServer({ settings, dataDir, port: Number(process.env.PORT ?? 5199), openExternal });
+// The local bloop (Sail) by default; BLOOP_URL=https://… for another one.
+const bloopUrl = process.env.BLOOP_URL ?? 'http://localhost';
+const { url } = await createServer({ settings, dataDir, port: Number(process.env.PORT ?? 5199), openExternal, bloopUrl });
 console.log(`dev data: ${dataDir}`);
 console.log(`dev web server on ${url}`);

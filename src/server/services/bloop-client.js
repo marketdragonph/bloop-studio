@@ -1,5 +1,5 @@
 // The bloop web app's Studio API (api/v1/studio): the optional account that adds bloop's cloud
-// models to cards, paid with the person's bloop credits. The token is only ever sent to bloopUrl.
+// models to cards, paid with the person's bloop credits. The token is only ever sent to that bloop.
 
 export class BloopError extends Error {
     constructor(message, status, body = {}) {

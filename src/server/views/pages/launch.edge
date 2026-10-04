@@ -2,34 +2,50 @@
      without an account (routes/home.js). The bloop sign-in is optional; the app is free without it. --}}
 @component('layouts/app', { title: 'Welcome', bodyClass: 'is-launch' })
 <div class="launch">
-  <header class="launch__head">
-    <p class="ae-stencil ae-stencil--sensor">Welcome to</p>
-    <h1 class="launch__title">Bloop Studio</h1>
-    <p class="plate-note">Lay out a story as cards and render stills and video with sound on your own GPU. Free, offline, yours.</p>
-    <div class="launch__engine" hx-get="/engine/status" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
-      @include('partials/engine-status')
+  <header class="launch__hero">
+    <img class="launch__mark" src="/assets/img/bloop-studio-mark.svg" alt="" width="96" height="96">
+    <div class="launch__intro">
+      <p class="ae-stencil ae-stencil--sensor">Welcome to</p>
+      <h1 class="launch__title">Bloop Studio</h1>
+      <p class="launch__tagline">Lay out a story as cards. Render stills and video with sound on your own GPU.</p>
+      <div class="launch__engine" hx-get="/engine/status" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        @include('partials/engine-status')
+      </div>
     </div>
   </header>
 
   <div class="launch__choices">
-    @component('components/plate', { heading: 'Sign in with bloop', labelledBy: 'launch-bloop-h' })
-      <p class="plate-note">Optional. Adds bloop's cloud models to your cards, paid with your bloop credits. New accounts get 60 free credits.</p>
-      <div id="bloop-account" hx-get="/account?from=launch" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
-        <p class="plate-note">Checking for a bloop sign-in…</p>
+    <section class="ae-plate launch__choice launch__choice--bloop" aria-labelledby="launch-bloop-h">
+      <div class="ae-plate__inner launch__choice-inner">
+        <p class="ae-stencil launch__kicker">Recommended · optional</p>
+        <h2 id="launch-bloop-h" class="launch__choice-title">Sign in with bloop</h2>
+        <ul class="launch__perks" role="list">
+          <li>{{{ icon('bolt') }}}<span>Cloud models on every card: Kling, Seedance, Runway, Grok Imagine and more</span></li>
+          <li>{{{ icon('check') }}}<span>New accounts get <strong>60 free credits</strong></span></li>
+          <li>{{{ icon('key') }}}<span>Google, TikTok, Facebook or email. Your password never touches this app</span></li>
+        </ul>
+        <div id="bloop-account" class="launch__account" hx-get="/account?from=launch" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+          <p class="plate-note">Checking for a bloop sign-in…</p>
+        </div>
       </div>
-    @end
+    </section>
 
-    @component('components/plate', { heading: 'Continue without an account', labelledBy: 'launch-local-h' })
-      <p class="plate-note">Everything renders on this PC through ComfyUI. You can sign in later from Settings.</p>
-      <div class="row">
-        <button type="button" class="ae-key" hx-post="/launch/continue">Continue without an account</button>
+    <section class="ae-plate launch__choice" aria-labelledby="launch-local-h">
+      <div class="ae-plate__inner launch__choice-inner">
+        <p class="ae-stencil launch__kicker">Free · offline</p>
+        <h2 id="launch-local-h" class="launch__choice-title">Continue without an account</h2>
+        <ul class="launch__perks" role="list">
+          <li>{{{ icon('board') }}}<span>Everything renders on this PC through ComfyUI</span></li>
+          <li>{{{ icon('settings') }}}<span>Sign in any time later from the top bar</span></li>
+        </ul>
+        <button type="button" class="ae-key ae-key--block" hx-post="/launch/continue">Continue without an account</button>
       </div>
-    @end
+    </section>
   </div>
 
   @if(recent.length)
-    <section class="stack-sm" aria-labelledby="launch-recent-h">
-      <h2 id="launch-recent-h" class="ae-stencil">Recent spaces</h2>
+    <section class="launch__recent" aria-labelledby="launch-recent-h">
+      <h2 id="launch-recent-h" class="ae-stencil">Jump back in</h2>
       <ul class="tile-grid" role="list">
         @each(space in recent)
           <li>

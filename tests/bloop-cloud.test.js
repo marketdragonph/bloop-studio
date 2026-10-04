@@ -17,7 +17,7 @@ const KLING = {
 const MODELS = { image: [], video: [KLING] };
 
 function memorySettings(initial = {}) {
-    const store = { bloopUrl: 'http://bloop.test', bloopAccount: null, bloopToken: null, ...initial };
+    const store = { bloopAccount: null, bloopToken: null, ...initial };
     return {
         store,
         get: (key) => store[key],
@@ -52,7 +52,7 @@ test('signing in: the browser hands back a code, swapped with the PKCE verifier 
             return { token: 'tok-1', account: { name: 'Jo', paid: true } };
         },
     });
-    const account = new BloopAccount({ settings, openExternal: (url) => { opened = new URL(url); }, clientFor });
+    const account = new BloopAccount({ baseUrl: 'http://bloop.test', settings, openExternal: (url) => { opened = new URL(url); }, clientFor });
 
     await account.startSignIn();
     assert.equal(account.state().status, 'waiting');
@@ -74,7 +74,7 @@ test('signing in: the browser hands back a code, swapped with the PKCE verifier 
 
 test('canceling in the browser leaves the app signed out with a reason', async () => {
     let opened = null;
-    const account = new BloopAccount({ settings: memorySettings(), openExternal: (url) => { opened = new URL(url); } });
+    const account = new BloopAccount({ baseUrl: 'http://bloop.test', settings: memorySettings(), openExternal: (url) => { opened = new URL(url); } });
     await account.startSignIn();
     await fetch(`http://127.0.0.1:${opened.searchParams.get('port')}/callback?error=access_denied&state=${opened.searchParams.get('state')}`);
     assert.deepEqual(account.state(), { status: 'signed-out', error: 'Sign-in was canceled.' });
@@ -83,7 +83,7 @@ test('canceling in the browser leaves the app signed out with a reason', async (
 test('a revoked token signs the app out; signed out offers no cloud models', async () => {
     const expired = Object.assign(new Error('Unauthenticated.'), { status: 401 });
     const settings = memorySettings({ bloopToken: 'old', bloopAccount: { paid: true } });
-    const account = new BloopAccount({ settings, openExternal: () => {}, clientFor: () => ({ me: async () => { throw expired; } }) });
+    const account = new BloopAccount({ baseUrl: 'http://bloop.test', settings, openExternal: () => {}, clientFor: () => ({ me: async () => { throw expired; } }) });
     await account.refresh();
     assert.equal(settings.store.bloopToken, null);
     assert.equal(account.state().status, 'signed-out');
@@ -93,7 +93,7 @@ test('a revoked token signs the app out; signed out offers no cloud models', asy
 test('bloop decides what a plan sees: a free account gets its list, a refused one is not asked again', async () => {
     let asked = 0;
     const cheap = { image: [], video: [{ key: 'runway/gen4', name: 'Runway Gen-4', credits: 13, params: {} }] };
-    const free = new BloopAccount({
+    const free = new BloopAccount({ baseUrl: 'http://bloop.test',
         settings: memorySettings({ bloopToken: 't', bloopAccount: { paid: false } }),
         openExternal: () => {},
         clientFor: () => ({ models: async () => { asked++; return cheap; } }),
@@ -101,7 +101,7 @@ test('bloop decides what a plan sees: a free account gets its list, a refused on
     assert.deepEqual(await free.models(), cheap);
 
     const refused = Object.assign(new Error('Needs Lite.'), { status: 402 });
-    const older = new BloopAccount({
+    const older = new BloopAccount({ baseUrl: 'http://bloop.test',
         settings: memorySettings({ bloopToken: 't', bloopAccount: { paid: false } }),
         openExternal: () => {},
         clientFor: () => ({ models: async () => { asked++; throw refused; }, me: async () => ({ paid: false }) }),

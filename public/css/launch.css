@@ -1,13 +1,50 @@
 /* The launch screen (pages/launch.edge): the optional bloop sign-in beside "continue without",
    shown when the app opens until one is chosen. */
-.launch { display: grid; gap: var(--space-8); max-width: 56rem; margin: 0 auto; padding-block: var(--space-6); }
+.launch { display: grid; gap: var(--space-8); max-width: 60rem; margin: 0 auto; padding-block: var(--space-6) var(--space-8); }
 
-.launch__head { display: grid; gap: var(--space-2); justify-items: start; }
-.launch__title { margin: 0; font-family: var(--font-stencil); font-size: var(--fs-2xl); line-height: 1.1; letter-spacing: 0.04em; }
-.launch__engine { margin-top: var(--space-2); }
+/* ── Hero ── */
+.launch__hero { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); }
+.launch__mark { width: 5rem; height: 5rem; flex: none; }
+.launch__intro { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
+.launch__title {
+    margin: 0;
+    font-family: var(--font-stencil);
+    font-size: clamp(var(--fs-2xl), 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.launch__tagline { margin: 0; max-width: 36rem; color: var(--text-secondary); font-size: var(--fs-md); }
+.launch__engine { margin-top: var(--space-1); }
 
+@media (min-width: 40rem) {
+    .launch__mark { width: 6rem; height: 6rem; }
+}
+
+/* ── The two choices ── */
 .launch__choices { display: grid; gap: var(--space-4); }
+.launch__choice-inner { display: grid; gap: var(--space-3); align-content: start; height: 100%; padding: var(--space-6); }
+.launch__choice { display: grid; }
+.launch__kicker { margin: 0; color: var(--text-muted); }
+.launch__choice-title { margin: 0; font-size: var(--fs-xl); line-height: 1.2; }
+
+/* The bloop choice leads: an orange edge (orange = action) and a lit kicker. */
+.launch__choice--bloop { --ae-seam-strong: var(--accent); }
+.launch__choice--bloop .launch__kicker { color: var(--accent-text); }
+
+.launch__perks { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; color: var(--text-secondary); font-size: var(--fs-sm); }
+.launch__perks li { display: grid; grid-template-columns: 1rem 1fr; gap: var(--space-2); align-items: start; }
+.launch__perks svg { width: 1rem; height: 1rem; margin-top: 0.125rem; color: var(--sensor-text); }
+.launch__perks strong { color: var(--text-primary); }
+
+.launch__account { display: grid; gap: var(--space-2); margin-top: var(--space-1); }
+.launch__account .row { display: grid; }
+.launch__account .ae-key { justify-content: center; }
 
 @media (min-width: 48rem) {
-    .launch__choices { grid-template-columns: 1fr 1fr; align-items: start; }
+    .launch__choices { grid-template-columns: 1.15fr 1fr; align-items: stretch; }
 }
+
+/* ── Recent boards ── */
+.launch__recent { display: grid; gap: var(--space-3); }

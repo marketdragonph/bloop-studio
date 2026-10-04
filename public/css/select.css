@@ -95,6 +95,22 @@
 
 .sel-list { max-height: 15rem; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 0.125rem 0; list-style: none; }
 
+/* The search box of a long list (9+ options), above the rows. */
+.sel-search {
+    display: block;
+    width: calc(100% - 1rem);
+    margin: 0.5rem 0.5rem 0.25rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--ae-seam-strong);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: var(--fs-sm);
+}
+.sel-search:focus-visible { border-color: var(--accent); outline: 1px solid var(--accent); outline-offset: 0; }
+.sel-empty { margin: 0.25rem 0.75rem 0.5rem; }
+.sel-search ~ .sel-list { max-height: min(22rem, 60vh); } /* a long list gets more room */
+
 /* A lit rail marks the chosen row instead of an orange flood. */
 .sel-option {
     position: relative;

@@ -31,7 +31,7 @@
   @end
   <div class="row">
     @if(launch)
-      <button type="button" class="ae-key ae-key--accent" hx-post="/launch/continue">Open Bloop Studio</button>
+      <button type="button" class="ae-key ae-key--accent ae-key--block" hx-post="/launch/continue">Open Bloop Studio</button>
     @else
       <button type="button" class="ae-key ae-key--sm" hx-get="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Refresh</button>
       <button type="button" class="ae-key ae-key--sm" hx-delete="/account" hx-target="#bloop-account" hx-swap="innerHTML" hx-confirm="Sign out of bloop on this PC?">Sign out</button>
@@ -45,6 +45,6 @@
     @!component('components/alert', { tone: 'warn', message: error })
   @end
   <div class="row">
-    <button type="button" class="ae-key ae-key--accent{{ launch ? '' : ' ae-key--sm' }}" hx-post="/account/sign-in{{ q }}" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Sign in with bloop</button>
+    <button type="button" class="ae-key ae-key--accent{{ launch ? ' ae-key--block' : ' ae-key--sm' }}" hx-post="/account/sign-in{{ q }}" hx-target="#bloop-account" hx-swap="innerHTML" hx-disabled-elt="this">Sign in with bloop</button>
   </div>
 @end

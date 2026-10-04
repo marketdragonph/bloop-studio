@@ -6,6 +6,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { BloopClient } from './bloop-client.js';
 
+// Where people sign in: always bloop itself. BLOOP_URL points a development run at a local bloop.
+export const BLOOP_URL = process.env.BLOOP_URL ?? 'https://marketdragon.ph';
+
 const SIGN_IN_TIMEOUT_MS = 5 * 60_000;
 const MODELS_MAX_AGE_MS = 5 * 60_000;
 
@@ -21,7 +24,8 @@ export class BloopAccount {
     #models = null; // { at, data }
 
     /** @param {{ settings, openExternal: (url: string) => unknown, clientFor?: Function, now?: () => number }} deps */
-    constructor({ settings, openExternal, clientFor = (url, token) => new BloopClient(url, token), now = Date.now }) {
+    constructor({ settings, openExternal, baseUrl = BLOOP_URL, clientFor = (url, token) => new BloopClient(url, token), now = Date.now }) {
+        this.baseUrl = baseUrl;
         this.settings = settings;
         this.openExternal = openExternal;
         this.clientFor = clientFor;
@@ -29,7 +33,7 @@ export class BloopAccount {
     }
 
     client() {
-        return this.clientFor(this.settings.get('bloopUrl'), this.settings.get('bloopToken'));
+        return this.clientFor(this.baseUrl, this.settings.get('bloopToken'));
     }
 
     get signedIn() {
@@ -55,7 +59,7 @@ export class BloopAccount {
         this.#pending = { server, state, verifier, timer };
 
         const challenge = base64url(createHash('sha256').update(verifier).digest());
-        const url = this.clientFor(this.settings.get('bloopUrl')).connectUrl({ port: server.address().port, state, challenge });
+        const url = this.clientFor(this.baseUrl).connectUrl({ port: server.address().port, state, challenge });
         await this.openExternal(url);
         return url;
     }
@@ -122,7 +126,7 @@ export class BloopAccount {
             return;
         }
         try {
-            const { token, account } = await this.clientFor(this.settings.get('bloopUrl')).exchange({
+            const { token, account } = await this.clientFor(this.baseUrl).exchange({
                 code: url.searchParams.get('code'),
                 verifier: pending.verifier,
                 deviceName: hostname().slice(0, 60),

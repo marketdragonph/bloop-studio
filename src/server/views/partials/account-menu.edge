@@ -1,0 +1,65 @@
+{{-- Top-bar account menu (every page). Reads the account this app already has; it never calls bloop
+     itself (Settings → Bloop account has Refresh). While a browser sign-in is open it re-polls every
+     2 s, so the chip appears by itself when the person presses Allow. --}}
+@if(status === 'waiting')
+  <span class="account-menu__waiting ae-readout">
+    <span class="ae-sensor-dot" aria-hidden="true"></span> Signing in…
+  </span>
+  <span hx-get="/account?refresh=0&from=menu" hx-trigger="load delay:2s" hx-target="#account-menu" hx-swap="innerHTML"></span>
+  <button type="button" class="ae-key ae-key--sm" hx-post="/account/cancel?from=menu" hx-target="#account-menu" hx-swap="innerHTML">Cancel</button>
+@elseif(status === 'signed-in')
+  @let(initials = (account.name ?? account.email ?? '?').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase())
+  @let(credits = Number(account.credits ?? 0).toLocaleString('en-US'))
+  @let(plan = account.plan ?? 'Starter')
+  <div class="account-menu" x-data="AccountMenu" @keydown.escape="close(true)" @click.outside="close()" @focusout="onFocusOut($event)">
+    <button type="button" class="account-menu__trigger" x-ref="trigger" @click="toggle()" :class="{ 'is-open': open }"
+            :aria-expanded="open ? 'true' : 'false'" aria-controls="account-menu-panel" aria-haspopup="true">
+      <span class="account-menu__avatar" aria-hidden="true">{{ initials }}</span>
+      <span class="account-menu__summary">
+        <span class="account-menu__plan">{{ plan }}</span>
+        <span class="ae-readout account-menu__credits">{{ credits }} credits</span>
+      </span>
+      <span class="account-menu__chev" aria-hidden="true">{{{ icon('chevron') }}}</span>
+      <span class="visually-hidden">Bloop account menu</span>
+    </button>
+
+    <div class="account-menu__panel ae-plate" id="account-menu-panel" x-ref="panel" x-show="open" x-cloak>
+      <div class="ae-plate__inner account-menu__inner">
+        <div class="account-menu__who">
+          <span class="account-menu__avatar account-menu__avatar--lg" aria-hidden="true">{{ initials }}</span>
+          <div class="account-menu__id">
+            <p class="account-menu__name">{{ account.name }}</p>
+            <p class="account-menu__email">{{ account.email }}</p>
+          </div>
+        </div>
+
+        <dl class="account-menu__stats">
+          <div>
+            <dt class="ae-stencil">Plan</dt>
+            <dd><span class="account-menu__badge{{ account.paid ? ' is-paid' : '' }}">{{ plan }}</span></dd>
+          </div>
+          <div>
+            <dt class="ae-stencil">Credits</dt>
+            <dd class="account-menu__figure">{{ credits }}</dd>
+          </div>
+        </dl>
+
+        @if(!account.paid)
+          <p class="account-menu__note">Free plan: bloop's lower-cost models.</p>
+        @end
+
+        <div class="account-menu__items" role="group" aria-label="Account">
+          @if(!account.paid && account.upgrade_url)
+            <a class="account-menu__item account-menu__item--accent" href="{{ account.upgrade_url }}" target="_blank" rel="noopener">{{{ icon('bolt') }}}<span>See plans</span></a>
+          @end
+          <a class="account-menu__item" href="/settings">{{{ icon('settings') }}}<span>Bloop account settings</span></a>
+          <button type="button" class="account-menu__item account-menu__item--danger" hx-delete="/account?from=menu" hx-target="#account-menu" hx-swap="innerHTML"
+                  hx-confirm="Sign out of bloop on this PC?">{{{ icon('export') }}}<span>Sign out</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+@else
+  <button type="button" class="ae-key ae-key--sm ae-key--accent" hx-post="/account/sign-in?from=menu" hx-target="#account-menu" hx-swap="innerHTML" hx-disabled-elt="this"
+          title="{{ error ?? 'Optional: adds bloop cloud models to your cards' }}">{{{ icon('key') }}}<span>Sign in</span></button>
+@end

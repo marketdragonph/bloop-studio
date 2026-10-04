@@ -28,7 +28,9 @@ with the person's bloop credits. The server side lives in the bloop repo (`modul
 
 ## Checklist
 
-- [x] Settings → Bloop account: sign in, plan and credits, refresh, sign out; bloop address field
+- [x] Settings → Bloop account: sign in, plan and credits, refresh, sign out (always marketdragon.ph; no address field)
+- [x] Top-bar account menu: Sign in, or the account chip with plan, credits, settings and Sign out
+- [x] Searchable Model list (9+ options)
 - [x] Cloud models on cards with their own knobs and price
 - [x] Cloud render stages, resume after restart, refund note on failure
 - [x] Tested against a local bloop (Sail): sign-in, account, 48 video + 23 image models on cards

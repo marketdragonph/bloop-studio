@@ -33,6 +33,8 @@
             <span x-show="theme === 'light'" x-cloak>{{{ icon('sun') }}}</span>
             <span x-show="theme === 'system'" x-cloak>{{{ icon('eye') }}}</span>
         </button>
+        {{-- Optional bloop account: Sign in, or the account chip with its menu (partials/account-menu). --}}
+        <div id="account-menu" class="topbar__account" hx-get="/account?refresh=0&from=menu" hx-trigger="load" hx-swap="innerHTML"></div>
     </header>
 
     <main id="main" class="page">

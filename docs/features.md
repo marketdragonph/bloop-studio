@@ -52,18 +52,24 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 
 - **Launch screen:** the app opens on it until the person chooses: *Sign in with bloop* or *Continue
   without an account* (plus the engine status and the four latest boards). After either, the app opens
-  straight on Spaces; signing in later is in Settings.
+  straight on Spaces; signing in later is in the top bar.
+- **Top-bar account menu** (right end): *Sign in* when signed out; signed in, a chip with initials, plan
+  and credits that opens name, email, plan badge, credits, *See plans* (free plan), settings and *Sign out*.
 - **Sign in** through the browser (any bloop login: Google, TikTok, Facebook, email); the app never
-  sees a password. Settings shows the name, plan and credits; *Refresh* and *Sign out*.
-- On **Lite and up**, bloop's curated cloud models join every card's Model list after the local ones,
-  marked "bloop cloud · from N credits", each with only the knobs it takes. Renders run on bloop with
-  the person's credits and come back as ordinary takes; a failed one says whether the credits came back.
+  sees a password. Always at https://marketdragon.ph (no address to set; `BLOOP_URL` in development).
+  Settings → Bloop account shows the same account with *Refresh* and *Sign out*.
+- Signed in, bloop's curated cloud models join every card's Model list after the local ones, marked
+  "bloop cloud · from N credits", each with only the knobs it takes (bloop decides what a plan sees).
+  Renders run on bloop with the person's credits and come back as ordinary takes; a failed one says
+  whether the credits came back.
+- **Searchable lists:** a list of 9 or more options (the Model list) gets a search box that matches the
+  name and the description ("kling", "cloud", "credits").
 - Plan: [docs/plans/bloop-account.md](plans/bloop-account.md).
 
 ## Settings
 
 - ComfyUI address with *Test connection*, media folder, Director provider, model names and API keys
-  (encrypted with Windows; only ever sent to their provider), bloop address, light/dark/system theme.
+  (encrypted with Windows; only ever sent to their provider), Bloop account, light/dark/system theme.
 
 ## App
 

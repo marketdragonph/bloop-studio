@@ -39,7 +39,7 @@ const startBrowser = async (url) => {
     spawn('rundll32', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
 };
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, openExternal = startBrowser, updates = NO_UPDATES, onThemeChange = () => {} }) {
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, openExternal = startBrowser, bloopUrl = undefined, updates = NO_UPDATES, onThemeChange = () => {} }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -49,7 +49,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const events = new BoardEvents();
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
     const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
-    const account = new BloopAccount({ settings, openExternal });
+    const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
