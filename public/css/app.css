@@ -88,6 +88,10 @@ a { color: var(--accent-text); }
 .status-light--ok .ae-sensor-dot { background: var(--sensor); }
 .status-light--fault .status-light__dot { background: var(--status-alert); }
 .status-light--fault .ae-readout { color: var(--status-alert-text); }
+.status-light--busy .status-light__dot { background: var(--sensor); }
+.status-light--busy .ae-readout { color: var(--sensor-text); }
+/* The light with its Start / Stop key (partials/engine-status). */
+.engine-switch { display: inline-flex; align-items: center; gap: var(--space-2); }
 
 /* ── App updates (Settings): blue = in progress ── */
 .update-pulse {
@@ -191,4 +195,17 @@ a { color: var(--accent-text); }
 @media (pointer: coarse) {
     .ae-key { min-height: 2.75rem; }
     .field__input { font-size: var(--fs-md); }
+}
+
+/* ── Engine log (Settings → Engine, when ComfyUI fails to start) ── */
+.engine-log { display: grid; gap: var(--space-2); }
+.engine-log__lines {
+    margin: 0;
+    max-height: 14rem;
+    overflow: auto;
+    padding: var(--space-3);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font: 400 var(--fs-xs) / 1.5 ui-monospace, Consolas, monospace;
+    white-space: pre-wrap;
 }

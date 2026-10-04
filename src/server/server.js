@@ -26,6 +26,7 @@ import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
 import { BloopAccount } from './services/bloop-account.js';
 import { accountRoutes } from './routes/account.js';
+import { ComfyLauncher } from './services/comfy-launcher.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -50,10 +51,11 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
     const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
     const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
+    const launcher = new ComfyLauncher({ settings }); // the person's own ComfyUI, started from the top bar
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account, launcher };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -74,10 +76,14 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     });
 
     if (startWorker) worker.start();
+    // "Start ComfyUI with Bloop Studio": only when it is not already running (by hand, or a second app).
+    if (settings.get('engineAutostart') && launcher.state().available) {
+        comfy().status().then((status) => status.online || launcher.start()).catch(() => {});
+    }
 
     return new Promise((resolve) => {
         const server = serve({ fetch: app.fetch, hostname: '127.0.0.1', port }, (info) => {
-            resolve({ server, url: `http://127.0.0.1:${info.port}`, worker });
+            resolve({ server, url: `http://127.0.0.1:${info.port}`, worker, launcher });
         });
     });
 }

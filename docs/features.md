@@ -42,6 +42,11 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - **Settings → Engine → Workflows on this PC** shows the GPU, VRAM, backend (CUDA/ROCm), ComfyUI version,
   the variant each workflow uses, and the exact missing files for the others. *Re-detect models* refreshes it.
 - A wired picture the chosen workflow cannot use (e.g. a last frame on Wan) stops the render with a clear message.
+- **ComfyUI launcher:** a ComfyUI on this PC (portable build, or git install with a venv; common folders,
+  or the folder set in Settings) is started by the app with the flags of its own `run_*.bat`, hidden, UTF-8.
+  Top bar: *Engine off · Start*, *Engine starting…*, *Engine online · Stop* (Stop only for one the app
+  started). Settings → Engine → ComfyUI on this PC: folder, *Start ComfyUI when Bloop Studio opens*,
+  Start / Stop / *Free GPU memory* / *Find again*, and the engine log when it fails. Stopped on quit.
 
 ## Director
 

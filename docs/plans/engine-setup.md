@@ -1,4 +1,4 @@
-# Engine setup: Bloop Studio installs and runs ComfyUI for you — PLANNED
+# Engine setup: Bloop Studio installs and runs ComfyUI for you — PARTIAL
 
 **Why this matters most.** Bloop Studio exists so people can make their stories without learning
 ComfyUI. Today they still have to install ComfyUI, find the right model files, put them in the right
@@ -94,7 +94,11 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [ ] Download queue: resume, checksum, free-space check, progress over the event stream
 - [ ] ComfyUI portable install (NVIDIA), pinned version, `7zr.exe` bundled + notices
 - [ ] Custom nodes as pinned archives + requirements
-- [ ] Engine process manager: start with the app, stop on quit, health check, log
+- [x] Start / stop the person's OWN ComfyUI (2026-10-05): found on this PC (portable or git+venv, flags read
+      from its run_*.bat), top-bar Start/Stop, Settings → ComfyUI on this PC (folder, start with the app,
+      Free GPU memory, engine log); stops on quit only if the app started it (`services/comfy-install.js`,
+      `services/comfy-launcher.js`). Runs with UTF-8 output: piped, an emoji in a node's log crashed it.
+- [ ] Engine process manager for the INSTALLED engine: free port, health check, restart once on crash
 - [ ] Start modes (with the app / when I render + idle stop / manual) and the top-bar Start/Stop/Free switch
 - [ ] Wizard UI (modal steps), Settings → Engine: install / add family / repair / remove / disk used
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint

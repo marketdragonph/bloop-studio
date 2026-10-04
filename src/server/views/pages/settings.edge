@@ -25,6 +25,20 @@
         </button>
       </div>
       <div id="engine-test" aria-live="polite"></div>
+      <h3 class="ae-stencil">ComfyUI on this PC</h3>
+      <p class="plate-note">Bloop Studio can start and stop your ComfyUI for you: <em>Start</em> in the top bar, no .bat to run.</p>
+      @!component('components/field', {
+        name: 'comfyPath', label: 'ComfyUI folder', value: old?.comfyPath ?? settings.comfyPath,
+        placeholder: 'Found automatically', hint: 'Only if it is not found: the folder with run_nvidia_gpu.bat (portable) or main.py.',
+        error: errors.comfyPath
+      })
+      <label class="choice">
+        <input type="checkbox" name="engineAutostart" value="1" {{ (old ? old.engineAutostart : settings.engineAutostart) ? 'checked' : '' }}>
+        <span>Start ComfyUI when Bloop Studio opens, and stop it when the app closes</span>
+      </label>
+      <div id="engine-launcher" hx-get="/engine/launcher" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        <p class="plate-note">Looking for ComfyUI…</p>
+      </div>
       <h3 class="ae-stencil">Workflows on this PC</h3>
       <p class="plate-note">Each family uses the first variant this ComfyUI has the nodes and models for. Families with none are hidden from cards.</p>
       <div id="engine-profile" hx-get="/engine/profile" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">

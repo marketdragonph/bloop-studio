@@ -13,7 +13,7 @@ let mainWindow = null;
 async function boot() {
     const settings = new SettingsStore(settingsPath(app.getPath('userData')));
     let chrome = null;
-    const { url } = await createServer({
+    const { url, launcher } = await createServer({
         settings,
         dataDir: app.getPath('userData'),
         reveal: (fullPath) => shell.showItemInFolder(fullPath),
@@ -21,6 +21,8 @@ async function boot() {
         updates: createUpdater(app),
         onThemeChange: () => chrome?.themeChanged(),
     });
+    // A ComfyUI this app started stops with it and gives the GPU back. One started by hand is left alone.
+    app.on('will-quit', () => launcher.stop());
 
     mainWindow = new BrowserWindow({
         width: 1440,

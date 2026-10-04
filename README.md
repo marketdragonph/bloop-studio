@@ -37,8 +37,10 @@ on 4 October 2026 at 15:30.
 
 ## Set up ComfyUI and models
 
-Bloop Studio sends every render to ComfyUI at `http://127.0.0.1:8188`. Start ComfyUI first, for example
-`run_nvidia_gpu.bat` in the portable build.
+Bloop Studio sends every render to ComfyUI at `http://127.0.0.1:8188`. If ComfyUI is installed on this PC
+(the portable build, or a git install with a venv), Bloop Studio finds it: press **Start** next to the engine
+light in the top bar, or tick *Start ComfyUI when Bloop Studio opens* in Settings → Engine. It is stopped
+again when you close the app. If it is not found, set its folder in Settings → Engine → ComfyUI folder.
 
 You don't need every model. The app checks which models your ComfyUI has and offers only the model
 families it can run. Install the files for the families you want, into ComfyUI's `models` folders.
@@ -160,7 +162,8 @@ model file for, and uses the best of those. So:
 
 | Problem | What to do |
 |---|---|
-| Top bar says **Engine offline** | Start ComfyUI and check the address in Settings → Test connection. |
+| Top bar says **Engine off** | Press **Start** next to it. If it stops again, Settings → Engine shows why and the engine log. |
+| Top bar says **Engine offline** | No ComfyUI found on this PC: start it yourself, or set its folder in Settings → Engine, and check the address with Test connection. |
 | A model is missing from a card's list | Settings → Workflows on this PC lists the missing files. Add them, restart ComfyUI, press Re-detect models. |
 | "No workflow on this PC fits this card…" | Nothing installed can render this combination of wires. Check Settings → Engine. |
 | "…cannot use the last frame picture" | The chosen model has no first→last mode (Wan), or there is no first frame wired. |

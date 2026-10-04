@@ -23,7 +23,7 @@
             <a href="/spaces" class="topbar__link">{{{ icon('board') }}}<span>Spaces</span></a>
             <a href="/settings" class="topbar__link">{{{ icon('settings') }}}<span>Settings</span></a>
         </nav>
-        <div class="topbar__engine"
+        <div class="topbar__engine" data-engine-light
              hx-get="/engine/status" hx-trigger="load, every 5s" hx-swap="innerHTML" aria-live="polite">
             @include('partials/engine-status')
         </div>

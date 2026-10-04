@@ -13,7 +13,7 @@
       <h1 class="launch__title">Bloop Studio</h1>
       <p class="ae-stencil launch__byline">by MarketDragon</p>
       <p class="launch__tagline">Lay out a story as cards. Render stills and video with sound on your own GPU.</p>
-      <div class="launch__engine" hx-get="/engine/status" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+      <div class="launch__engine" data-engine-light hx-get="/engine/status" hx-trigger="load, every 5s" hx-swap="innerHTML" aria-live="polite">
         @include('partials/engine-status')
       </div>
     </div>

@@ -1,3 +1,7 @@
+{{-- The top-bar engine light. With a ComfyUI found on this PC (launch.available) it carries the
+     switch: Start when the engine is off, Stop when Bloop Studio started it. A ComfyUI the person
+     started by hand has no Stop here: the app never stops what it did not start. --}}
+@let(sw = launch ?? { available: false, running: false, starting: false })
 @if(!status)
   <span class="status-light status-light--idle">
     <span class="status-light__dot" aria-hidden="true"></span>
@@ -5,9 +9,33 @@
   </span>
 @elseif(status.online)
   @let(activity = status.running ? ` · rendering${status.pending ? ` (+${status.pending} queued)` : ''}` : '')
-  <span class="status-light status-light--ok" title="{{ status.gpu }} · {{ status.vramFreeGb.toFixed(1) }} of {{ status.vramTotalGb.toFixed(1) }} GB free">
-    <span class="status-light__dot {{ status.running ? 'ae-sensor-dot' : '' }}" aria-hidden="true"></span>
-    <span class="ae-readout">Engine online{{ activity }}</span>
+  <span class="engine-switch">
+    <span class="status-light status-light--ok" title="{{ status.gpu }} · {{ status.vramFreeGb.toFixed(1) }} of {{ status.vramTotalGb.toFixed(1) }} GB free">
+      <span class="status-light__dot {{ status.running ? 'ae-sensor-dot' : '' }}" aria-hidden="true"></span>
+      <span class="ae-readout">Engine online{{ activity }}</span>
+    </span>
+    @if(sw.running)
+      <button type="button" class="ae-key ae-key--sm" hx-post="/engine/stop" hx-target="closest [data-engine-light]" hx-swap="innerHTML"
+              hx-confirm="{{ status.running ? 'A render is running. Stop the engine anyway?' : 'Stop the engine? Local renders wait until it starts again.' }}">
+        Stop
+      </button>
+    @end
+  </span>
+@elseif(sw.starting)
+  <span class="status-light status-light--busy" title="Starting ComfyUI from {{ sw.path }}">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span>
+    <span class="ae-readout">Engine starting…</span>
+  </span>
+@elseif(sw.available)
+  <span class="engine-switch">
+    <a href="/settings" class="status-light status-light--fault" title="{{ sw.error ?? status.error }}">
+      <span class="status-light__dot" aria-hidden="true"></span>
+      <span class="ae-readout">Engine off</span>
+    </a>
+    <button type="button" class="ae-key ae-key--accent ae-key--sm" hx-post="/engine/start" hx-target="closest [data-engine-light]" hx-swap="innerHTML"
+            title="Start ComfyUI from {{ sw.path }}">
+      Start
+    </button>
   </span>
 @else
   <a href="/settings" class="status-light status-light--fault" title="{{ status.error }}">

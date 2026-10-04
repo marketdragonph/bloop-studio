@@ -1,7 +1,8 @@
-// Settings page: engine address, media folder, and the Director's LLM provider + keys.
+// Settings page: engine address and ComfyUI folder, media folder, and the Director's LLM provider + keys.
 import { Hono } from 'hono';
 import { ComfyClient } from '../services/comfy-client.js';
 import { THEMES } from '../views.js';
+import { inspect } from '../services/comfy-install.js';
 
 const PROVIDERS = ['anthropic', 'openai'];
 
@@ -13,12 +14,15 @@ function validate(body) {
     } catch {
         errors.comfyUrl = 'Enter a full address, e.g. http://127.0.0.1:8188';
     }
+    if (body.comfyPath?.trim() && !inspect(body.comfyPath.trim())) {
+        errors.comfyPath = 'No ComfyUI in that folder. Pick the one with run_nvidia_gpu.bat, or with main.py and a venv.';
+    }
     if (!body.mediaDir?.trim()) errors.mediaDir = 'Choose a folder for generated media.';
     if (!PROVIDERS.includes(body.llmProvider)) errors.llmProvider = 'Pick Claude or OpenAI.';
     return errors;
 }
 
-export function settingsRoutes({ views, settings, onThemeChange }) {
+export function settingsRoutes({ views, settings, onThemeChange, launcher }) {
     const routes = new Hono();
 
     const page = async (c, extra = {}) =>
@@ -42,6 +46,8 @@ export function settingsRoutes({ views, settings, onThemeChange }) {
 
         settings.update({
             comfyUrl: body.comfyUrl.trim(),
+            comfyPath: body.comfyPath?.trim() ?? '',
+            engineAutostart: body.engineAutostart === '1',
             mediaDir: body.mediaDir.trim(),
             llmProvider,
             anthropicModel: body.anthropicModel?.trim() || undefined,
@@ -49,6 +55,7 @@ export function settingsRoutes({ views, settings, onThemeChange }) {
             anthropicApiKey: body.anthropicApiKey?.trim() ?? '',
             openaiApiKey: body.openaiApiKey?.trim() ?? '',
         });
+        launcher?.install({ refresh: true }); // a new folder is looked at now, not on the next start
         return c.redirect('/settings?saved=1');
     });
 

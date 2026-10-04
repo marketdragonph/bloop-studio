@@ -1,0 +1,50 @@
+{{-- Settings → Engine → ComfyUI on this PC: the install Bloop Studio found, and Start / Stop /
+     Free GPU memory. Refreshes itself while the engine is starting. --}}
+@if(launch.path)
+  <p class="plate-note">
+    Found at <span class="ae-readout">{{ launch.path }}</span>.
+    @if(launch.starting)
+      <span class="ae-sensor-dot update-pulse" aria-hidden="true"></span> Starting…
+    @elseif(launch.running)
+      Running, started by Bloop Studio. It stops when you close the app.
+    @elseif(status.online)
+      Running. Started outside Bloop Studio, so the app leaves it alone.
+    @else
+      Not running.
+    @end
+  </p>
+@else
+  <p class="plate-note">No ComfyUI found on this PC. Set its folder above, or start ComfyUI yourself and Bloop Studio uses it.</p>
+@end
+@if(launch.path && !launch.available)
+  <p class="plate-note">The engine address is not on this PC, so Bloop Studio cannot start it from here.</p>
+@end
+@if(launch.error || problem)
+  @!component('components/alert', { tone: 'alert', message: problem ?? launch.error })
+@end
+@if(freed)
+  @!component('components/alert', { tone: 'ok', message: 'GPU memory freed. Models load again on the next render.' })
+@end
+<div class="row">
+  @if(launch.available && !launch.running && !status.online)
+    <button type="button" class="ae-key ae-key--accent" hx-post="/engine/launcher/start" hx-target="#engine-launcher" hx-swap="innerHTML" hx-disabled-elt="this">Start ComfyUI</button>
+  @end
+  @if(launch.running)
+    <button type="button" class="ae-key" hx-post="/engine/launcher/stop" hx-target="#engine-launcher" hx-swap="innerHTML"
+            hx-confirm="Stop ComfyUI? Local renders wait until it starts again.">Stop ComfyUI</button>
+  @end
+  @if(status.online)
+    <button type="button" class="ae-key" hx-post="/engine/free" hx-target="#engine-launcher" hx-swap="innerHTML" hx-disabled-elt="this"
+            title="Unloads the models so a game or another app can use the GPU">Free GPU memory</button>
+  @end
+  <button type="button" class="ae-key" hx-post="/engine/launcher/find" hx-target="#engine-launcher" hx-swap="innerHTML">Find again</button>
+</div>
+@if(log.length && (launch.error || launch.starting))
+  <details class="engine-log">
+    <summary class="ae-stencil">Engine log</summary>
+    <pre class="engine-log__lines">{{ log.join('\n') }}</pre>
+  </details>
+@end
+@if(launch.starting)
+  <span hx-get="/engine/launcher" hx-trigger="load delay:2s" hx-target="#engine-launcher" hx-swap="innerHTML"></span>
+@end
