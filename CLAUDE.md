@@ -56,6 +56,11 @@ bloop's cloud models render on bloop with the person's bloop credits. Everything
 
 After any feature or fix: update `docs/plans/*.md` (`[x]`, PLANNED → PARTIAL → COMPLETE) and `docs/features.md`.
 
+**Every user-visible change adds one line to `CHANGELOG.md` under `## Unreleased`**, in plain words a user
+understands (`New:`, `Changed:`, `Fixed:`), not commit language. The release workflow publishes that
+section as the release notes and files it under the version. Internal-only changes (tests, refactors,
+docs) need no line.
+
 ## Media
 
 Generated media never goes in the repo. It goes to the media folder from Settings (default

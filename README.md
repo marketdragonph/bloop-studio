@@ -197,6 +197,9 @@ this private repo. Installed apps update from those releases (electron-updater, 
    named `release-<anything>`.
 3. The workflow builds on Windows and publishes `Bloop-Studio-Setup-<version>.exe`, `latest.yml` and the
    blockmap as a release. Within a few hours every installed app shows **Restart to update**.
+4. Release notes come from [CHANGELOG.md](CHANGELOG.md): add a plain-words line under `## Unreleased`
+   with every user-visible change. The workflow publishes that section with the release and files it
+   under the version number. Settings → App → *What's new* links to them.
 
 One-time setup:
 

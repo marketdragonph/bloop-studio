@@ -23,6 +23,11 @@
 @if(busy)
   <span hx-get="/app/update/about" hx-trigger="load delay:2s" hx-target="#update-about" hx-swap="innerHTML"></span>
 @end
+{{-- Release notes live with the releases (CHANGELOG.md → the GitHub release); links open in the browser. --}}
+@let(notes = update.version === 'dev'
+  ? 'https://github.com/marketdragonph/bloop-studio-releases/releases'
+  : `https://github.com/marketdragonph/bloop-studio-releases/releases/tag/v${update.version}`)
+<p class="plate-note"><a href="{{ notes }}" target="_blank" rel="noopener">What's new{{ update.version === 'dev' ? '' : ` in ${update.version}` }}</a></p>
 @if(!['dev', 'checking', 'downloading'].includes(update.status))
   <div class="row">
     <button type="button" class="ae-key ae-key--sm" hx-post="/app/update/check" hx-target="#update-about" hx-swap="innerHTML" hx-disabled-elt="this">

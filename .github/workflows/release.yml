@@ -19,8 +19,9 @@ on:
       - 'tests/**'
       - '.gitignore'
 
+# write: after publishing, the workflow files CHANGELOG.md's Unreleased notes under the new version.
 permissions:
-  contents: read
+  contents: write
 
 # Pushes in quick succession: the newer run cancels the older one, so only the latest code is
 # published. A cancelled run leaves at most a draft release, which installed apps never see.
@@ -60,7 +61,13 @@ jobs:
           $files = @($exe, "$exe.blockmap", 'dist/latest.yml')
           Write-Host "Publishing $version"
 
-          gh release create "v$version" --repo $repo --draft --title $version --notes "Bloop Studio $version"
+          # Release notes: CHANGELOG.md's "## Unreleased" section, in the words people read.
+          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          $notes = if ($changelog -match '(?s)## Unreleased\s*\r?\n(.*?)(?=\r?\n## |\z)') { $Matches[1].Trim() } else { '' }
+          if (-not $notes) { $notes = 'Fixes and improvements.' }
+          Set-Content -Path dist/release-notes.md -Value $notes -Encoding utf8
+
+          gh release create "v$version" --repo $repo --draft --title $version --notes-file dist/release-notes.md
           if ($LASTEXITCODE) { exit 1 }
 
           foreach ($attempt in 1..3) {
@@ -74,3 +81,22 @@ jobs:
           gh release edit "v$version" --repo $repo --draft=false --latest
           if ($LASTEXITCODE) { exit 1 }
           Write-Host "Published https://github.com/$repo/releases/tag/v$version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+        id: publish
+
+      # The notes just published move under their version, with a fresh empty Unreleased above them.
+      # A CHANGELOG.md-only push does not trigger this workflow (paths-ignore '**.md'), so no loop.
+      - name: File the changelog under this version
+        shell: pwsh
+        run: |
+          $version = '${{ steps.publish.outputs.version }}'
+          $changelog = Get-Content CHANGELOG.md -Raw -Encoding utf8
+          if ($changelog -notmatch '(?s)## Unreleased\s*\r?\n\s*-') { Write-Host 'No unreleased notes to file.'; exit 0 }
+          $changelog = $changelog -replace '## Unreleased', "## Unreleased`n`n## $version"
+          Set-Content -Path CHANGELOG.md -Value $changelog.TrimEnd() -Encoding utf8NoBOM
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898283+github-actions[bot]@users.noreply.github.com'
+          git add CHANGELOG.md
+          git commit -m "Changelog: $version"
+          git pull --rebase origin main
+          git push origin HEAD:main
