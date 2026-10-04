@@ -50,6 +50,9 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 
 ## Bloop account (optional)
 
+- **Launch screen:** the app opens on it until the person chooses: *Sign in with bloop* or *Continue
+  without an account* (plus the engine status and the four latest boards). After either, the app opens
+  straight on Spaces; signing in later is in Settings.
 - **Sign in** through the browser (any bloop login: Google, TikTok, Facebook, email); the app never
   sees a password. Settings shows the name, plan and credits; *Refresh* and *Sign out*.
 - On **Lite and up**, bloop's curated cloud models join every card's Model list after the local ones,

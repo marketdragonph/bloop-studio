@@ -32,6 +32,9 @@ with the person's bloop credits. The server side lives in the bloop repo (`modul
 - [x] Cloud models on cards with their own knobs and price
 - [x] Cloud render stages, resume after restart, refund note on failure
 - [x] Tested against a local bloop (Sail): sign-in, account, 48 video + 23 image models on cards
+- [x] Launch screen: optional sign-in or continue without, shown until one is chosen
+- [x] Cloud models for any signed-in account; bloop decides what each plan sees
+- [ ] bloop: free plans see models up to 5 credits (image) / 15 (video) instead of a 402
 - [ ] One paid render end to end (spends real credits: needs the owner's go-ahead)
 - [ ] Cloud renders on their own lane, so a slow bloop render does not hold up local GPU renders
 - [ ] Deploy bloop (`feature/studio-desktop-api`) before releasing this
