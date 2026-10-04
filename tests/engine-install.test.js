@@ -58,21 +58,72 @@ test('the biggest card in the registry is the one that renders', () => {
 });
 
 /** A local file server that honours Range, and can drop the connection once. */
-async function fileServer(body, { dropAt = null } = {}) {
+async function fileServer(body, { dropAt = null, ranges = true } = {}) {
     let dropped = false;
+    const requests = [];
     const server = createServer((req, res) => {
-        const start = Number(/bytes=(\d+)-/.exec(req.headers.range ?? '')?.[1] ?? 0);
-        res.writeHead(start ? 206 : 200, { 'Content-Length': body.length - start });
-        if (dropAt && !dropped && start < dropAt) {
+        const [, from, to] = /bytes=(\d+)-(\d*)/.exec(req.headers.range ?? '') ?? [];
+        requests.push(req.headers.range ?? 'all');
+        const start = ranges && from ? Number(from) : 0;
+        const end = ranges && to ? Number(to) : body.length - 1;
+        res.writeHead(ranges && from ? 206 : 200, { 'Content-Length': end - start + 1 });
+        if (dropAt !== null && !dropped && start <= dropAt && dropAt < end) {
             dropped = true;
             res.write(body.subarray(start, dropAt));
             return res.destroy();
         }
-        res.end(body.subarray(start));
+        res.end(body.subarray(start, end + 1));
     });
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-    return { url: `http://127.0.0.1:${server.address().port}/file`, close: () => server.close() };
+    return { url: `http://127.0.0.1:${server.address().port}/file`, requests, close: () => server.close() };
 }
+
+/** A body that is different at every offset, so a byte written in the wrong place shows. */
+const patterned = (size) => Buffer.from(Array.from({ length: size }, (_, i) => (i * 31 + (i >> 8)) & 255));
+const sha = (body) => createHash('sha256').update(body).digest('hex');
+
+test('a big file comes in parallel ranges, written in place; a dropped range carries on', async () => {
+    const body = patterned(300 * 1024);
+    const server = await fileServer(body, { dropAt: 120 * 1024 });
+    const dir = mkdtempSync(join(tmpdir(), 'bloop-par-'));
+    try {
+        const target = join(dir, 'big.bin');
+        await download({ url: server.url, size: body.length, sha256: sha(body) }, target, { connections: 4, parallelFrom: 1 });
+        assert.deepEqual(readFileSync(target), body);
+        assert.ok(server.requests.filter((r) => /^bytes=\d+-\d+$/.test(r)).length >= 4); // ranges, not one stream
+        assert.equal(existsSync(`${target}.part.json`), false);
+    } finally {
+        server.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('a server without ranges gets one plain stream; a stopped parallel download resumes from its saved ranges', async () => {
+    const body = patterned(200 * 1024);
+    const plain = await fileServer(body, { ranges: false });
+    const server = await fileServer(body);
+    const dir = mkdtempSync(join(tmpdir(), 'bloop-par-'));
+    try {
+        const target = join(dir, 'plain.bin');
+        await download({ url: plain.url, size: body.length, sha256: sha(body) }, target, { connections: 4, parallelFrom: 1 });
+        assert.deepEqual(readFileSync(target), body);
+
+        // Half of each range on disk, as a stopped app leaves it: only the rest is asked for.
+        const resumed = join(dir, 'resumed.bin');
+        const ranges = [[0, 51199], [51200, 102399], [102400, 153599], [153600, 204799]].map(([start, end]) => ({ start, end, done: 25600 }));
+        const part = Buffer.alloc(body.length);
+        for (const r of ranges) body.copy(part, r.start, r.start, r.start + r.done);
+        writeFileSync(`${resumed}.part`, part);
+        writeFileSync(`${resumed}.part.json`, JSON.stringify({ size: body.length, ranges }));
+        await download({ url: server.url, size: body.length, sha256: sha(body) }, resumed, { connections: 4, parallelFrom: 1 });
+        assert.deepEqual(readFileSync(resumed), body);
+        assert.deepEqual(server.requests, ranges.map((r) => `bytes=${r.start + 25600}-${r.end}`));
+    } finally {
+        plain.close();
+        server.close();
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
 
 test('a dropped download resumes where it stopped and is checked against its SHA-256', async () => {
     const body = Buffer.alloc(256 * 1024, 7);
@@ -138,24 +189,60 @@ test('no room, or nothing picked, is refused before anything is written', () => 
     assert.equal(store.engineInstall, undefined);
 });
 
-test('into the person\'s own ComfyUI: only the models, into its models folders, and it is not reinstalled', async () => {
-    const store = {};
-    const fetched = [];
-    const installer = new EngineInstaller({
-        settings: { get: (k) => store[k], update: (v) => Object.assign(store, v) },
-        launcher: { start: () => assert.fail('an existing ComfyUI is not restarted behind the person\'s back') },
-        freeGb: () => 5000,
-        download: async (_file, target) => fetched.push(target),
-        unpack: async () => assert.fail('nothing to unpack'),
-    });
-    installer.start(planFor({ gpu: gpu('nvidia', 12), drives }), { folder: '', families: ['zimage'], into: { root: 'C:\ComfyUI', kind: 'portable' } });
-    for (let i = 0; i < 50 && installer.state().phase !== 'added'; i++) await new Promise((r) => setTimeout(r, 20));
+test('repair fetches again only the known files that fail their checksum, never the person\'s own', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bloop-repair-'));
+    try {
+        const models = join(dir, 'ComfyUI', 'models');
+        const good = { folder: 'vae', name: 'ae.safetensors', size: 4, sha256: 'good-sum' };
+        const bad = { folder: 'text_encoders', name: 'te.safetensors', size: 3, sha256: 'bad-sum' };
+        const absent = { folder: 'checkpoints', name: 'not-here.safetensors', size: 9, sha256: 'x' };
+        for (const [file, body] of [[good, 'good'], [bad, 'bad']]) {
+            mkdirSync(join(models, file.folder), { recursive: true });
+            writeFileSync(join(models, file.folder, file.name), body);
+        }
+        mkdirSync(join(models, 'loras'), { recursive: true });
+        writeFileSync(join(models, 'loras', 'my-own.safetensors'), 'mine');
+        const fetched = [];
+        const installer = new EngineInstaller({
+            settings: { get: () => undefined, update() {} },
+            launcher: { install: () => ({ root: dir, kind: 'portable' }) },
+            known: [good, bad, absent],
+            download: async (file) => fetched.push(file.name),
+            verify: async (path) => (readFileSync(path, 'utf8') === 'good' ? 'good-sum' : 'wrong'),
+        });
+        installer.repair();
+        for (let i = 0; i < 50 && installer.state().phase !== 'repaired'; i++) await new Promise((r) => setTimeout(r, 20));
 
-    assert.equal(installer.state().phase, 'added', installer.state().error);
-    assert.deepEqual(fetched, [
-        join('C:\ComfyUI', 'ComfyUI', 'models', 'diffusion_models', 'z_image_turbo_int8_convrot.safetensors'),
-        join('C:\ComfyUI', 'ComfyUI', 'models', 'text_encoders', 'qwen_3_4b_fp8_mixed.safetensors'),
-        join('C:\ComfyUI', 'ComfyUI', 'models', 'vae', 'ae.safetensors'),
-    ]);
-    assert.equal(store.comfyPath, undefined); // still the person's own setting
+        assert.equal(installer.state().phase, 'repaired', installer.state().error);
+        assert.deepEqual(fetched, ['te.safetensors']); // not the good one, not one that was never installed
+        assert.equal(installer.state().fixed, 1);
+        assert.equal(readFileSync(join(models, 'loras', 'my-own.safetensors'), 'utf8'), 'mine');
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+test('remove deletes only an engine Bloop Studio installed, after stopping it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'bloop-remove-'));
+    const root = join(dir, 'ComfyUI_windows_portable');
+    mkdirSync(join(root, 'ComfyUI'), { recursive: true });
+    const store = { engineManaged: root, comfyPath: root };
+    const stopped = [];
+    const settings = { get: (k) => store[k], update: (v) => Object.assign(store, v) };
+    const launcher = { state: () => ({ running: true }), stop: () => stopped.push(true), install() {} };
+    const installer = Object.assign(new EngineInstaller({ settings, launcher }), { restartDelayMs: 1 });
+    try {
+        await installer.remove();
+        assert.equal(existsSync(root), false);
+        assert.deepEqual(stopped, [true]);
+        assert.equal(store.engineManaged, null);
+        assert.equal(store.comfyPath, '');
+
+        // The person's own ComfyUI: refused, nothing deleted.
+        mkdirSync(root, { recursive: true });
+        await assert.rejects(installer.remove(), /did not install/);
+        assert.equal(existsSync(root), true);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 });

@@ -4,13 +4,52 @@
 // in settings (`engineInstall`) so a closed app offers to carry on: finished files are skipped and
 // a half-downloaded one resumes (download.js). Nothing is installed outside the chosen folder.
 import { execFile } from 'node:child_process';
-import { rmSync, statfsSync } from 'node:fs';
+import { existsSync, rmSync, statSync, statfsSync } from 'node:fs';
+import { readdir, rm, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
-import { download as fetchFile } from './download.js';
+import { download as fetchFile, sha256Of } from './download.js';
+import { MODEL_FAMILIES } from '../../shared/model-sources.js';
 import { filesFor } from './plan.js';
 import { inspect } from '../services/comfy-install.js';
+import { allModelDirs, modelPaths } from '../services/comfy-model-paths.js';
 
 const PORTABLE_DIR = 'ComfyUI_windows_portable';
+const RUNNING = ['comfy', 'unpacking', 'models', 'starting', 'repairing'];
+
+/** Where an install keeps its model files. */
+export const modelsDir = (install) => (install.kind === 'venv' ? join(install.root, 'models') : join(install.root, 'ComfyUI', 'models'));
+
+/** Every file the app knows a source for, each once. */
+const KNOWN_FILES = [...new Map(MODEL_FAMILIES.flatMap((f) => Object.values(f.variants).flat()).map((file) => [`${file.folder}/${file.name}`, file])).values()];
+
+/** Where a known file already is in this install (its own or an extra models folder), or null. */
+export function locate(install, file, { exact = true } = {}) {
+    for (const dir of modelPaths(install)(file.folder)) {
+        const path = join(dir, file.name);
+        if (existsSync(path) && (!exact || statSync(path).size === file.size)) return path;
+    }
+    return null;
+}
+
+/** Disk the models of an install take, extra_model_paths folders included. */
+export async function modelsBytes(install) {
+    let total = 0;
+    for (const dir of allModelDirs(install)) total += await folderBytes(dir);
+    return total;
+}
+
+/** Bytes of model files under a folder (walked, not estimated). */
+export async function folderBytes(dir) {
+    let total = 0;
+    try {
+        for (const entry of await readdir(dir, { withFileTypes: true, recursive: true })) {
+            if (entry.isFile()) total += (await stat(join(entry.parentPath ?? entry.path, entry.name))).size;
+        }
+    } catch {
+        // No folder: nothing used.
+    }
+    return total;
+}
 
 /** Unpacks a .7z with Windows' own bsdtar (libarchive): no extractor to ship. */
 function unpack(archive, into) {
@@ -34,9 +73,9 @@ export class EngineInstaller {
     #state = { phase: 'idle' };
     #abort = null;
 
-    /** @param {{ settings, launcher, engine?, download?: Function, unpack?: Function, freeGb?: Function }} deps */
-    constructor({ settings, launcher, engine, download = fetchFile, unpack: unpackImpl = unpack, freeGb: free = freeGb }) {
-        Object.assign(this, { settings, launcher, engine, download, unpackImpl, free });
+    /** @param {{ settings, launcher, engine?, download?: Function, unpack?: Function, freeGb?: Function, verify?: Function, known?: object[] }} deps */
+    constructor({ settings, launcher, engine, download = fetchFile, unpack: unpackImpl = unpack, freeGb: free = freeGb, verify = sha256Of, known = KNOWN_FILES }) {
+        Object.assign(this, { settings, launcher, engine, download, unpackImpl, free, verify, known });
     }
 
     state() {
@@ -44,7 +83,7 @@ export class EngineInstaller {
     }
 
     get running() {
-        return ['comfy', 'unpacking', 'models', 'starting'].includes(this.#state.phase);
+        return RUNNING.includes(this.#state.phase);
     }
 
     /**
@@ -85,11 +124,15 @@ export class EngineInstaller {
         };
     }
 
-    /** Into an existing ComfyUI: only the model files, into its models folders. It is not restarted. */
+    /**
+     * Into an existing ComfyUI: only the model files it does not have yet (looked for in its own and
+     * its extra_model_paths folders), into its own models folders. It is not restarted.
+     */
     async #addModels(into, files, signal) {
-        const models = into.kind === 'portable' ? join(into.root, 'ComfyUI', 'models') : join(into.root, 'models');
         for (const file of files) {
-            await this.download(file, join(models, file.folder, file.name), { onProgress: this.#progress(`${file.folder}/${file.name}`), signal });
+            const id = `${file.folder}/${file.name}`;
+            if (locate(into, file)) this.#progress(id)(file.size, file.size);
+            else await this.download(file, join(modelsDir(into), file.folder, file.name), { onProgress: this.#progress(id), signal });
         }
         this.settings.update({ engineInstall: null });
         this.#state.phase = 'added';
@@ -118,7 +161,8 @@ export class EngineInstaller {
 
         // 3. Point the app at it and start it.
         this.#state.phase = 'starting';
-        this.settings.update({ comfyPath: root, engineInstall: null });
+        // engineManaged: this one Bloop Studio installed, so it may also remove it.
+        this.settings.update({ comfyPath: root, engineInstall: null, engineManaged: root });
         this.launcher.install({ refresh: true });
         // One the app started from another folder makes way (same port); one started by hand is
         // left alone, and the new one then says the port is taken.
@@ -128,5 +172,59 @@ export class EngineInstaller {
         }
         this.launcher.start();
         this.#state.phase = 'done';
+    }
+
+    /**
+     * Repair: every model file the app knows that is in this ComfyUI is checked against its
+     * publisher's SHA-256; a wrong or half-written one is fetched again. Files it does not know
+     * (the person's own) are never touched. Runs in the background like an install.
+     */
+    repair() {
+        if (this.running) throw new Error('An install is already running.');
+        const install = this.launcher.install({ refresh: true });
+        if (!install) throw new Error('No ComfyUI found on this PC to repair.');
+        // Wherever ComfyUI reads them from: a half-written .part counts too.
+        const found = this.known.map((file) => ({ file, path: locate(install, file, { exact: false })
+            ?? (existsSync(join(modelsDir(install), file.folder, `${file.name}.part`)) ? join(modelsDir(install), file.folder, file.name) : null) }))
+            .filter((f) => f.path);
+        const files = found.map((f) => f.file);
+        this.#abort = new AbortController();
+        this.#state = { phase: 'repairing', folder: install.root, fixed: 0, error: null,
+            steps: files.map((f) => ({ id: `${f.folder}/${f.name}`, label: f.name, done: 0, total: f.size })) };
+        this.#repair(found, this.#abort.signal).catch((error) => {
+            this.#state = { ...this.#state, phase: this.#abort?.signal.aborted ? 'canceled' : 'failed', error: error.message };
+        });
+    }
+
+    async #repair(found, signal) {
+        for (const { file, path } of found) {
+            const ok = existsSync(path) && statSync(path).size === file.size && (await this.verify(path)) === file.sha256;
+            if (signal.aborted) throw new Error('Canceled.');
+            if (!ok) {
+                rmSync(path, { force: true });
+                await this.download(file, path, { onProgress: this.#progress(`${file.folder}/${file.name}`), signal });
+                this.#state.fixed++;
+            }
+            this.#progress(`${file.folder}/${file.name}`)(file.size, file.size);
+        }
+        this.#state.phase = 'repaired';
+    }
+
+    /**
+     * Remove: only an engine Bloop Studio installed (engineManaged), stopped first, the whole folder
+     * deleted. Boards and renders live elsewhere and are never touched.
+     */
+    async remove() {
+        if (this.running) throw new Error('An install is running. Cancel it first.');
+        const root = this.settings.get('engineManaged');
+        if (!root) throw new Error('Bloop Studio did not install this ComfyUI, so it does not remove it.');
+        if (this.launcher.state().running) {
+            this.launcher.stop();
+            await new Promise((resolve) => setTimeout(resolve, this.restartDelayMs ?? 3000));
+        }
+        await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 });
+        this.settings.update({ comfyPath: this.settings.get('comfyPath') === root ? '' : this.settings.get('comfyPath'), engineManaged: null });
+        this.launcher.install({ refresh: true });
+        this.#state = { phase: 'removed' };
     }
 }

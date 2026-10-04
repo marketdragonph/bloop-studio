@@ -47,7 +47,10 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   can run (`engine-install/plan.js`), and downloads ComfyUI portable v0.38.0 plus the picked model files from
   their publishers (`src/shared/model-sources.js`: URL, size, SHA-256, license). Resumable, checksum-checked,
   unpacked with Windows' own tar, then started by the launcher. *Add to my ComfyUI* puts the same models into
-  an existing install. Licenses are linked and accepted per install.
+  an existing install. Licenses are linked and accepted per install. Files over 256 MB come in 6 parallel
+  ranges. Models kept elsewhere through ComfyUI's `extra_model_paths.yaml` are found and never fetched twice.
+  Settings → Engine shows disk used, **Repair** (checksum of every known model file, broken ones fetched again)
+  and **Remove** (only an engine the app installed).
 - **Cloud only:** no ComfyUI answering, none on this PC to start, and signed in to bloop: the engine light
   says *Cloud only* (blue), a card's Model list puts bloop's models first, and an untouched card renders on
   the first one (`routes/generation.js` → `offered()`). A ComfyUI that is only switched off keeps local first.

@@ -1,14 +1,18 @@
 // One file from its publisher to disk: resumable (HTTP Range onto a `.part` file, so a stopped
 // app or a dropped connection carries on where it was), checked against the publisher's SHA-256
 // before it is renamed into place, retried a few times. A finished file of the right size and
-// hash is never fetched again.
+// hash is never fetched again. Big files come in parallel ranges (segmented.js); a server without
+// range support gets one plain stream.
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { fetchRanges } from './segmented.js';
 
 const RETRIES = 3;
+const PARALLEL_FROM_BYTES = 256 * 1024 * 1024; // smaller files are not worth splitting
+const CONNECTIONS = 6;
 
 export async function sha256Of(path) {
     const hash = createHash('sha256');
@@ -23,7 +27,7 @@ const sizeOf = (path) => (existsSync(path) ? statSync(path).size : 0);
  * @param {string} target  final path
  * @param {{ onProgress?: (done: number, total: number) => void, signal?: AbortSignal, fetchImpl?: typeof fetch, verify?: (path: string) => Promise<string> }} options
  */
-export async function download(file, target, { onProgress = () => {}, signal, fetchImpl = fetch, verify = sha256Of } = {}) {
+export async function download(file, target, { onProgress = () => {}, signal, fetchImpl = fetch, verify = sha256Of, connections = CONNECTIONS, parallelFrom = PARALLEL_FROM_BYTES } = {}) {
     if (sizeOf(target) === file.size) {
         onProgress(file.size, file.size);
         return target; // already in place (checked when it was first finished)
@@ -31,7 +35,20 @@ export async function download(file, target, { onProgress = () => {}, signal, fe
     mkdirSync(dirname(target), { recursive: true });
     const part = `${target}.part`;
 
-    for (let attempt = 1; ; attempt++) {
+    // In parallel ranges, unless a plain .part from an earlier single-stream run is there to resume.
+    const parallel = file.size >= parallelFrom && connections > 1 && (!existsSync(part) || existsSync(`${part}.json`));
+    let single = !parallel;
+    if (parallel) {
+        try {
+            await fetchRanges(file, part, { count: connections, onProgress, signal, fetchImpl });
+        } catch (error) {
+            if (signal?.aborted || !error.noRanges) throw error;
+            rmSync(part, { force: true }); // the server has no ranges: one plain stream from the start
+            rmSync(`${part}.json`, { force: true });
+            single = true;
+        }
+    }
+    for (let attempt = 1; single; attempt++) {
         try {
             await fetchRest(file, part, { onProgress, signal, fetchImpl });
             break;

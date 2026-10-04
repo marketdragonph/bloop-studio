@@ -5,6 +5,8 @@ import { isAbsolute } from 'node:path';
 import { MAX_FOLDER_CHARS, planFor } from '../engine-install/plan.js';
 import { readDrives, readGpu } from '../engine-install/hardware.js';
 
+const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+
 export function engineInstallRoutes({ views, installer, launcher, engine, hardware = { readGpu, readDrives } }) {
     const routes = new Hono();
     let cached = null; // the PC does not change while the app runs: read it once
@@ -21,7 +23,7 @@ export function engineInstallRoutes({ views, installer, launcher, engine, hardwa
         return c.html(await views.render('partials/engine-install', { plan: await plan(), pending, existing, installed, errors: {}, ...extra }));
     };
 
-    routes.get('/', (c) => (['idle', 'canceled', 'done', 'added', 'failed'].includes(installer.state().phase) ? wizard(c) : progress(c)));
+    routes.get('/', (c) => (installer.running ? progress(c) : wizard(c)));
     routes.get('/progress', progress);
 
     routes.post('/', async (c) => {
@@ -45,6 +47,29 @@ export function engineInstallRoutes({ views, installer, launcher, engine, hardwa
             return wizard(c, { errors: { folder: error.message }, old });
         }
         return progress(c);
+    });
+
+    // Re-check every known model file against its checksum, fetch broken ones again.
+    routes.post('/repair', async (c) => {
+        try {
+            installer.repair();
+        } catch (error) {
+            c.header('HX-Retarget', '#engine-launcher-note');
+            return c.html(`<p class="field__error">${escapeHtml(error.message)}</p>`);
+        }
+        return progress(c);
+    });
+
+    // Delete an engine Bloop Studio installed. Boards and renders are elsewhere and stay.
+    routes.post('/remove', async (c) => {
+        try {
+            await installer.remove();
+        } catch (error) {
+            c.header('HX-Retarget', '#engine-launcher-note');
+            return c.html(`<p class="field__error">${escapeHtml(error.message)}</p>`);
+        }
+        c.header('HX-Redirect', '/settings?saved=1');
+        return c.body(null, 204);
     });
 
     routes.post('/cancel', async (c) => {

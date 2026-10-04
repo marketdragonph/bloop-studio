@@ -103,7 +103,10 @@ cloud models and the app is fully usable with no ComfyUI at all.
       `tar.exe` (bsdtar reads .7z): no extractor shipped
 - [x] *Add to my ComfyUI*: the same picked models into an existing install's models folders;
       Settings → Workflows on this PC → *Download missing models*
-- [ ] Parallel ranged connections (GitHub gives ~7 MB/s on one)
+- [x] Parallel ranged connections (6, files over 256 MB), each range resuming on its own (`segmented.js`).
+      Measured here: 7.0 → 7.5 MB/s — this line is the limit; faster lines gain more
+- [x] extra_model_paths.yaml read (`services/comfy-model-paths.js`): files kept elsewhere are found
+      (never fetched twice), repaired where they are, and counted in disk used
 - [ ] Custom nodes as pinned archives + requirements
 - [x] Start / stop the person's OWN ComfyUI (2026-10-05): found on this PC (portable or git+venv, flags read
       from its run_*.bat), top-bar Start/Stop, Settings → ComfyUI on this PC (folder, start with the app,
@@ -113,7 +116,8 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [ ] Start modes (with the app / when I render + idle stop / manual) and the top-bar Start/Stop/Free switch
 - [x] Install modal: this PC + verdict, families (suggested ticked, installed marked), folder, licenses
       consent; progress per file, Cancel, carries on after a restart (2026-10-05)
-- [ ] Settings → Engine: repair / remove / disk used
+- [x] Settings → Engine: disk used, Repair (SHA-256 of every known model file, broken ones fetched again;
+      the person's own files untouched), Remove (only `engineManaged`, stopped first) (2026-10-05)
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint
 - [ ] AMD (ROCm) path, behind beta
 - [ ] Tested end to end on a clean Windows PC (12 GB NVIDIA) and the 24 GB AMD desktop

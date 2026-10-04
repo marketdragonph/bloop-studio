@@ -1,6 +1,6 @@
 {{-- The install as it runs: one bar per download, the step it is on, and Cancel. Polls itself
      every second while it runs. Closing the modal does not stop it. --}}
-@let(running = ['comfy', 'unpacking', 'models', 'starting'].includes(install.phase))
+@let(running = ['comfy', 'unpacking', 'models', 'starting', 'repairing'].includes(install.phase))
 @let(steps = install.steps ?? [])
 @let(gb = (bytes) => (bytes / 1e9).toFixed(1))
 @let(phases = {
@@ -9,11 +9,13 @@
   models: 'Downloading the models…',
   starting: 'Starting the engine…',
   done: 'Installed. The engine is starting: the light in the top bar turns green when it is ready.',
+  repairing: 'Checking every model file against the checksum its publisher gives…',
+  repaired: install.fixed ? `Repaired: ${install.fixed} file${install.fixed === 1 ? '' : 's'} fetched again. Restart the engine to use them.` : 'Every model file checks out. Nothing to repair.',
   added: 'The models are in your ComfyUI. Restart it (Stop, then Start), then press Re-detect models in Settings.',
   failed: `The install stopped: ${install.error}`,
   canceled: 'Install canceled. What was downloaded is kept for next time.',
 })
-@component('components/modal', { title: 'Install offline engine' })
+@component('components/modal', { title: ['repairing', 'repaired'].includes(install.phase) ? 'Repair offline engine' : 'Install offline engine' })
   <div class="stack-sm install">
     @if(install.phase === 'failed')
       @!component('components/alert', { tone: 'alert', message: phases.failed })

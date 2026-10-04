@@ -5,6 +5,10 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: Settings → Engine shows how much disk your models take, and has **Repair** (checks every model file and downloads broken ones again) and **Remove** (for an engine Bloop Studio installed; your boards and renders stay).
+- Changed: big model downloads use several connections at once.
+- Changed: models you keep in another folder (ComfyUI's extra_model_paths.yaml) are found, so they are never downloaded twice.
+
 ## 2026.1005.651
 
 - New: **Install offline engine** (Settings → Engine). Bloop Studio checks your graphics card, suggests the models it can run, and downloads ComfyUI and those models for you, straight from their publishers. Downloads resume if interrupted and every file is checked.

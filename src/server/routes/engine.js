@@ -2,8 +2,9 @@
 // for a ComfyUI found on this PC; and the engine profile (which workflow variant each family uses on
 // this PC) and the launcher panel shown in Settings.
 import { Hono } from 'hono';
+import { modelsBytes } from '../engine-install/installer.js';
 
-export function engineRoutes({ views, comfy, engine, launcher, account, installer }) {
+export function engineRoutes({ views, comfy, engine, launcher, account, installer, settings }) {
     const routes = new Hono();
 
     const light = async (c) => {
@@ -33,7 +34,11 @@ export function engineRoutes({ views, comfy, engine, launcher, account, installe
     const panel = async (c, extra = {}) => {
         const status = await comfy().status();
         const install = installer?.state() ?? { phase: 'idle' };
-        return c.html(await views.render('partials/engine-launcher', { status, launch: launcher.state({ online: status.online }), log: launcher.log(), install, ...extra }));
+        const found = launcher.install();
+        // Disk the models take, and whether this is the engine Bloop Studio installed (it may remove that one).
+        const usedGb = found ? (await modelsBytes(found)) / 1e9 : 0;
+        const managed = Boolean(found && settings?.get('engineManaged') === found.root);
+        return c.html(await views.render('partials/engine-launcher', { status, launch: launcher.state({ online: status.online }), log: launcher.log(), install, usedGb, managed, ...extra }));
     };
 
     // Settings → Engine → ComfyUI on this PC.
