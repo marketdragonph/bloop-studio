@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.816
+
 - Changed: models you download show up on your cards right away. No restart and no Re-detect needed.
 - Changed: each model now uses the version your graphics card has the memory for. A 12 GB card no longer picks a 24 GB version just because its files are there; Settings → Engine says *too big for this card* instead.
 
