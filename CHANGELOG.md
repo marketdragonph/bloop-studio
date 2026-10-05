@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Fixed: Audio cards show their progress again while they render (the percentage, the bar and the step).
+
 ## 2026.1005.1122
 
 - Changed: cards take the real shape of their clip or picture. A vertical clip makes a tall card instead of sitting in a wide box with black bars, on rendered cards and uploads alike.

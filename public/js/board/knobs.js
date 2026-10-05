@@ -77,7 +77,9 @@ export const knobMethods = {
     },
 
     previewAspect(node) {
-        if (node.type === 'audio') return 'auto'; // the player sets its own height, not a frame
+        // Sound sizes to its player; until there is one (rendering, or nothing yet) the bay keeps a strip's height,
+        // or the progress drawn inside it would have no room at all.
+        if (node.type === 'audio') return node.media_path ? 'auto' : '4 / 1';
         // A finished render's real frame wins over the setting: an older take, a cloud model or an upload
         // can be another shape, and the card takes that shape instead of letterboxing it (bloop's noteClipShape).
         return node._mediaShape ?? aspectCss(this.knobValue(node, 'aspect'));
