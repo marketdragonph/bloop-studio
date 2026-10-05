@@ -60,7 +60,7 @@ export class LiveCut {
         if (!cut.auto) return null;
         try {
             return this.drafts.draft(spaceId, {
-                mode: cut.items.length ? 'add_new' : 'fill', by: 'auto', revision: cut.revision, bed: true,
+                mode: cut.items.length ? 'add_new' : 'fill', by: 'auto', revision: cut.revision,
             });
         } catch (error) {
             // The person saved between our read and our write: read again (their save turned auto off).

@@ -217,6 +217,9 @@ test('Duck under lines: on at −10 dB in one undo step, the slider commits once
     assert.equal(dock.cutDuckDb(), null);
     assert.equal(dock.cutDuckText(), 'Duck under lines: off');
     assert.equal(dock.cutDuckLinesText(), 'Under 1 spoken line');
+    assert.equal(dock.cutBeds.music, null, 'the cut has no music: the lane shows none, the card is offered');
+    dock.cutUseBed('music');
+    assert.equal(dock.cutBeds.music.node_id, 20);
     dock.cutDuckToggle();
     assert.deepEqual(dock.cutSound.music.duck, { depth_db: -10, attack_ms: 120, release_ms: 400 });
     assert.equal(dock.cutSound.music.gain_db, -12, 'the bed gets its default level first');

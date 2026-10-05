@@ -53,7 +53,7 @@ export function bedLine(kind, bed, a, totalMs) {
  * @param {{ cut: object, analysisOf: Function, wanted: Set<string>|null, scripts: Map<string, string>,
  *   toolsMissing: boolean, measuring: (path: string) => boolean, reasons: (tag: string) => object[] }} input
  */
-export function inspectText({ cut, analysisOf, wanted = null, scripts = new Map(), toolsMissing = false, measuring = () => false, reasons = () => [] }) {
+export function inspectText({ cut, analysisOf, wanted = null, scripts = new Map(), toolsMissing = false, measuring = () => false, reasons = () => [], soundCards = [] }) {
     if (toolsMissing) return 'Not measured: the video tools are missing on this PC. Use no times.';
     const clock = cutClock(cut.items);
     const fit = fitPlan(cut.items, new Map(cut.items.map((i) => [i.media_path, analysisOf(i.media_path)]).filter(([, a]) => a)), 0);
@@ -75,6 +75,9 @@ export function inspectText({ cut, analysisOf, wanted = null, scripts = new Map(
         if (a) lines.push(bedLine(kind, bed, a, clock.total_ms));
         else missing.push(`the ${kind} bed (${measuring(bed.media_path) ? 'queued' : 'not measured'})`);
     }
+    const onBoard = wanted ? [] : soundCards.filter((c) => c.node_id !== cut.sound?.music?.node_id && c.node_id !== cut.sound?.voice?.node_id);
+    if (onBoard.length) lines.push(`Sound cards on the board, not in the cut (a music op puts one on the Music lane): ${onBoard.slice(0, 8).map((c) => `@${c.node_id} "${c.label}"${c.seconds ? ` ${s1(c.seconds * 1000)} s` : ''}`).join(', ')}.`);
+    else if (!wanted && !cut.sound?.music) lines.push('The cut has no music, and the board has no other sound card with a file.');
     if (missing.length) lines.push(`Not measured yet: ${missing.join(', ')}. Use only these numbers; do not guess the rest.`);
     const out = cut.settings?.outputs;
     if (out && !wanted) {

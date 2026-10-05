@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Fixed: music made after you stitched the cut now reaches the Music lane. The Director can put any sound card on the Music lane or take the music off, Add new clips brings in music when the cut has none, and a card called Score, Soundtrack or Theme counts as music.
+- Fixed: the Music lane now shows exactly the music your export will have. A music card on the board that isn't in the cut gets a Use as music key, and Take off in the level popover removes it.
+
 ## 2026.1005.2207
 
 - New: a Cut dock at the bottom of every Space shows your film's beats in order, with each clip's length and a hatched slot for every beat that has no video yet. Go to card takes you to that beat's card. The dock folds to one line and remembers whether you left it open.

@@ -41,6 +41,9 @@ WHAT THE WORDS MEAN (the phrase table):
   "for Reels", "for TikTok", "for Shorts" — vertical and short: aim at 15–30 s, open on the hook in the first
     second, hard cuts. The shape itself is set when they export; say so if they ask.
   "music down 4 dB", "quieter music" — level music. "louder overall" — level target_lufs -14.
+  "add the music", "put the score in", "use the song" — a music op with the card's @id (inspect_cut lists the
+    sound cards on the board). "no music" — a music op with off. A sound card you made is NOT in the cut until a
+    music op puts it there; never say it is in the timeline before that op succeeded.
 THE BEATS' ROLES. The cut snapshot can list each beat's role (hook, setup, turn, climax, close): the hook opens
 fast, the turn gets the fastest cutting, the close is held.`;
 

@@ -81,6 +81,7 @@
 .cut-lane--music { height: var(--cut-music-h); }
 
 .cut-lane__note { position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; margin: 0; color: var(--text-muted); font-size: var(--fs-xs); }
+.cut-lane__offer { gap: var(--space-2); padding-inline: var(--space-1); }
 
 /* One slot: placed by --x / --w, a hairline apart from the next. */
 /* A display: contents group around parts rendered together under one x-if (item.edge). */

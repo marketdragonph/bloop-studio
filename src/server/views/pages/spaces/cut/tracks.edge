@@ -82,7 +82,11 @@
             <span class="visually-hidden" x-text="cutBeds.music.label + (cutDuckBands.length ? ', ' + cutDuckText() : '')"></span>
           </div>
         </template>
-        <p class="cut-lane__note" x-show="!cutBeds.music" x-text="cutEmptyText.music"></p>
+        <p class="cut-lane__note" x-show="!cutBeds.music && !cutOffered.music" x-text="cutEmptyText.music"></p>
+        <p class="cut-lane__note cut-lane__offer" x-show="!cutBeds.music && cutOffered.music">
+          <span x-text="cutCopy('musicOffered', { label: cutOffered.music?.label ?? '' })"></span>
+          <button type="button" class="ae-key ae-key--sm" data-control="cut.useMusic" @click="cutUseBed('music')">{{ controlLabel('cut.useMusic') }}</button>
+        </p>
       </div>
 
       <div class="cut-playhead" data-cut-part="playhead" aria-hidden="true"><span class="cut-playhead__cap" data-cut-part="cap">0:00</span></div>

@@ -6,6 +6,7 @@ import { cleanPlates, railMap, railOps, slug } from '../plan/plates.js';
 import { DESTINATION_KEYS, clock, destination, runtimeField, runtimeShare } from '../plan/shape.js';
 import { BoardOpsRejected } from '../ops/board-ops.js';
 import { ROLES } from '../cut/cut-state.js';
+import { MUSIC_BED } from '../../cut/board-cut.js';
 
 const MOST_BEATS = 50;
 const INLINE_BELOW = 3;
@@ -162,7 +163,7 @@ export const buildBoard = {
         // Lanes: a beat already on the board keeps its lane; new beats go after everything else.
         // The rail's lanes, then the bed's and the look's only when they went down (no empty rows in the block).
         const plateLanes = Object.keys(plan.plates).length;
-        const bedLane = bed.made || t.spaces.board(plan.space_id).nodes.some((n) => n.type === 'audio' && /^(music bed|song)$/i.test(n.label ?? '')) ? plateLanes + 1 : 0;
+        const bedLane = bed.made || t.spaces.board(plan.space_id).nodes.some((n) => n.type === 'audio' && MUSIC_BED.test(n.label?.trim() ?? '')) ? plateLanes + 1 : 0;
         const lookLane = look.id ? plateLanes + 2 : 0;
         const taken = Math.max(plateLanes, bedLane, lookLane, ...[...existing.values()].map((b) => b.lane));
         let next = taken + 1;

@@ -7,13 +7,16 @@
 // 3. Take: the card's newest take. 4. Length: takes.duration_ms (measured), else the asked length, UNMEASURED.
 // 5. No plan: board order (top to bottom, then left to right), ORDER_GUESSED.
 //    Never a cut of the cut: a card whose newest take is our own export (preset 'cut' / 'katana') is never a clip.
-// 6. Beds: the audio card labelled `music bed` or `song`, and a voice bed (`voice`, `voice over`, `narration`).
+// 6. Beds: what the cut plays. A bed the cut holds (cut.sound) is the bed, whatever its card is called (in_cut).
+//    For a kind the cut has not got, the newest music card (settings.bed, or labelled music bed / song / score /
+//    soundtrack …) or voice card (voice, voice over, narration) is offered with in_cut: false. The export plays
+//    only in_cut beds, and so does the dock, except an empty cut's draft lane (a fill takes the music in).
 // 7. Findings, never refusals: GAP, STALE, TAKES, UNMEASURED, ORDER_GUESSED, MIXED_ASPECT, RUNTIME_OFF, MISSING_FILE.
 import { DirectorPlans } from '../repositories/director-plans.js';
 import { cutClock } from '../../shared/cut-clock.js';
 
 export const EXPORT_PRESETS = new Set(['cut', 'katana']);
-const MUSIC_BED = /^(music bed|song)$/i;
+export const MUSIC_BED = /^(music( bed)?|song|score|soundtrack|theme( music| song)?|bgm|background music)$/i;
 const VOICE_BED = /^(voice|voice ?over|voice-over|narration|narrator)$/i;
 const RUNTIME_SLACK = 0.15;
 const RENDERING = new Set(['queued', 'generating']);
@@ -44,6 +47,11 @@ export const beatTitle = (tag) => {
 
 const isClipCard = (n) => n.type === 'video' || (n.type === 'upload' && String(n.media_mime ?? '').startsWith('video/'));
 const isSoundCard = (n) => n.type === 'audio' || (n.type === 'upload' && String(n.media_mime ?? '').startsWith('audio/'));
+const bedName = (kind) => (kind === 'music' ? 'Music' : 'Voice');
+const soundCard = ({ n, src }) => ({
+    node_id: n.id, take_id: src.take_id, label: n.label?.trim() || `Audio ${n.id}`, media_path: src.media_path,
+    seconds: src.duration_ms != null ? src.duration_ms / 1000 : null, measured: src.duration_ms != null,
+});
 
 export class BoardCut {
     /** @param {{ db: import('node:sqlite').DatabaseSync, exists?: (mediaPath: string) => boolean }} deps */
@@ -64,7 +72,7 @@ export class BoardCut {
         const beats = plan ? this.plans.beats(plan.id) : [];
         const guessed = beats.length === 0;
         const slots = guessed ? this.#guessed(board) : this.#planned(board, beats, plan);
-        const beds = this.#beds(board);
+        const beds = this.#beds(board, cut);
         const clock = this.#clock(slots, cut?.items ?? []);
         const findings = this.#findings({ board, slots, plan, guessed, clock, items: cut?.items ?? [] });
         return { plan_id: plan?.id ?? null, guessed, slots, beds, findings, clock };
@@ -155,22 +163,44 @@ export class BoardCut {
         };
     }
 
-    #beds(board) {
+    /** One bed per kind: the one the cut holds (in_cut), else the board's newest card of that kind (offered). */
+    #beds(board, cut) {
         const beds = [];
         for (const [kind, pattern] of [['music', MUSIC_BED], ['voice', VOICE_BED]]) {
-            const node = board.nodes
-                .filter((n) => isSoundCard(n) && pattern.test(n.label?.trim() ?? '') && !board.ownExport(n))
-                .map((n) => ({ n, src: this.#source(board, n) }))
-                .filter(({ src }) => src && this.exists(src.media_path))
-                .sort((a, b) => b.n.id - a.n.id)[0];
-            if (!node) continue;
-            const measured = node.src.duration_ms != null;
-            beds.push({
-                node_id: node.n.id, take_id: node.src.take_id, label: node.n.label.trim(), kind,
-                media_url: mediaUrl(node.src.media_path), media_path: node.src.media_path, seconds: measured ? node.src.duration_ms / 1000 : null, measured,
-            });
+            const held = cut?.sound?.[kind];
+            const bed = held ? this.#heldBed(board, held, kind) : this.#offeredBed(board, kind, pattern);
+            if (bed) beds.push(bed);
         }
         return beds;
+    }
+
+    /** The bed the cut plays: its pinned file, named by its card (or by its kind once the card has left). */
+    #heldBed(board, held, kind) {
+        const node = board.byId.get(held.node_id);
+        const ms = held.take_id ? this.db.prepare('SELECT duration_ms FROM takes WHERE id = ?').get(held.take_id)?.duration_ms ?? null : null;
+        return {
+            node_id: held.node_id, take_id: held.take_id ?? null, label: node?.label?.trim() || bedName(kind), kind, in_cut: true,
+            media_url: mediaUrl(held.media_path), media_path: held.media_path ?? null, seconds: ms != null ? ms / 1000 : null, measured: ms != null,
+        };
+    }
+
+    #offeredBed(board, kind, pattern) {
+        const found = this.#soundCards(board)
+            .filter(({ n }) => n.settings?.bed === kind || pattern.test(n.label?.trim() ?? ''))
+            .sort((a, b) => b.n.id - a.n.id)[0];
+        return found ? { ...soundCard(found), label: found.n.label?.trim() || bedName(kind), kind, in_cut: false, media_url: mediaUrl(found.src.media_path) } : null;
+    }
+
+    #soundCards(board) {
+        return board.nodes
+            .filter((n) => isSoundCard(n) && !board.ownExport(n))
+            .map((n) => ({ n, src: this.#source(board, n) }))
+            .filter(({ src }) => src && this.exists(src.media_path));
+    }
+
+    /** Every playable sound card on the board, newest first: what the Director's music op and inspect_cut name. */
+    soundCards(spaceId) {
+        return this.#soundCards(this.#board(spaceId)).sort((a, b) => b.n.id - a.n.id).map(soundCard);
     }
 
     /** Export time: the stored items when there are any, else the ready slots back to back. Gaps: the rest. */

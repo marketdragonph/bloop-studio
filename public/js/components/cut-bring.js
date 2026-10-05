@@ -164,8 +164,9 @@ export const cutBringMethods = {
         const card = this.nodes?.find((n) => n.id === choice.node_id);
         if (card) card.label = 'music bed';
         await this.cutLoad();
-        const bed = this.cutBeds?.music;
-        if (bed?.node_id !== choice.node_id) return;
+        // On the lane already (an empty cut's draft), or offered for it (a cut with no music yet: cut-beds.js).
+        const bed = [this.cutBeds?.music, this.cutOffered?.music].find((b) => b?.node_id === choice.node_id);
+        if (!bed) return;
         const { music: _old, ...rest } = this.cutSound ?? {};
         const said = copy('bringSongPicked', { name: choice.name });
         this.cutCommit(said, { sound: withLevel(rest, 'music', bed, MUSIC_LEVEL.default) });

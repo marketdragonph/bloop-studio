@@ -107,7 +107,13 @@ export class CutTurns {
             if (JSON.stringify(next) !== JSON.stringify(item)) touched.push(item.id);
             return next;
         });
-        const sound = kinds.includes('duck') || kinds.includes('level') ? row.before.sound : cut.sound;
+        let sound = kinds.includes('duck') || kinds.includes('level') ? row.before.sound : cut.sound;
+        // 'music': the Music lane as it was before the turn (that card, or none); the voice stays as it is now.
+        if (kinds.includes('music')) {
+            const { music: _now, ...rest } = sound ?? {};
+            const back = { ...rest, ...(row.before.sound?.music ? { music: row.before.sound.music } : {}) };
+            sound = Object.keys(back).length ? back : null;
+        }
         // A level takes back the loudness target; 'outputs' (P6) the export set-up; each keeps the other's.
         // A key the turn added goes back to null: the save merges with the stored settings, so a missing key would keep it.
         let settings = { ...cut.settings };

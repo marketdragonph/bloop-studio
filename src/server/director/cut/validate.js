@@ -4,10 +4,10 @@
 import { DISSOLVE, DUCK, MUSIC_LEVEL, TARGET_LUFS, WHY_MAX, CUT_LIMITS, checkOutputs } from '../../../shared/cut-rules.js';
 import { CAPTIONS } from '../../../shared/cut-captions.js';
 
-export const CUT_OPS = ['place', 'trim', 'move', 'remove', 'join', 'sound', 'duck', 'level', 'snap', 'poster', 'outputs', 'undo_turn'];
+export const CUT_OPS = ['place', 'trim', 'move', 'remove', 'join', 'sound', 'duck', 'level', 'snap', 'poster', 'outputs', 'music', 'undo_turn'];
 export const MAX_CUT_OPS = 40;
 export const TRACKS = ['music', 'voice', 'clips'];
-export const UNDO_KINDS = ['trim', 'join', 'sound', 'duck', 'level', 'outputs'];
+export const UNDO_KINDS = ['trim', 'join', 'sound', 'duck', 'level', 'outputs', 'music'];
 /** P6 (05 §5.6): what an `outputs` op may set. Crop boxes are the person's; exports are the person's press. */
 export const OUTPUT_FIELDS = ['preset', 'shapes', 'captions', 'caption_text'];
 const NEVER_IN_OUTPUTS = { frame: 'Crop boxes are the person\'s to move; you never set them. Leave `frame` out.', crop: 'Crop boxes are the person\'s to move; you never set them. Leave `crop` out.',
@@ -67,6 +67,10 @@ export function shapeProblems(ops) {
             }
         }
         if (op.op === 'sound' && typeof op.on !== 'boolean') reasons.push(`op ${n}: \`on\` is true or false — the clip's own sound.`);
+        if (op.op === 'music') {
+            const card = op.card !== undefined && /^@\d+$/.test(String(op.card).trim());
+            if (op.off === true ? op.card !== undefined : !card) reasons.push(`op ${n}: a music op sets \`card\` (@<id> of a sound card on the board) to put it on the Music lane, or \`off\`: true to take the music off — one of the two.`);
+        }
         if (op.op === 'duck' && (!num(op.depth_db) || op.depth_db > DUCK.max || op.depth_db < DUCK.min)) reasons.push(`op ${n}: \`depth_db\` is ${DUCK.max} to ${DUCK.min} dB.`);
         if (op.op === 'level') {
             if (op.target_lufs === undefined && !TRACKS.includes(op.track)) reasons.push(`op ${n}: \`track\` is music, voice or clips (or send only \`target_lufs\`).`);

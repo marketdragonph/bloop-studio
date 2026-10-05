@@ -32,6 +32,17 @@ export function leftOutAfter(stored, items, { by, draft }) {
     return list.slice(-LEFT_OUT_MAX);
 }
 
+/**
+ * `settings.music_off`: the music card taken off the cut on purpose (by the person or the Director). Add new clips and
+ * the live cut never put that card back; music back on the cut clears it. Drafts and the live cut never set it.
+ */
+export function musicOffAfter(stored, sound, { by, draft }) {
+    const was = stored.settings?.music_off ?? null;
+    if (sound === undefined) return was;
+    if (sound?.music) return null;
+    return !draft && by !== 'auto' && stored.sound?.music ? stored.sound.music.node_id : was;
+}
+
 /** True when this slot's clip is one the person took out on purpose (same card, same take). */
 export const isLeftOut = (leftOut, slot) => (leftOut ?? []).some((e) => e.node_id === slot.node_id && (e.take_id == null || e.take_id === slot.take_id));
 /** An item put back by Undo turn: its stamps and note as they were before the turn. */
@@ -81,9 +92,11 @@ export class CutEdits {
 
         const mode = previous ?? (by === 'person' && !draft ? 'clear' : 'keep');
         const leftOut = leftOutAfter(stored, stamped, { by, draft });
+        const musicOff = musicOffAfter(stored, clean.sound, { by, draft });
         const { left_out: _sent, ...settingsOut } = clean.settings;
         const saved = this.cuts.save(spaceId, {
-            items: stamped, sound: clean.sound, settings: leftOut.length ? { ...settingsOut, left_out: leftOut } : settingsOut, revision: stored.revision, by,
+            items: stamped, sound: clean.sound, revision: stored.revision, by,
+            settings: { ...settingsOut, ...(leftOut.length ? { left_out: leftOut } : {}), ...(musicOff != null ? { music_off: musicOff } : {}) },
             keepPrevious: mode === 'set', clearPrevious: mode === 'clear',
             // A hand edit turns the live cut off (P2b); a draft leaves it as it was.
             auto: by === 'person' && !draft ? false : undefined,

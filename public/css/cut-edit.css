@@ -251,6 +251,7 @@
 }
 .cut-level__range { width: 100%; accent-color: var(--accent); }
 .cut-level__value { color: var(--text-primary); }
+.cut-level__off { justify-self: start; }
 
 @media (pointer: coarse) {
     .cut-level__key { min-height: var(--touch-min); }

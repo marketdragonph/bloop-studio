@@ -57,7 +57,9 @@ export const stitchCut = {
         }
         const changed = result.cut.items.map((i) => i.node_id);
         const placed = result.cut.items.filter((i) => !prior.has(i.id));
-        const text = `${mode === 'fill' ? 'Put' : 'Added'} ${result.added} ${result.added === 1 ? 'clip' : 'clips'} in beat order`;
+        const clips = `${mode === 'fill' ? 'Put' : 'Added'} ${result.added} ${result.added === 1 ? 'clip' : 'clips'} in beat order`;
+        const music = result.music ? `"${result.music}" on the Music lane` : '';
+        const text = result.added ? `${clips}${music ? `, ${music}` : ''}` : music;
         // A fill goes into an empty cut, whose dock lane showed these very clips as the draft: the turn starts from
         // that length, not from 0:00, so the strip reads the length the person saw (bug 2026-10-05).
         const shown = mode === 'fill' && !c.turns.repo.find(t.ledger.cutTurnId)?.before?.items?.length ? cutClock(result.cut.items).total_ms : null;
@@ -67,14 +69,14 @@ export const stitchCut = {
         });
         t.ledger.recordCut({ edits: 1, changed, drafted: true, lines: [text] });
         const capped = result.capped ? ' The cut stopped at its limit (50 clips or 10 minutes).' : '';
-        const list = `\nExactly what changed: ${placed.map((i) => i.beat_tag).join(', ')} placed whole, in beat order; nothing was trimmed, moved or taken out.`;
-        return { ok: true, content: `Added ${result.added} clips in beat order; the cut is ${clockText(cutClock(result.cut.items).total_ms)}, revision ${result.cut.revision}.${capped} ${gaps} NOTHING WAS RENDERED. Say which beats are missing in one sentence. Do not say they are rendering, and do not name any buttons.${list}${critic(t, changed)}` };
+        const list = `\nExactly what changed: ${placed.length ? `${placed.map((i) => i.beat_tag).join(', ')} placed whole, in beat order` : 'no clip was added'}${music ? `; ${music}` : ''}; nothing was trimmed, moved or taken out.`;
+        return { ok: true, content: `${text}; the cut is ${clockText(cutClock(result.cut.items).total_ms)}, revision ${result.cut.revision}.${capped} ${gaps} NOTHING WAS RENDERED. Say which beats are missing in one sentence. Do not say they are rendering, and do not name any buttons.${list}${critic(t, changed)}` };
     },
 };
 
 export const proposeCutOps = {
     name: 'propose_cut_ops',
-    description: 'Edit the Cut: place, trim, move or remove a beat\'s clip, set the join between two clips, the clip\'s own sound, J/L cuts, music ducking, levels, a cut on the music\'s downbeat, the poster frame, how the export is set up (preset, shapes, captions, caption wording), or take back your last turn. Use it for "tighten it", "trim the dead bits", "cut on the beat", "duck the music", "make it punchier", "swap 3 and 4", "end on the train", "make it ready for TikTok", "add captions", "undo that". Read the numbers with inspect_cut first; never guess a time. Everything in ONE call, all of it or none of it. Clips the person placed or changed are theirs unless they name them (or the whole cut) this turn. It changes the edit only — it renders nothing and exports nothing; the export is for the person to start.',
+    description: 'Edit the Cut: place, trim, move or remove a beat\'s clip, set the join between two clips, the clip\'s own sound, J/L cuts, which sound card is the music (or none), music ducking, levels, a cut on the music\'s downbeat, the poster frame, how the export is set up (preset, shapes, captions, caption wording), or take back your last turn. Use it for "tighten it", "trim the dead bits", "cut on the beat", "duck the music", "make it punchier", "swap 3 and 4", "end on the train", "make it ready for TikTok", "add captions", "add the score", "no music", "undo that". Read the numbers with inspect_cut first; never guess a time. Everything in ONE call, all of it or none of it. Clips the person placed or changed are theirs unless they name them (or the whole cut) this turn. It changes the edit only — it renders nothing and exports nothing; the export is for the person to start.',
     schema: {
         type: 'object',
         properties: {
@@ -93,6 +95,8 @@ export const proposeCutOps = {
                         ms: { type: 'integer', description: 'join: dissolve length, 250-1000, at most half the shorter clip.' },
                         audio_ms: { type: 'integer', description: 'join: J cut < 0 (next sound starts early), L cut > 0 (this sound runs on). |audio_ms| <= 1500.' },
                         on: { type: 'boolean', description: 'sound: the clip\'s own sound on or off.' },
+                        card: { type: 'string', description: 'music: @<id> of the sound card to put on the Music lane (inspect_cut lists them); it replaces the music there.' },
+                        off: { type: 'boolean', description: 'music: true takes the music off the cut.' },
                         depth_db: { type: 'number', description: 'duck: how far music drops under spoken lines, -3 to -18.' },
                         track: { type: 'string', enum: TRACKS, description: 'level: which track.' },
                         gain_db: { type: 'number', description: 'level: -24 to +6.' },
@@ -145,7 +149,7 @@ export function appliedText(done) {
 
 export const inspectCut = {
     name: 'inspect_cut',
-    description: 'Measure the clips in the Cut and the music bed: dead frames at the head and tail, silence, spoken lines, loudness, music beats, what each clip can lose. Use it before any trim, cut point, duck or level, when asked whether the cut is tight, and when asked why you cut somewhere (it shows your stored reasons for the beats you name). It reads only — it changes nothing.',
+    description: 'Measure the clips in the Cut and the music bed, and list the board\'s sound cards that are not in the cut: dead frames at the head and tail, silence, spoken lines, loudness, music beats, what each clip can lose. Use it before any trim, cut point, duck or level, when asked whether the cut is tight, and when asked why you cut somewhere (it shows your stored reasons for the beats you name). It reads only — it changes nothing.',
     schema: {
         type: 'object',
         properties: { beats: { type: 'array', items: { type: 'string' }, maxItems: 50, description: 'Beat tags; leave out for the whole cut.' } },
@@ -167,6 +171,7 @@ export const inspectCut = {
         const text = inspectText({
             cut, wanted, scripts, analysisOf: check.analysisOf, toolsMissing: c.analysis.toolsMissing,
             measuring: (path) => c.analysis.measuring(path), reasons: (tag) => c.turns.repo.reasonsFor(t.spaceId, tag),
+            soundCards: wanted ? [] : c.boardCut.soundCards(t.spaceId),
         });
         return { ok: true, content: `${text}${absent.length ? `\nNot in the cut: ${absent.join(', ')}.` : ''}\n\nNothing has changed. Use these numbers in propose_cut_ops; a reason you give is kept with the edit.` };
     },

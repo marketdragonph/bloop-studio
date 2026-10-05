@@ -26,6 +26,7 @@ import { cutCheckMethods } from './cut-check.js';
 import { cutShapeMethods } from './cut-shape.js';
 import { cutOutputMethods } from './cut-outputs.js';
 import { cutNarrowMethods } from './cut-narrow.js';
+import { cutBedMethods } from './cut-beds.js';
 import { patchList } from './cut-patch.js';
 
 const REFETCH_MS = 300;
@@ -69,7 +70,8 @@ export default function CutDock() {
         cutAsExported: false,
         cutItems: [], // what the lanes draw (cut-timeline.js), rebuilt only on load, edit, resize
         cutIndex: {}, // node id → lane index: a node event for a card not in the cut costs one lookup
-        cutBeds: { music: null, voice: null },
+        cutBeds: { music: null, voice: null }, // what the export plays (cut-beds.js)
+        cutOffered: { music: null, voice: null }, // a board card not on the cut: Use as music / voice
         cutBeatsMs: [],
         cutPps: 0,
         cutSpan: 0,
@@ -179,11 +181,7 @@ export default function CutDock() {
             this._cutSlots = Array.isArray(data.slots) ? data.slots : [];
             this.cutFindings = Array.isArray(data.findings) ? data.findings : [];
             this.cutGuessed = Boolean(data.guessed);
-            const beds = Array.isArray(data.beds) ? data.beds : [];
-            this.cutBeds = {
-                music: beds.find((b) => b.kind === 'music') ?? null,
-                voice: beds.find((b) => b.kind === 'voice') ?? null,
-            };
+            this._cutBedCards = Array.isArray(data.beds) ? data.beds : []; // the lanes follow the cut's sound (cut-beds.js)
             if (cut.settings) this.cutSettings = cut.settings;
             this.cutAdoptOutputs(); // P6: the last preset of this space (cut-outputs.js)
             this.cutReceive(cut, { by: cut.updated_by }); // adopts, keeps the person's edits, or asks (cut-persistence.js)
@@ -199,6 +197,7 @@ export default function CutDock() {
             const { entries, draft } = laneEntries(this.cutModel, this._cutSlots);
             const layout = layoutLane(entries, { gaps: !this.cutAsExported });
             this.cutDraft = draft;
+            this.cutSyncBeds();
             this._cutLay = layout;
             this._cutBoardMs = this.cutAsExported ? layoutLane(entries).total_ms : layout.total_ms;
             const shown = layout.entries.filter((e) => !e.hidden);
@@ -493,5 +492,6 @@ export default function CutDock() {
         ...cutShapeMethods,
         ...cutOutputMethods,
         ...cutNarrowMethods,
+        ...cutBedMethods,
     };
 }

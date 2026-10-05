@@ -98,6 +98,8 @@ export const CONTROLS = Object.freeze([
     c('settings.chooseFfmpeg', 'settings', 'Choose ffmpeg.exe', 'Settings › Video tools', 'points the app at your own ffmpeg', 'P3'),
     // ── P4: the Director edits ──
     c('cut.snap', 'dock', 'Snap to beats', 'the open dock\'s track header', 'lands a dragged trim on the music\'s nearest downbeat (estimated)', 'P4'),
+    c('cut.useMusic', 'dock', 'Use as music', 'the Music lane, when a music card on the board is not in the cut', 'puts that card on the Music lane, so the export plays it', 'P4'),
+    c('cut.bedOff', 'dock', 'Take off', 'the Music or Voice level popover', 'takes that sound off the cut; the card stays on the board', 'P4'),
     c('cut.duck', 'dock', 'Duck under lines', 'under the Music level', 'sets how far music drops under spoken lines', 'P4'),
     c('cut.turnShow', 'dock', 'Show edits', 'the Director\'s turn strip', 'lists each edit the Director made and marks those clips', 'P4'),
     c('cut.turnRow', 'dock', 'Go to edit', 'each row of Show edits', 'selects that clip and moves the playhead to it', 'P4'),
@@ -257,6 +259,11 @@ export const COPY = Object.freeze({
     measuringSome: 'Measuring the clips…',
     toolsMissing: 'Not measured: the video tools are missing on this PC.',
     laneNotMeasured: 'Not measured',
+    musicOn: '{label} is the music now.',
+    musicOff: 'Music taken off the cut.',
+    voiceOn: '{label} is the voice now.',
+    voiceOff: 'Voice taken off the cut.',
+    musicOffered: '{label} is on the board, not in the cut.',
     beatsEstimated: 'Beats · estimated',
     beatsNone: 'No beats measured yet',
     snapped: 'Trim landed on a downbeat at {time}',
@@ -305,6 +312,6 @@ export const EMPTY_TEXT = Object.freeze({
     dock: 'No clips yet. Render a beat\'s video card and it lands here.',
     board: 'Make a short film. Clips land here in order, timed to music.',
     ghostSlots: Object.freeze(['01 · Open', '02 · Turn', '03 · Close']),
-    music: 'No music yet. Add an Audio card labelled music bed.',
+    music: 'No music yet. Add an Audio card labelled music, or ask the Director.',
     voice: 'No voice yet. Add an Audio card labelled voice.',
 });

@@ -21,8 +21,8 @@ const NOT_MEASURED_YET = 'is not measured yet, so no time can be set. Leave its 
 
 /** The working copy one op list edits, with the checks the handlers share. */
 export class WorkingCut {
-    constructor({ cut, slots, beats, analysisOf, toolsMissing, opened, takesOf, measured }) {
-        Object.assign(this, { slots, beats, analysisOf, toolsMissing, opened, takesOf, measured });
+    constructor({ cut, slots, beats, analysisOf, toolsMissing, opened, takesOf, measured, soundCards = [] }) {
+        Object.assign(this, { slots, beats, analysisOf, toolsMissing, opened, takesOf, measured, soundCards });
         this.items = clone(cut.items);
         this.sound = clone(cut.sound);
         this.settings = clone(cut.settings);
@@ -120,6 +120,7 @@ export class CutOps {
             opened: namedItems(request, cut.items, beats),
             takesOf: (nodeId) => this.deps.db.prepare('SELECT id, media_path, duration_ms FROM takes WHERE node_id = ? ORDER BY id DESC').all(nodeId),
             measured: (item) => measuredNodes.has(item.node_id) && item.seconds_ms > 0,
+            soundCards: ops.some((o) => o?.op === 'music') ? boardCut.soundCards(spaceId) : [],
         });
         ops.forEach((op, i) => {
             if (!unreadable.has(i + 1)) applyOp(w, i + 1, op);
@@ -177,7 +178,7 @@ export class CutOps {
             const locked = cut.items.filter((i) => back.touched.includes(i.id) && isLocked(i) && opened !== 'all' && !opened.has(i.id));
             if (locked.length) throw new CutOpsRejected([`${locked.map((i) => i.beat_tag).join(', ')} changed by the person since that turn, so it is theirs. Leave it, or ask them in one sentence.`]);
             const took = `Took back: ${op.kinds.join(', ')}`;
-            const whole = op.kinds.filter((k) => ['duck', 'level', 'outputs'].includes(k));
+            const whole = op.kinds.filter((k) => ['duck', 'level', 'outputs', 'music'].includes(k));
             const w = { snapped: [], rows: back.touched.map((id) => ({ kind: 'undo', item_id: id, text: took })), summary: whole.length ? [{ kind: 'undo', track: null, text: `Took back: ${whole.join(', ')}`, why: null }] : [] };
             return this.#save(spaceId, cut, { items: back.items, sound: back.sound, settings: back.settings }, w, ledger);
         } catch (error) {

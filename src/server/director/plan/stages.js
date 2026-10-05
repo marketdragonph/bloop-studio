@@ -3,6 +3,7 @@
 // the bed, the look and every beat line up as one block.
 import { BoardOpsRejected } from '../ops/board-ops.js';
 import { cleanPlates, railMap, railOps } from './plates.js';
+import { MUSIC_BED } from '../../cut/board-cut.js';
 
 export const RAIL_STAGES = ['cast', 'world'];
 
@@ -76,7 +77,7 @@ export class BuildStages {
     bed(plan, { music, lyrics, seconds }) {
         if (!music) return { made: 0, actions: [] };
         const board = this.spaces.board(plan.space_id);
-        if (board.nodes.some((n) => n.type === 'audio' && /^(music bed|song)$/i.test(n.label ?? ''))) return { made: 0, actions: [] };
+        if (board.nodes.some((n) => n.type === 'audio' && MUSIC_BED.test(n.label?.trim() ?? ''))) return { made: 0, actions: [] };
         const lane = Object.keys(plan.plates).length + 1;
         const song = Boolean(String(lyrics ?? '').trim());
         const ops = [

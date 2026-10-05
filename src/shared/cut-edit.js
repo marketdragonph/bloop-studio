@@ -204,3 +204,15 @@ export function withLevel(sound, kind, bed, db) {
     if (!current) return sound ?? null;
     return { ...(sound ?? {}), [kind]: { ...extra, ...current, gain_db: clampLevel(db, levelRange(kind)) } };
 }
+
+/** The sound with BoardCut's card ({node_id, take_id, media_url}) on that bed's lane, at the default level. */
+export function withBed(sound, kind, bed) {
+    const extra = kind === 'voice' ? { start_ms: 0 } : { fade_out_ms: FADE_OUT.default };
+    return { ...(sound ?? {}), [kind]: { node_id: bed.node_id, take_id: bed.take_id ?? null, media_path: mediaPathOf(bed.media_url), gain_db: levelRange(kind).default, ...extra } };
+}
+
+/** The sound without that bed (null when nothing is left). */
+export function withoutBed(sound, kind) {
+    const { [kind]: _gone, ...rest } = sound ?? {};
+    return Object.keys(rest).length ? rest : null;
+}

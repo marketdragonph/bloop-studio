@@ -3,7 +3,7 @@
 // cut-ops.js saves only when no op has a reason (all or nothing). Notes (≤ 40 chars, sensor blue on the clip),
 // strip rows and the why ledger are written here as the ops apply.
 import { cutClock } from '../../../shared/cut-clock.js';
-import { DISSOLVE, DUCK, MIN_CLIP_MS, CUT_LIMITS } from '../../../shared/cut-rules.js';
+import { DISSOLVE, DUCK, FADE_OUT, MIN_CLIP_MS, MUSIC_LEVEL, CUT_LIMITS } from '../../../shared/cut-rules.js';
 import { snapToBeat } from '../../../shared/cut-sound.js';
 import { DEFAULT_PRESET, EXPORT_PRESETS, outputsFor } from '../../../shared/export-presets.js';
 import { itemFor } from '../../cut/cut-draft.js';
@@ -199,6 +199,31 @@ const HANDLERS = {
         w.sound = { ...w.sound, music: { ...w.sound.music, duck: { depth_db: depth, attack_ms: DUCK.attack_ms, release_ms: DUCK.release_ms } } };
         w.count('duck');
         w.summary.push({ kind: 'duck', track: 'music', text: `Music ducked ${depth} dB under spoken lines`, why: op.why ?? null });
+    },
+
+    /** The Music lane: a sound card from the board goes on it (its level and duck carry over), or the music comes off. */
+    music(w, n, op) {
+        const was = w.sound?.music ?? null;
+        if (op.off === true) {
+            if (!was) return w.reason(`op ${n}: the cut has no music, so there is nothing to take off.`);
+            const { music: _off, ...rest } = w.sound;
+            w.sound = Object.keys(rest).length ? rest : null;
+            w.count('music');
+            return w.summary.push({ kind: 'music', track: 'music', text: 'Music taken off the cut', why: op.why ?? null });
+        }
+        const id = Number(String(op.card).trim().slice(1));
+        const card = w.soundCards.find((c) => c.node_id === id);
+        if (!card) {
+            const list = w.soundCards.slice(0, 8).map((c) => `@${c.node_id} "${c.label}"`).join(', ');
+            return w.reason(`op ${n}: @${id} is not a sound card with a file on this board. ${list ? `The sound cards are: ${list}.` : 'The board has no sound card with a file yet; say so in one sentence and do not offer to render one.'}`);
+        }
+        if (was?.node_id === id) return w.reason(`op ${n}: "${card.label}" is already the cut's music.`);
+        w.sound = { ...(w.sound ?? {}), music: {
+            node_id: id, take_id: card.take_id, media_path: card.media_path,
+            gain_db: was?.gain_db ?? MUSIC_LEVEL.default, fade_out_ms: was?.fade_out_ms ?? FADE_OUT.default, ...(was?.duck ? { duck: was.duck } : {}),
+        } };
+        w.count('music');
+        w.summary.push({ kind: 'music', track: 'music', text: `"${card.label}" on the Music lane${was ? ', in place of the music before' : ''}`, why: op.why ?? null });
     },
 
     level(w, n, op) {

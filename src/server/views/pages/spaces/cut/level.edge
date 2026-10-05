@@ -14,6 +14,7 @@
            @input="cutSetLevel('{{ kind }}', $event.target.value)"
            @change="cutSetLevel('{{ kind }}', $event.target.value, { commit: true })">
     <span class="ae-readout cut-level__value" x-text="cutLevelText('{{ kind }}')" aria-hidden="true"></span>
+    <button type="button" class="ae-key ae-key--sm cut-level__off" data-control="cut.bedOff" x-show="cutSound?.{{ kind }}" @click="cutBedOff('{{ kind }}')">{{ controlLabel('cut.bedOff') }}</button>
     @if(kind === 'music')
     <div class="cut-level__duck">
       <button type="button" class="ae-key ae-key--sm" @click="cutDuckToggle()" data-control="cut.duck"

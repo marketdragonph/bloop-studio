@@ -86,6 +86,10 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   that needs a new take shows **Go to card**, warn marks on the ruler. `public/css/cut-director.css`.
   **Settings › Director › Editing style** (≤ 600 characters) holds how the person likes to cut; the Director reads
   it on every turn. P4 controls are in the guide (`SHIPPED`).
+  **The Music lane is the export's music** (2026-10-06): `BoardCut` returns the bed the cut holds (`in_cut`) or offers
+  the board's newest music card (settings.bed, or labelled music, music bed, song, score, soundtrack, theme, bgm);
+  `public/js/components/cut-beds.js` draws only what the export plays, with **Use as music** on an offered card and
+  **Take off** in the level popover. Add new clips and the Director's `music` op put music on; a card taken off stays off.
   **Outputs (P6, the dock side)**: **Shape** under the preview (16:9 / 9:16 / 1:1, remembered per viewer and space)
   shows each clip exactly as the export frames it: `src/shared/cut-frame-edit.js` places each preview video from
   `cut-frame.js` `fitFor`/`cropBox` (the export's maths; a 9:16 export frame matched the shared box at SSIM 0.98,

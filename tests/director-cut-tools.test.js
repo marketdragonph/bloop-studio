@@ -32,7 +32,7 @@ test('stitch_cut fill: beat order, gaps named, nothing rendered, one cut event f
     const t = f.turn(b.space.id, 'cut it together');
     let result;
     const sent = await f.listen(async () => { result = run('stitch_cut', { mode: 'fill' }, t); });
-    assert.match(result.content, /^Added 3 clips in beat order; the cut is 0:12, revision 1\. 1 beat has no video: s3-run\. NOTHING WAS RENDERED\./);
+    assert.match(result.content, /^Put 3 clips in beat order, "music bed" on the Music lane; the cut is 0:12, revision 1\. 1 beat has no video: s3-run\. NOTHING WAS RENDERED\./);
     const cut = f.cuts.current(b.space.id);
     assert.deepEqual(cut.items.map((i) => [i.beat_tag, i.placed_by]), [['s1-open', 'director'], ['s2-cup', 'director'], ['s4-end', 'director']]);
     assert.deepEqual(sent.map((e) => [e.by, e.turn, e.missing]), [['director', t.ledger.cutTurnId, ['s3-run']]]);

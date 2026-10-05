@@ -265,6 +265,10 @@ SAY IT IN EDITING WORDS. "Tightened the open, cut on the swing, let her line run
   schema yet); `level target_lufs` is stored as `settings.target_lufs` (validator + `checkSettings`) and the export's
   loudness stage aims at it over the preset. Notes: phrases joined with " · ", whole phrases only, ≤ 40 chars.
   Strip rows carry `at_ms` (where the clip now starts) and, for trims and snaps, `was {in_ms, out_ms}` for the ghost.
+  **`music {card: '@id'} | {off: true}`** (2026-10-06, bug: a score made after the stitch never reached the lane):
+  puts any sound card from `BoardCut.soundCards` on the Music lane (level, fade and duck carry over) or takes the music
+  off (`settings.music_off`, so Add new clips leaves it off); `undo_turn kinds: ['music']` takes back only the lane.
+  inspect_cut lists the board's sound cards not in the cut; stitch_cut add_new brings the board's music when the cut has none.
 - [x] §4 Lock: `director/cut/lock.js`. Locked = `placed_by 'person'` or a `person_rev`. Opened by the beat tag (dash,
   space or underscore), "beat/shot/clip/scene N", "first … tenth / last / opening clip", or a whole-cut phrase. A lock
   also covers move, remove and swapping a take; a join's lock is the clip after the join (the field lives there).

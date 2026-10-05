@@ -65,17 +65,17 @@ test('a turn that fills an empty cut, then edits: one count, and the strip start
     for (const tag of TAGS) f.measure(b.clips[tag].take.media_path, { duration_ms: 4000 });
     const t = f.turn(b.space.id, 'cut it together, under 15 seconds');
     const stitched = f.run('stitch_cut', { mode: 'fill' }, t);
-    assert.match(stitched.content, /Exactly what changed: s1-open, s2-cup, s3-run, s4-end placed whole, in beat order; nothing was trimmed, moved or taken out\./);
+    assert.match(stitched.content, /Exactly what changed: s1-open, s2-cup, s3-run, s4-end placed whole, in beat order; "music bed" on the Music lane; nothing was trimmed, moved or taken out\./);
     f.run('propose_cut_ops', { ops: [{ op: 'remove', beat: 's3-run', why: 'Silent.' }, { op: 'trim', beat: 's1-open', in_s: 0.5, why: 'Still head.' }] }, t);
     const view = f.turns.view(b.space.id);
     // Before: the four clips the dock's lane showed (0:18), not the empty stored cut (0:00).
     assert.deepEqual([view.before_total_ms, view.after_total_ms], [18_000, 12_500]);
-    assert.deepEqual(view.rows.map((r) => r.text), ['Put 4 clips in beat order', 'Trimmed −0.5 s', 'Taken out of the cut']);
+    assert.deepEqual(view.rows.map((r) => r.text), ['Put 4 clips in beat order, "music bed" on the Music lane', 'Trimmed −0.5 s', 'Taken out of the cut']);
     assert.equal(view.edits, 3, 'one write of clips + two edits, as many as Show edits lists');
     const turn = readTurn(view, f.cuts.current(b.space.id).items);
     assert.equal(turnHead(turn), 'Director · 3 edits · 0:18 → 0:12');
     assert.equal(closeTurn({ streamed: '', ledger: t.ledger, recover: () => null }).text,
-        'I made 3 edits to the cut: Put 4 clips in beat order; s1-open: Trimmed −0.5 s; s3-run: Taken out of the cut.');
+        'I made 3 edits to the cut: Put 4 clips in beat order, "music bed" on the Music lane; s1-open: Trimmed −0.5 s; s3-run: Taken out of the cut.');
     // A stitch on its own: the closing words say the clips went in, not "N edits".
     const b2 = f.board('fill only', TAGS);
     const t2 = f.turn(b2.space.id, 'stitch it');

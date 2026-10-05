@@ -5,7 +5,8 @@
 //
 //   fill     build the cut in beat order, ONLY into an empty cut. A cut with clips: nothing is written, and the
 //            `cut` event offers a replace (offer: 'replace'); the choice is the person's.
-//   add_new  add ready beats whose card is not in the cut yet and was not taken out on purpose (settings.left_out).
+//   add_new  add ready beats whose card is not in the cut yet and was not taken out on purpose (settings.left_out),
+//            and the board's music when the cut has none (unless that card was taken off: settings.music_off).
 //            Never moves, trims or removes an item: the items already there stay in their order as they were.
 //   replace  the person's press after the offer: a fresh draft in beat order. The old items become the
 //            one-step Undo draft (previous_items).
@@ -50,17 +51,18 @@ export class CutDraft {
      * @param {number} spaceId
      * @param {{ mode: 'fill'|'add_new'|'replace', by?: 'person'|'director', revision?: number|null, turn?: number|null }} request
      *   `revision` (the dock sends it): a stale one is a 409, as for a PUT. The Director omits it.
-     * @returns {{ drafted: boolean, mode: string, reason: string|null, added: number, missing: string[], capped: boolean, offer: string|null, cut: object }}
+     * @returns {{ drafted: boolean, mode: string, reason: string|null, added: number, missing: string[], capped: boolean, offer: string|null, music: string|null, cut: object }}
+     *   `music`: the label of the music card this draft put on the cut, or null.
      * @throws {CutConflictError|CutInvalidError}
      */
-    draft(spaceId, { mode, by = 'person', revision = null, turn = null, bed = false }) {
+    draft(spaceId, { mode, by = 'person', revision = null, turn = null }) {
         if (!DRAFT_MODES.includes(mode)) throw new CutInvalidError('A draft fills the cut, adds new clips, or replaces it.');
         const cut = this.cuts.current(spaceId);
         if (revision != null && Number(revision) !== cut.revision) throw new CutConflictError(cut);
         const read = this.boardCut.read(spaceId, { cut });
         const missing = read.slots.filter((s) => s.state !== 'ready').map((s) => s.beat_tag);
         const ready = read.slots.filter((s) => s.state === 'ready' && s.node_id && s.media_path);
-        const result = (fields) => ({ drafted: false, mode, reason: null, added: 0, missing, capped: false, offer: null, cut, ...fields });
+        const result = (fields) => ({ drafted: false, mode, reason: null, added: 0, missing, capped: false, offer: null, music: null, cut, ...fields });
 
         if (!ready.length) return result({ reason: 'no_clips' });
         if (mode === 'fill' && cut.items.length) {
@@ -72,8 +74,10 @@ export class CutDraft {
         const inCut = new Set(kept.map((item) => item.node_id));
         // A clip the person took out on purpose (settings.left_out) stays out of Add new clips and the live cut.
         const fresh = ready.filter((slot) => !inCut.has(slot.node_id) && (mode !== 'add_new' || !isLeftOut(cut.settings?.left_out, slot)));
-        // `bed` (the live cut): a music bed that landed after the clips goes in too, when the cut has none.
-        const newBed = bed && mode === 'add_new' && !cut.sound?.music && read.beds.some((b) => b.kind === 'music');
+        // A music card that landed after the clips goes in too, when the cut has none (bug 2026-10-06: a score
+        // made after the stitch never reached the Music lane).
+        const music = this.#music(cut, read.beds);
+        const newBed = mode === 'add_new' && Boolean(music);
         if (!fresh.length && !newBed) return result({ reason: 'nothing_new' });
 
         const { items, added, capped } = mode === 'add_new' ? this.#addNew(kept, fresh, read.slots) : this.#fresh(fresh);
@@ -88,7 +92,7 @@ export class CutDraft {
             turn,
             missing,
         });
-        return result({ drafted: true, added, capped, cut: saved });
+        return result({ drafted: true, added, capped, music: music ? music.label : null, cut: saved });
     }
 
     /**
@@ -138,10 +142,17 @@ export class CutDraft {
         return { items, added, capped: false };
     }
 
+    /** The board's music card the cut could take: none when the cut has music or that card was taken off. */
+    #music(cut, beds) {
+        if (cut.sound?.music) return null;
+        const music = beds.find((b) => b.kind === 'music' && !b.in_cut);
+        return music && music.node_id !== cut.settings?.music_off ? music : null;
+    }
+
     /** The music bed goes in when the board has one and the cut has none; a voice bed is the person's choice. */
     #sound(cut, beds) {
-        const music = beds.find((b) => b.kind === 'music');
-        if (cut.sound?.music || !music) return cut.sound ?? null;
+        const music = this.#music(cut, beds);
+        if (!music) return cut.sound ?? null;
         return { ...(cut.sound ?? {}), music: { node_id: music.node_id, take_id: music.take_id, gain_db: MUSIC_LEVEL.default, fade_out_ms: FADE_OUT.default } };
     }
 
