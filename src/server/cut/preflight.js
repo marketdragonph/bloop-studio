@@ -6,7 +6,7 @@ import { statfs as fsStatfs } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { cutClock } from '../../shared/cut-clock.js';
 import { CUT_LIMITS } from '../../shared/cut-rules.js';
-import { checkPreset, estimateBytes, presetLine, presetOutput } from '../../shared/export-presets.js';
+import { checkPreset, estimateBytes, lengthHint, presetLine, presetOutput } from '../../shared/export-presets.js';
 import { beatTitle } from './board-cut.js';
 
 const DISK_FACTOR = 3;
@@ -25,18 +25,20 @@ export function itemLabel(item, index, slots = []) {
 
 /**
  * @param {{ spaceId: number, snapshot: { revision: number, items: object[], sound: object|null, settings: object },
- *   preset: string, boardCut: import('./board-cut.js').BoardCut, media: { resolve(p: string): string|null, getRoot(): string },
+ *   preset: string, variant?: string|null, boardCut: import('./board-cut.js').BoardCut, media: { resolve(p: string): string|null, getRoot(): string },
  *   tools?: { state(): Promise<object> } | null, exists?: (p: string) => boolean, statfs?: (p: string) => Promise<{ bavail: number, bsize: number }> }} input
- * @returns {Promise<object>} `{ ok, code?, reason?, beat?, items, skipped, total_ms, estimate_bytes, output, audio_encoder, line }`
+ * `variant` (P6): the shape of this file in the Shapes row; null = the preset's own shape, else the cut's.
+ * @returns {Promise<object>} `{ ok, code?, reason?, beat?, items, skipped, total_ms, estimate_bytes, output, plan_shape, audio_encoder, line, hint }`
  */
-export async function preflight({ spaceId, snapshot, preset, boardCut, media, tools = null, exists = existsSync, statfs = fsStatfs }) {
+export async function preflight({ spaceId, snapshot, preset, variant = null, boardCut, media, tools = null, exists = existsSync, statfs = fsStatfs }) {
     const read = boardCut.read(spaceId, { cut: { items: snapshot.items } });
     const planAspect = read.slots.find((s) => s.plan_aspect)?.plan_aspect ?? null;
-    const output = presetOutput(preset, { ...snapshot.settings, aspect: snapshot.settings?.aspect ?? planAspect });
+    const planShape = snapshot.settings?.aspect ?? planAspect ?? '16:9';
+    const output = presetOutput(preset, { ...snapshot.settings, aspect: planShape }, variant);
     const total = cutClock(snapshot.items).total_ms;
     const skipped = read.slots.filter((s) => s.state !== 'ready' && !snapshot.items.some((i) => i.node_id === s.node_id)).map((s) => s.label);
     const items = snapshot.items.map((item, index) => ({ ...item, index, label: itemLabel(item, index, read.slots), src: item.media_path ? media.resolve(item.media_path) : null }));
-    const result = { ok: false, items, skipped, total_ms: total, estimate_bytes: estimateBytes(total), output, audio_encoder: null, line: presetLine(output, total) };
+    const result = { ok: false, items, skipped, total_ms: total, estimate_bytes: estimateBytes(total), output, audio_encoder: null, line: presetLine(output, total), plan_shape: planShape, hint: lengthHint(preset, total) };
     const refuse = (code, reason, beat = null) => ({ ...result, code, reason, beat });
 
     const presetReason = checkPreset(preset);

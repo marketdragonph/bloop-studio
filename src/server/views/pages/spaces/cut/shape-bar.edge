@@ -1,0 +1,26 @@
+{{-- Under the preview (P6, 05 §5.4–§5.5): Shape picks what the preview shows (16:9, 9:16, 1:1), framed exactly as the
+     export frames it; Crop opens the crop box on the selected clip; Captions turns the burned-in captions on or off
+     (the same choice as the export sheet's). Native radios: the arrow keys move between shapes (the dock's keys skip
+     inputs). Nothing here exports. --}}
+<div class="cut-shape-bar">
+  <fieldset class="cut-shape" data-control="cut.shape">
+    <legend class="visually-hidden">{{ controlLabel('cut.shape') }}</legend>
+    <span class="cut-shape__label ae-stencil" aria-hidden="true">{{ controlLabel('cut.shape') }}</span>
+    <template x-for="shape in cutShapeList" :key="shape">
+      <label class="cut-shape__pick" :class="{ 'is-on': cutShapeNow() === shape }">
+        <input type="radio" name="cut-shape" class="cut-shape__input" :value="shape" :checked="cutShapeNow() === shape"
+               @change="cutSetShape(shape)" :aria-label="shape + (shape === cutPlanShape() ? ', the cut\'s own shape' : '')">
+        <span class="cut-shape__glyph" :data-shape="shape" aria-hidden="true"></span>
+        <span x-text="shape"></span>
+      </label>
+    </template>
+  </fieldset>
+  <div class="cut-shape__keys">
+    <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': cutCropping() }" @click="cutCropToggle()"
+            :disabled="!cutCropAllowed()" :aria-pressed="cutCropping() ? 'true' : 'false'" data-control="cut.crop">{{ controlLabel('cut.crop') }}</button>
+    <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': cutCaptionsOn() }" @click="cutCaptionsToggle()" :aria-pressed="cutCaptionsOn() ? 'true' : 'false'"
+            data-control="cut.captions">{{ controlLabel('cut.captions') }}</button>
+  </div>
+  <p class="cut-shape__hint" x-show="cutCropping()" x-text="cutCropHint()"></p>
+  <p class="cut-shape__hint" x-show="cutCaptionsOn() && !cutCropping()" x-text="cutCaptionHint()"></p>
+</div>

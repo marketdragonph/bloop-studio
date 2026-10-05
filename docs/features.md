@@ -86,6 +86,28 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   that needs a new take shows **Go to card**, warn marks on the ruler. `public/css/cut-director.css`.
   **Settings › Director › Editing style** (≤ 600 characters) holds how the person likes to cut; the Director reads
   it on every turn. P4 controls are in the guide (`SHIPPED`).
+  **Outputs (P6, the dock side)**: **Shape** under the preview (16:9 / 9:16 / 1:1, remembered per viewer and space)
+  shows each clip exactly as the export frames it: `src/shared/cut-frame-edit.js` places each preview video from
+  `cut-frame.js` `fitFor`/`cropBox` (the export's maths; a 9:16 export frame matched the shared box at SSIM 0.98,
+  a 7 px shift drops to 0.50). **Crop** opens the orange **Crop box** on the selected clip (CutReframe,
+  `public/js/components/cut-reframe.js`: drag, corner or pinch zoom 1–3×, wheel, arrows 2 % / Shift 10 %, Home
+  centres, one undo step per drag or key; `item.frame`). Soft bars draw a blurred copy of the playing clip behind a
+  fitted one. **Captions** (preview and sheet) shows the cues of `src/shared/cut-captions.js` in the burned-in look;
+  `public/js/cut/caption-render.js` draws each cue as a PNG (Inter 700, dark plate, orange cut) for the export. The
+  export sheet (`cut-outputs.js`, `export-outputs.edge`): TikTok/Reels/Shorts presets with the length hint,
+  **Shapes** (one file per shape, one job on the sheet: "File 2 of 3 · 9:16", then every file with **Show in
+  folder** / **Copy path**), **Fit with soft bars** with the measured blow-up, Captions Off / Burned in with the
+  honest note and ".srt beside every export", **Preview GIF**. All choices in `settings.outputs`. Captions start
+  on when every captioned clip speaks its own script (`GET /spaces/:id/cut` `captions {default_on, why_off}`), else
+  off with the reason in the sheet. After the person has seen a finished export, the sheet opens on the choices again.
+  `public/css/cut-shape.css`. P6 controls are in the guide (`SHIPPED`).
+  **Outputs (P6, the export side)**: one press makes one `cut_exports` row per shape (`variant`, `group_id`), run
+  one at a time on the tools queue; Cancel stops the whole group. Each part is fitted, cropped from the person's box
+  or set on soft bars (`gblur`, never `boxblur`) by `src/server/cut/export/frame-chain.js`, with the page's caption
+  PNGs overlaid while each line is spoken; `extras.js` writes the `.srt` and the 6 s preview GIF (`palettegen`,
+  ≤ 8 MB). Files are named per shape (`night-market-master-9x16-r12.mp4`) with the `.srt` and `-preview.gif` beside
+  them, and Pack takes them along. The Director's `outputs` op sets up preset, shapes and captions (and fixes caption
+  words) but never moves a crop box or starts an export.
 
 ## Rendering
 

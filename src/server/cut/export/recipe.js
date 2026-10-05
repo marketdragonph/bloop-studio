@@ -5,7 +5,8 @@
 // Pure functions: no spawn here. Every call still goes through CappedFfmpeg (output -t, -fs, timeout).
 import { cutClock } from '../../../shared/cut-clock.js';
 import { FPS, VIDEO_BITRATE, AUDIO_BITRATE } from '../../../shared/export-presets.js';
-import { PART_AUDIO_CODEC, POSTER_ENCODER, VIDEO_ENCODER } from '../../../shared/export-recipes.js';
+import { GIF_ENCODER, PART_AUDIO_CODEC, POSTER_ENCODER, VIDEO_ENCODER } from '../../../shared/export-recipes.js';
+import { pictureGraph } from './frame-chain.js';
 
 export const VENC = ['-c:v', VIDEO_ENCODER, '-b:v', `${VIDEO_BITRATE / 1_000_000}M`, '-g', String(FPS * 2)];
 const PCM = ['-c:a', PART_AUDIO_CODEC, '-ar', '48000', '-ac', '2'];
@@ -62,19 +63,21 @@ export function layoutParts(items) {
     return { parts, junctions, order, totalFrames: grid.at(-1)?.endF ?? 0, items: timed };
 }
 
-const videoChain = (w, h) => `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=${FPS}:start_time=0,format=yuv420p`;
-
 /**
- * One part of one clip: scaled into the frame, 30 fps, PCM sound padded to the exact length. Sound off or no
- * audio stream: silence from anullsrc, capped by its own input -t and the output -t.
+ * One part of one clip: fitted, cropped (P6: the person's box for this shape) or set on soft bars, 30 fps, with
+ * the caption PNGs that show during it, and PCM sound padded to the exact length. Sound off or no audio stream:
+ * silence from anullsrc, capped by its own input -t and the output -t. No box and no caption: the P3 args.
  */
-export function normalizeArgs({ src, startSec, frames, withSound, width, height, out }) {
+export function normalizeArgs({ src, startSec, frames, withSound, width, height, out, fit = null, sar = 1, captions = [] }) {
     const len = secs(frames);
     const inputs = ['-ss', startSec.toFixed(6), '-i', src];
     if (!withSound) inputs.push('-f', 'lavfi', '-t', len, '-i', 'anullsrc=r=48000:cl=stereo');
+    const picture = pictureGraph({ fit, width, height, sar, captions, firstImage: withSound ? 1 : 2 });
+    for (const image of picture.images) inputs.push('-i', image); // one still frame each: overlay holds it
+    const video = picture.vf ? ['-map', '0:v:0', '-map', withSound ? '0:a:0' : '1:a:0', '-vf', picture.vf]
+        : ['-filter_complex', picture.graph, '-map', picture.map, '-map', withSound ? '0:a:0' : '1:a:0'];
     return [
-        '-y', ...inputs, '-map', '0:v:0', '-map', withSound ? '0:a:0' : '1:a:0',
-        '-vf', videoChain(width, height),
+        '-y', ...inputs, ...video,
         '-af', `aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur=${len}`,
         ...VENC, ...PCM, '-t', len, out,
     ];
@@ -158,6 +161,16 @@ export function loudnessGain(measured, targetLufs, ceiling) {
 export function finishArgs({ input, frames, gainDb, audioEncoder, out }) {
     const af = gainDb ? ['-af', `volume=${gainDb}dB`] : [];
     return ['-y', '-i', input, '-map', '0:v', '-map', '0:a', '-c:v', 'copy', ...af, '-c:a', audioEncoder, '-b:a', `${AUDIO_BITRATE / 1000}k`, '-ar', '48000', '-ac', '2', '-t', secs(frames), '-movflags', '+faststart', out];
+}
+
+/**
+ * The preview GIF (05 §5.3): up to 6 s from `atSec`, the long side 480 px (or less on a retry), 12 fps, one
+ * palette made for these frames (palettegen + paletteuse). Capped at 8 MB by the runner's -fs.
+ */
+export function gifArgs({ input, atSec, seconds, longSide = 480, fps = 12, portrait = false, out }) {
+    const size = portrait ? `-2:${longSide}` : `${longSide}:-2`;
+    const graph = `[0:v]fps=${fps},scale=${size}:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4[g]`;
+    return ['-y', '-ss', atSec.toFixed(3), '-t', seconds.toFixed(3), '-i', input, '-filter_complex', graph, '-map', '[g]', '-an', '-c:v', GIF_ENCODER, '-loop', '0', '-t', seconds.toFixed(3), out];
 }
 
 /** The poster frame (05 §5.3): one JPEG at `atSec`. */

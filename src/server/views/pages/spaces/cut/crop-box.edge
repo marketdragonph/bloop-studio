@@ -1,0 +1,16 @@
+{{-- The crop box (P6, 05 §5.4): over the whole selected clip while Crop is on, in CutReframe's scope
+     (public/js/components/cut-reframe.js). What the shape cuts away is greyed; the orange box is what the file keeps.
+     Drag it (anywhere on the clip), drag its corner or pinch to zoom; on the focused box the arrow keys move it 2 %,
+     Home centres it, + and − zoom, Enter or Escape close. Each drag or key press is one undo step. --}}
+<div class="cut-crop" x-data="CutReframe" x-show="cutCropping() && crSource()" x-cloak :style="crVars()"
+     :class="{ 'is-live': crLive }"
+     @pointerdown="crDown($event)" @pointermove="crMove($event)" @pointerup="crUp($event)" @pointercancel="crUp($event)"
+     @wheel="crWheel($event)">
+  <div class="cut-crop__box" tabindex="0" role="group" aria-roledescription="crop box" data-control="cut.cropBox"
+       :aria-label="crLabel()" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home + - Escape"
+       @keydown="crKey($event)">
+    <span class="cut-crop__third cut-crop__third--v" aria-hidden="true"></span>
+    <span class="cut-crop__third cut-crop__third--h" aria-hidden="true"></span>
+    <span class="cut-crop__corner" aria-hidden="true" @pointerdown.stop="crDown($event, 'zoom')"></span>
+  </div>
+</div>

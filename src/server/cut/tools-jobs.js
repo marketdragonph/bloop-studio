@@ -129,6 +129,7 @@ export function jobView(row, currentRevision = null) {
         error_beat: row.error_beat, media_path: row.media_path, bytes: row.bytes, node_id: row.node_id,
         cancel_requested: Boolean(row.cancel_requested_at), created_at: row.created_at, finished_at: row.finished_at,
         report: row.report ?? {}, stale, stale_text: stale ? STALE : null,
+        variant: row.variant ?? null, group_id: row.group_id ?? null, // P6: the row's shape, and the press it belongs to
     };
 }
 

@@ -1,0 +1,51 @@
+{{-- The export sheet's P6 rows (05 §5.1, §5.3–§5.5), under the Preset choice; bindings in cut-outputs.js.
+     Shapes: one file per ticked shape from one press. Fit with soft bars when a crop blows a clip up. Captions: Off or
+     Burned in, with the honest note; an .srt goes beside every export. Preview GIF: 6 s from the poster. --}}
+<p class="cut-sheet__note cut-sheet__note--warn" x-show="cutLengthHint()" x-text="cutLengthHint()"></p>
+
+<fieldset class="cut-outputs" data-control="cut.shapes">
+  <legend class="ae-stencil">{{ controlLabel('cut.shapes') }}</legend>
+  <div class="cut-outputs__row">
+    <template x-for="shape in cutShapeList" :key="shape">
+      <label class="cut-outputs__pick" :class="{ 'is-on': cutShapeTicked(shape) }">
+        <input type="checkbox" class="cut-outputs__input" :checked="cutShapeTicked(shape)" @change="cutToggleExportShape(shape)"
+               :aria-label="shape + (shape === cutPlanShape() ? ', the cut\'s own shape' : '')">
+        <span class="cut-shape__glyph" :data-shape="shape" aria-hidden="true"></span>
+        <span x-text="shape"></span>
+      </label>
+    </template>
+  </div>
+  <ul class="cut-outputs__files">
+    <template x-for="file in cutExportFiles()" :key="file.key">
+      <li class="ae-readout" x-text="file.text"></li>
+    </template>
+  </ul>
+  <label class="cut-outputs__check" x-show="cutSoftBarsOffered()" data-control="cut.softBars">
+    <input type="checkbox" :checked="cutOutputs().soft_bars === true" @change="cutToggleSoftBars()">
+    <span>{{ controlLabel('cut.softBars') }}</span>
+  </label>
+  <p class="cut-sheet__note" x-show="cutSoftBarsOffered()" x-text="cutSoftBarsNote()"></p>
+</fieldset>
+
+<fieldset class="cut-outputs" data-control="cut.captions">
+  <legend class="ae-stencil">{{ controlLabel('cut.captions') }}</legend>
+  <div class="cut-outputs__row">
+    <label class="cut-outputs__pick" :class="{ 'is-on': !cutCaptionsOn() }">
+      <input type="radio" name="cut-captions" class="cut-outputs__input" :checked="!cutCaptionsOn()" @change="cutSetCaptions('off')">
+      <span>Off</span>
+    </label>
+    <label class="cut-outputs__pick" :class="{ 'is-on': cutCaptionsOn() }">
+      <input type="radio" name="cut-captions" class="cut-outputs__input" :checked="cutCaptionsOn()" @change="cutSetCaptions('burned')">
+      <span>Burned in</span>
+    </label>
+  </div>
+  <p class="cut-sheet__note" x-show="cutCaptionsOn()" x-text="cutCaptionHint()"></p>
+  <p class="cut-sheet__note" x-show="!cutCaptionsOn() && cutCaptionWhyOff()" x-text="cutCaptionWhyOff()"></p>
+  <p class="cut-sheet__note" x-text="cutCopy('captionsSrt')"></p>
+</fieldset>
+
+<label class="cut-outputs__check" data-control="cut.gif">
+  <input type="checkbox" :checked="cutGifOn()" @change="cutToggleGif()">
+  <span>{{ controlLabel('cut.gif') }}</span>
+  <span class="cut-outputs__aside" x-text="cutCopy('gifNote')"></span>
+</label>

@@ -97,6 +97,7 @@ export default function CutPlayer() {
                 video.dataset.src = entry.src;
             }
             video.dataset.index = String(index);
+            this.cutFrameVideo?.(video, entry); // P6: the preview's shape and crop (cut-shape.js)
             const at = (entry.in_ms + offsetMs) / 1000;
             const seek = () => { try { video.currentTime = at; } catch { /* not seekable yet */ } };
             if (video.readyState >= 1) seek();
@@ -365,6 +366,7 @@ export default function CutPlayer() {
 
         cpUi(force = false) {
             const lay = this.cutLay();
+            this.cutPreviewTick?.(toExport(lay, s.t)); // P6: captions and the soft-bars backdrop (cut-shape.js)
             const x = (s.t / 1000) * (this.cutPps || 0);
             this.cutPart('playhead')?.style.setProperty('--cut-x', `${x}px`);
             const now = performance.now();

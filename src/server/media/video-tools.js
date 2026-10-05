@@ -3,7 +3,7 @@
 // `-filters`) so CheckCut never spawns to ask again. "Check again" and "Choose ffmpeg.exe…" refresh it.
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { AUDIO_ENCODERS, EXPORT_FILTERS, VIDEO_ENCODER, parseCodecList } from '../../shared/export-recipes.js';
+import { AUDIO_ENCODERS, EXPORT_FILTERS, GIF_ENCODER, OUTPUT_FILTERS, POSTER_ENCODER, VIDEO_ENCODER, missingOutputReason, parseCodecList } from '../../shared/export-recipes.js';
 
 export const TOOLS_MISSING = 'The video tools are missing. Reinstall Bloop Studio, or choose ffmpeg.exe in Settings › Video tools.';
 export const ENCODER_MISSING = 'This PC has no H.264 encoder from Windows. Install the Media Feature Pack from Windows Settings.';
@@ -15,6 +15,22 @@ export function licenceOf(versionText) {
     if (/--enable-nonfree/.test(text)) return 'nonfree';
     if (/--enable-gpl/.test(text)) return /--enable-version3/.test(text) ? 'GPL-3.0-or-later' : 'GPL-2.0-or-later';
     return /--enable-version3/.test(text) ? 'LGPL-3.0-or-later' : 'LGPL-2.1-or-later';
+}
+
+/**
+ * P6 (05 §5.8): what this build can make beyond the core export, each with a plain reason when it cannot
+ * ("Ready for: Export, Poster, Shapes, Captions, GIF" in Settings › Video tools).
+ * @returns {Record<string, { ready: boolean, reason: string|null }>}
+ */
+export function outputsReady(filters, encoders) {
+    const out = {};
+    for (const [output, needs] of Object.entries(OUTPUT_FILTERS)) {
+        const lacking = needs.filter((f) => !filters.has(f));
+        if (output === 'gif' && !encoders.has(GIF_ENCODER)) lacking.push(`the ${GIF_ENCODER} encoder`);
+        out[output] = { ready: !lacking.length, reason: lacking.length ? missingOutputReason(output, lacking) : null };
+    }
+    out.poster = { ready: encoders.has(POSTER_ENCODER), reason: encoders.has(POSTER_ENCODER) ? null : 'This build of the video tools has no mjpeg encoder, so the poster is skipped.' };
+    return out;
 }
 
 export class VideoTools {
@@ -39,7 +55,7 @@ export class VideoTools {
     async #check() {
         const where = this.ffmpeg.locate();
         const base = { found: false, ffmpeg: where.ffmpeg, ffprobe: where.ffprobe, source: where.source, version: null, licence: null,
-            encoders: { video: null, audio: null }, filters_missing: [], ready: false, reason: TOOLS_MISSING, checked_at: new Date().toISOString() };
+            encoders: { video: null, audio: null }, filters_missing: [], outputs: {}, ready: false, reason: TOOLS_MISSING, checked_at: new Date().toISOString() };
         try {
             const version = await this.ffmpeg.info(['-version']);
             await this.ffmpeg.info(['-version'], { tool: 'ffprobe' });
@@ -57,7 +73,7 @@ export class VideoTools {
             this.cached = {
                 ...base, found: true, version: version.split(/\r?\n/)[0].replace(/\s+Copyright.*$/, '').trim(), licence,
                 encoders: { video, audio, all: [...encoders].filter((e) => [VIDEO_ENCODER, ...AUDIO_ENCODERS].includes(e)) },
-                filters_missing: missing, ready: !reason, reason,
+                filters_missing: missing, outputs: outputsReady(filters, encoders), ready: !reason, reason,
             };
         } catch {
             this.cached = base; // never the stderr text on the page

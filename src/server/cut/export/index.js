@@ -2,20 +2,25 @@
 // as pressed, and the media-tools queue runs it through the stages below, one job at a time, off the GPU worker.
 // Cancel aborts the running ffmpeg child; a deleted space is noticed on the next progress write and stops the
 // job too. The temp folder goes in `finally`, whatever happened. Nothing here starts by itself: the dock and
-// the Director never call start().
+// the Director never call start(). P6: one press makes one row per shape (a group), run one at a time; the
+// caption PNGs the page drew wait in the group's folder until its last row ends.
 import { existsSync } from 'node:fs';
 import { runPipeline } from '../../generation/pipeline.js';
 import { JobProgress, endFor, jobView, makeJobDir, removeDir } from '../tools-jobs.js';
 import { preflight } from '../preflight.js';
-import { DEFAULT_PRESET, checkPreset } from '../../../shared/export-presets.js';
+import { DEFAULT_PRESET, checkPreset, outputsFor } from '../../../shared/export-presets.js';
+import { checkOutputs } from '../../../shared/cut-rules.js';
+import { captionPlan } from '../captions-plan.js';
 import { checkCut, probeSources } from './check-probe.js';
 import { joinClips, normalizeClips } from './build-picture.js';
 import { loudness, mixSound } from './finish-sound.js';
+import { prepareCaptions, sideFiles } from './extras.js';
+import { PressRefused, SourceSizes, pressChoices, pressRows, saveCaptionImages, shapesReadout, signature } from './outputs.js';
 import { storeResult } from './store-result.js';
 
 const WATCH_MS = 1000;
 
-export const EXPORT_STAGES = Object.freeze([checkCut, probeSources, normalizeClips, joinClips, mixSound, loudness, storeResult]);
+export const EXPORT_STAGES = Object.freeze([checkCut, probeSources, prepareCaptions, normalizeClips, joinClips, mixSound, loudness, sideFiles, storeResult]);
 
 /** Weighted progress: a fixed share for probing, then each step by its output seconds × weight. */
 class StepTracker {
@@ -51,33 +56,64 @@ export class CutExporter {
     }
 
     /**
-     * The Export press. Idempotent: an export already queued or running on this space is returned as it is,
-     * and so is a done export of this same revision and preset whose file is still there. `revision` (the one
-     * the dock just saved) must still be the cut's: an export never runs an older or newer cut than the person
-     * saw. The preflight runs here too, so a cut over the limits is refused with no row and no process.
-     * @returns {Promise<{ export: object, created: boolean } | { error: string, code: string, status: number, beat?: string }>}
+     * The Export press. Idempotent: an export already queued or running on this space is returned with its group,
+     * and so is a done export of this same revision, preset, shape and choices whose file is still there.
+     * `revision` (the one the dock just saved) must still be the cut's: an export never runs an older or newer cut
+     * than the person saw. The preflight runs here too, so a cut over the limits is refused with no row and no
+     * process. P6: `shapes` (the Shapes row), `captions` ({mode, images: [{id, png}]}), `soft_bars`, `gif`;
+     * whatever is not sent comes from the cut's saved `settings.outputs`.
+     * @returns {Promise<{ export: object, exports: object[], group_id: string|null, created: boolean } | { error: string, code: string, status: number, beat?: string }>}
      */
-    async start(spaceId, { preset = DEFAULT_PRESET, revision = null, posterMs = null } = {}) {
-        const reason = checkPreset(preset);
-        if (reason) return { error: reason, code: 'limits', status: 422 };
+    async start(spaceId, input = {}) {
+        const { revision = null, posterMs = null } = input;
+        if (input.preset != null && checkPreset(input.preset)) return { error: checkPreset(input.preset), code: 'limits', status: 422 };
         const { cuts, exportsRepo, media, exists } = this.deps;
         const cut = cuts.current(spaceId);
         if (revision != null && revision !== cut.revision) {
             return { error: 'The cut changed since it was saved here. Export again to use the latest version.', code: 'revision', status: 409 };
         }
         const running = exportsRepo.active(spaceId, 'export');
-        if (running) return { export: this.view(running), created: false };
-        const done = exportsRepo.doneFor(spaceId, cut.revision, preset);
-        const there = (p) => Boolean(p && (exists ?? existsSync)(media.resolve(p) ?? ''));
-        const samePoster = posterMs == null || posterMs === (done?.snapshot?.settings?.poster_ms ?? null);
-        if (done && there(done.media_path) && samePoster) return { export: this.view(done), created: false };
+        if (running) return this.#pressed(running.group_id ? exportsRepo.group(running.group_id) : [running], false);
         const snapshot = snapshotOf(cut);
         if (Number.isInteger(posterMs) && posterMs >= 0) snapshot.settings = { ...snapshot.settings, poster_ms: posterMs };
-        const check = await this.preflight(spaceId, preset, snapshot);
+        const plan = captionPlan({ db: this.deps.db, analysis: this.deps.analysis ?? null }, spaceId, snapshot);
+        const choices = pressChoices(input, snapshot.settings, plan);
+        const reason = checkPreset(choices.preset) ?? checkOutputs({ shapes: choices.shapes ?? undefined, captions: choices.captions });
+        if (reason) return { error: reason, code: 'limits', status: 422 };
+        const check = await this.preflight(spaceId, choices.preset, snapshot);
         if (!check.ok) return { error: check.reason, code: check.code, beat: check.beat ?? null, status: 422 };
-        const row = exportsRepo.create(spaceId, { kind: 'export', revision: cut.revision, preset, snapshot });
-        this.#enqueue(row);
-        return { export: this.view(row), created: true };
+
+        // A file already made from this revision with these choices (and still there) is not made again.
+        const sig = signature(choices, plan.cues);
+        const there = (p) => Boolean(p && (exists ?? existsSync)(media.resolve(p) ?? ''));
+        const samePoster = (row) => posterMs == null || posterMs === (row?.snapshot?.settings?.poster_ms ?? null);
+        const key = (r) => `${r.preset}|${r.variant}`;
+        const reuse = new Map();
+        for (const want of outputsFor(choices.preset, choices.shapes, check.plan_shape)) {
+            const done = exportsRepo.doneFor(spaceId, cut.revision, want.preset, want.variant);
+            if (done && there(done.media_path) && samePoster(done) && (done.options?.signature ?? sig) === sig) reuse.set(key(want), done);
+        }
+        const press = pressRows(choices, check.plan_shape, plan.cues, null);
+        if (press.rows.every((r) => reuse.has(key(r)))) return this.#pressed(press.rows.map((r) => reuse.get(key(r))), false);
+        let captionsDir = null;
+        try {
+            if (choices.captions === 'burned') captionsDir = await saveCaptionImages(media, press.groupId, plan.cues, input.captions?.images);
+        } catch (error) {
+            if (error instanceof PressRefused) return { error: error.message, code: error.code, status: 422 };
+            throw error;
+        }
+        const rows = press.rows.map((r) => {
+            if (reuse.has(key(r))) return reuse.get(key(r));
+            const options = captionsDir ? { ...r.options, captions: { mode: 'burned', dir: captionsDir } } : r.options;
+            return exportsRepo.create(spaceId, { kind: 'export', revision: cut.revision, preset: r.preset, variant: r.variant, groupId: press.groupId, snapshot, options });
+        });
+        for (const row of rows) if (row.group_id === press.groupId) this.#enqueue(row);
+        return this.#pressed(rows, true);
+    }
+
+    #pressed(rows, created) {
+        const views = rows.map((r) => this.view(r));
+        return { export: views[0], exports: views, group_id: rows.find((r) => r.group_id)?.group_id ?? null, created };
     }
 
     status(spaceId, id) {
@@ -91,14 +127,37 @@ export class CutExporter {
         return view;
     }
 
-    /** Cancel: marks the row, then drops it from the queue or aborts its running child. */
+    /**
+     * Cancel: marks the row, then drops it from the queue or aborts its running child. P6: a press is one action,
+     * so the other rows of its group that are still waiting or running are cancelled with it.
+     */
     cancel(spaceId, id) {
         const { exportsRepo, queue } = this.deps;
         const row = exportsRepo.findInSpace(spaceId, id);
         if (!row || row.kind !== 'export') return null;
-        if (!exportsRepo.requestCancel(id)) return this.view(row); // already ended
-        if (queue.cancel(`export:${id}`) !== 'aborted') this.#end(row, endFor(Object.assign(new Error('x'), { name: 'AbortError' }), 'export'));
+        const rows = row.group_id ? exportsRepo.group(row.group_id).filter((r) => r.id !== id && ['queued', 'running'].includes(r.status)) : [];
+        for (const r of [row, ...rows]) {
+            if (!exportsRepo.requestCancel(r.id)) continue; // already ended
+            if (queue.cancel(`export:${r.id}`) !== 'aborted') this.#end(r, endFor(Object.assign(new Error('x'), { name: 'AbortError' }), 'export'));
+        }
         return this.view(exportsRepo.find(id));
+    }
+
+    /**
+     * The sheet's P6 readout before the press: the files the Shapes row makes (a line and a length hint each), the
+     * captions (cues for the page to draw, the default and why it is off), the soft-bars offer, what the video
+     * tools can make. Read only.
+     */
+    async readout(spaceId, { preset = null, shapes = null } = {}) {
+        const cut = this.deps.cuts.current(spaceId);
+        const snapshot = snapshotOf(cut);
+        const plan = captionPlan({ db: this.deps.db, analysis: this.deps.analysis ?? null }, spaceId, snapshot);
+        const choices = pressChoices({ preset: preset ?? undefined, shapes }, snapshot.settings, plan);
+        const check = await this.preflight(spaceId, checkPreset(choices.preset) ? DEFAULT_PRESET : choices.preset, snapshot);
+        this.sizes ??= new SourceSizes(this.deps.ffmpeg);
+        const shapesView = await shapesReadout({ items: check.items, settings: snapshot.settings, planShape: check.plan_shape, totalMs: check.total_ms, choices, sizes: this.sizes });
+        const tools = this.deps.tools ? await this.deps.tools.state() : null;
+        return { ...check, choices, files: shapesView.files, soft_bars: shapesView.soft_bars, captions: plan, ready_for: tools?.outputs ?? null };
     }
 
     #enqueue(row) {
@@ -116,7 +175,7 @@ export class CutExporter {
         const progress = new JobProgress({ row, exportsRepo, events });
         const tracker = new StepTracker();
         const ctx = {
-            deps: this.deps, spaceId: row.space_id, exportId: row.id, preset: row.preset, snapshot: row.snapshot,
+            deps: this.deps, spaceId: row.space_id, exportId: row.id, preset: row.preset, variant: row.variant ?? null, options: row.options ?? {}, snapshot: row.snapshot,
             signal: local.signal, progress, tracker, report: {}, tmp: null, gone: false,
         };
         ctx.alive = () => {
@@ -176,12 +235,22 @@ export class CutExporter {
         } finally {
             signal.removeEventListener('abort', relay);
             await removeDir(ctx.tmp);
+            await this.#sweepGroup(row);
         }
+    }
+
+    /** The group's caption PNGs go once no row of the group is waiting or running. */
+    async #sweepGroup(row) {
+        const dir = row.options?.captions?.dir;
+        if (!dir || !row.group_id) return;
+        if (this.deps.exportsRepo.group(row.group_id).some((r) => r.status === 'queued' || r.status === 'running')) return;
+        await removeDir(dir);
     }
 
     #end(row, end, report = undefined) {
         const { exportsRepo, events } = this.deps;
         const ended = exportsRepo.finish(row.id, { ...end, ...(report ? { report } : {}) });
+        if (ended) this.#sweepGroup(row).catch(() => {}); // a waiting row cancelled: it never runs its own sweep
         if (!ended && end.error_code !== 'gone') return;
         events.cutExport?.({ spaceId: row.space_id, exportId: row.id, kind: row.kind, status: end.status, progress: 0, step: null,
             error: end.error, error_code: end.error_code, error_beat: end.error_beat ?? null });

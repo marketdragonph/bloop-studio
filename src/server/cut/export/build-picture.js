@@ -1,10 +1,12 @@
 // NormalizeClips and JoinClips (01-core.md §6, P3 spike fixes). One part at a time: every clip becomes its
 // head/body/tail parts (PCM sound, 30 fps, scaled into the frame); each dissolve junction mixes a tail and a
-// head of the same frame count; the concat demuxer copies the pieces into one file of exactly the total.
+// head of the same frame count; the concat demuxer copies the pieces into one file of exactly the total. P6: each
+// part is fitted, cropped or set on soft bars for the row's shape, with the caption PNGs that show during it.
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { JobStop } from '../tools-jobs.js';
-import { concatArgs, concatList, junctionArgs, normalizeArgs, secs } from './recipe.js';
+import { concatArgs, concatList, junctionArgs, msOf, normalizeArgs, secs } from './recipe.js';
+import { cuesInPart } from './frame-chain.js';
 
 const partFile = (ctx, name) => join(ctx.tmp, `${name}.mov`);
 const clipStop = (item, error) => {
@@ -18,9 +20,11 @@ export async function normalizeClips(ctx, next) {
     for (const part of ctx.layout.parts) {
         const item = ctx.items[part.item];
         const seconds = part.frames / 30;
+        const startMs = msOf(ctx.layout.items[part.item].startF + part.offsetF);
         const args = normalizeArgs({
             src: item.src, startSec: item.in_ms / 1000 + part.offsetF / 30, frames: part.frames,
             withSound: item.sound !== false && item.hasAudio, width, height, out: partFile(ctx, part.name),
+            fit: item.fit ?? null, sar: item.sar ?? 1, captions: cuesInPart(ctx.captions ?? [], startMs, msOf(part.frames)),
         });
         try {
             await ctx.step(args, { label: `Preparing clip ${item.index + 1} of ${n}`, weight: ctx.weights.part(part), timeoutMs: Math.max(60_000, 4000 * seconds) });

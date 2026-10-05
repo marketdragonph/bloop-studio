@@ -32,6 +32,7 @@ const [bin, ...args] = process.argv.slice(2);
 const mode = process.env.FAKE_MODE || 'ok';
 if (process.env.FAKE_LOG) fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ bin, args }) + '\n');
 const enc = (process.env.FAKE_ENCODERS || 'h264_mf,aac_mf,aac').split(',').filter(Boolean);
+const p6 = (process.env.FAKE_P6 || '').split(',').filter(Boolean); // P6 filters this fake build lists too
 if (/ffprobe/.test(bin)) {
     if (args.includes('-version')) { process.stdout.write('ffprobe version n7.1.5\n'); process.exit(0); }
     const file = args.at(-1);
@@ -39,7 +40,7 @@ if (/ffprobe/.test(bin)) {
     try { spec = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { process.stderr.write('Invalid data found'); process.exit(1); }
     if (spec.broken === 'probe') { process.stderr.write('moov atom not found'); process.exit(1); }
     const streams = [];
-    if (spec.video !== false) streams.push({ codec_type: 'video', width: 1280, height: 720 });
+    if (spec.video !== false) streams.push({ codec_type: 'video', width: spec.width || 1280, height: spec.height || 720 });
     if (spec.audio !== false) streams.push({ codec_type: 'audio' });
     process.stdout.write(JSON.stringify({ format: { duration: String(spec.duration) }, streams }));
     process.exit(0);
@@ -53,7 +54,7 @@ if (args.includes('-encoders')) {
     process.exit(0);
 }
 if (args.includes('-filters')) {
-    const all = 'scale pad setsar fps format aresample aformat apad xfade afade amix atrim asetpts volume adelay ebur128'.split(' ');
+    const all = 'scale pad setsar fps format aresample aformat apad xfade afade amix atrim asetpts volume adelay ebur128'.split(' ').concat(p6);
     process.stdout.write('Filters:\n' + all.map((f) => ' ..C ' + f + '   V->V   x').join('\n') + '\n');
     process.exit(0);
 }
@@ -74,14 +75,15 @@ if (out === 'NUL') {
 process.stdout.write('out_time_us=' + Math.round(t * 1000000) + '\nprogress=end\n');
 `;
 
-export async function toolsFixture(prefix, { zip64 = 'auto' } = {}) {
+export async function toolsFixture(prefix, options = {}) {
+    const { zip64 = 'auto' } = options;
     const dir = await mkdtemp(join(tmpdir(), prefix));
     const mediaRoot = join(dir, 'media');
     await mkdir(mediaRoot, { recursive: true });
     const fake = join(dir, 'fake-ffmpeg.cjs');
     await writeFile(fake, FAKE);
     const log = join(dir, 'calls.jsonl');
-    const env = { mode: 'ok', encoders: 'h264_mf,aac_mf,aac' };
+    const env = { mode: 'ok', encoders: 'h264_mf,aac_mf,aac', p6: options.p6 ?? '', analysis: options.analysis ?? null };
     const db = openDatabase(join(dir, 'test.db'));
     const spaces = new SpacesRepository(db);
     const jobs = new JobsRepository(db);
@@ -97,7 +99,7 @@ export async function toolsFixture(prefix, { zip64 = 'auto' } = {}) {
         spawn: (bin, args, opts) => {
             spawns += 1;
             return spawn(process.execPath, [fake, bin, ...args], {
-                ...opts, env: { ...process.env, FAKE_MODE: env.mode, FAKE_LOG: log, FAKE_ENCODERS: env.encoders },
+                ...opts, env: { ...process.env, FAKE_MODE: env.mode, FAKE_LOG: log, FAKE_ENCODERS: env.encoders, FAKE_P6: env.p6 ?? '' },
             });
         },
     });
@@ -105,7 +107,7 @@ export async function toolsFixture(prefix, { zip64 = 'auto' } = {}) {
     const queue = new ToolsQueue();
     const quiet = { warn() {}, error() {} };
     const statfs = async () => ({ bavail: env.freeBytes ?? 1e12, bsize: 1 });
-    const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue, statfs, log: quiet });
+    const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue, statfs, log: quiet, analysis: env.analysis });
     const packer = new Packer({ db, cuts, exportsRepo, media, events, queue, statfs, appVersion: '9.9.9', log: quiet, zip64 });
     const app = new Hono();
     app.use('*', csrf(TOKEN));

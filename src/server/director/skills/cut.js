@@ -7,6 +7,7 @@ import { cutClock } from '../../../shared/cut-clock.js';
 import { mediaOfCut } from '../../analysis/analyze-media.js';
 import { checkCut } from '../../cut/cut-check.js';
 import { CutOpsRejected, CUT_OPS, MAX_CUT_OPS, TRACKS, UNDO_KINDS } from '../cut/validate.js';
+import { PRESET_IDS, SHAPE_LIST } from '../../../shared/export-presets.js';
 import { countWords } from '../cut/cut-ops.js';
 import { cutCheckText } from '../cut/audit-cut.js';
 import { inspectText } from '../cut/inspect-text.js';
@@ -67,7 +68,7 @@ export const stitchCut = {
 
 export const proposeCutOps = {
     name: 'propose_cut_ops',
-    description: 'Edit the Cut: place, trim, move or remove a beat\'s clip, set the join between two clips, the clip\'s own sound, J/L cuts, music ducking, levels, a cut on the music\'s downbeat, the poster frame, or take back your last turn. Use it for "tighten it", "trim the dead bits", "cut on the beat", "duck the music", "make it punchier", "swap 3 and 4", "end on the train", "undo that". Read the numbers with inspect_cut first; never guess a time. Everything in ONE call, all of it or none of it. Clips the person placed or changed are theirs unless they name them (or the whole cut) this turn. It changes the edit only — it renders nothing and exports nothing.',
+    description: 'Edit the Cut: place, trim, move or remove a beat\'s clip, set the join between two clips, the clip\'s own sound, J/L cuts, music ducking, levels, a cut on the music\'s downbeat, the poster frame, how the export is set up (preset, shapes, captions, caption wording), or take back your last turn. Use it for "tighten it", "trim the dead bits", "cut on the beat", "duck the music", "make it punchier", "swap 3 and 4", "end on the train", "make it ready for TikTok", "add captions", "undo that". Read the numbers with inspect_cut first; never guess a time. Everything in ONE call, all of it or none of it. Clips the person placed or changed are theirs unless they name them (or the whole cut) this turn. It changes the edit only — it renders nothing and exports nothing; the export is for the person to start.',
     schema: {
         type: 'object',
         properties: {
@@ -91,6 +92,10 @@ export const proposeCutOps = {
                         gain_db: { type: 'number', description: 'level: -24 to +6.' },
                         target_lufs: { type: 'number', enum: [-23, -16, -14], description: 'level: loudness the export aims for.' },
                         at_s: { type: 'number', description: 'poster: the frame, seconds into the clip.' },
+                        preset: { type: 'string', enum: PRESET_IDS, description: 'outputs: master, youtube (16:9), tiktok, reels or shorts (9:16, 1080x1920, -14 LUFS).' },
+                        shapes: { type: 'array', items: { type: 'string', enum: SHAPE_LIST }, description: 'outputs: one file per shape. A shape the clips were not made in crops from the middle; the person moves the crop boxes, never you.' },
+                        captions: { type: 'string', enum: ['off', 'burned'], description: 'outputs: burn in the script lines where they are spoken (an .srt is always written beside the file).' },
+                        caption_text: { type: 'object', additionalProperties: { type: 'string' }, description: 'outputs: corrected caption words by beat tag, {"s2-cup": "..."}; an empty string takes a fix back.' },
                         kinds: { type: 'array', items: { type: 'string', enum: UNDO_KINDS }, description: 'undo_turn: take back only these kinds of edit from your last turn; leave out to take back the whole turn.' },
                         why: { type: 'string', description: 'trim/move/join: the reason, from the measured numbers, in editing words (at most 120 characters). It is kept and shown.' },
                     },
@@ -114,7 +119,8 @@ export const proposeCutOps = {
         if (done.undone === 'all') {
             return { ok: true, content: `Done — your last turn is taken back; the cut is ${clockText(done.after_ms)} again (was ${clockText(done.before_ms)}), revision ${done.saved.revision}. Say so in one sentence. Nothing was rendered or exported.` };
         }
-        const snaps = done.snapped.length ? `\n${done.snapped.join('\n')}` : '';
+        const notes = [...done.snapped, ...(done.hints ?? [])]; // P6: the outputs op's "the crop will be soft"
+        const snaps = notes.length ? `\n${notes.join('\n')}` : '';
         const what = countWords(done.counts) || `${done.rows.length} edits`;
         return { ok: true, content: `Done — ${what}; the cut is now ${clockText(done.after_ms)} (was ${clockText(done.before_ms)}), revision ${done.saved.revision}. It is in the Cut already: say what you changed and why in two sentences, in editing words. Nothing was rendered or exported.${snaps}${critic(t, done.changed)}` };
     },

@@ -61,10 +61,10 @@ test('every control in the dock is marked with a registry id and shows the regis
     assert.match(dock, /class="cut-join"[^>]*:aria-label="cutJoinLabel\(item\)"/s);
     assert.match(dock, /type="range" step="1"/);
     assert.match(dock, /:aria-valuetext="cutLevelText\('music'\)"/);
-    // P3 and P4 keys are on the page; no unshipped keys (Katana, shapes) and nothing that starts a render.
-    const built = CONTROLS.filter((c) => c.surface === 'dock' && ['P3', 'P4'].includes(c.phase)).map((c) => c.id);
+    // P3, P4 and P6 keys are on the page; no unshipped keys (Katana) and nothing that starts a render.
+    const built = CONTROLS.filter((c) => c.surface === 'dock' && ['P3', 'P4', 'P6'].includes(c.phase)).map((c) => c.id);
     for (const id of built) assert.ok(ids.includes(id), `${id} is on the page`);
-    for (const id of ['cut.openKatana', 'cut.shapes', 'cut.captions', 'cut.gif']) assert.ok(!ids.includes(id), `${id} waits for its phase`);
+    for (const id of ['cut.openKatana']) assert.ok(!ids.includes(id), `${id} waits for its phase`);
     assert.doesNotMatch(dock, /generate\(/);
 });
 

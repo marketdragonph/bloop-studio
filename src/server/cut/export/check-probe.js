@@ -6,19 +6,32 @@ import { JobStop } from '../tools-jobs.js';
 import { preflight } from '../preflight.js';
 import { durationMs } from '../../generation/measure-take.js';
 import { layoutParts, msOf, toFrames } from './recipe.js';
+import { displaySize, fitFor } from '../../../shared/cut-frame.js';
 
 const PROBE_SHARE = 0.03; // of the bar, before the step weights are known
 
 export async function checkCut(ctx, next) {
     const { boardCut, media, tools, exists, statfs } = ctx.deps;
     ctx.progress.report(0, 'Checking the cut');
-    const check = await preflight({ spaceId: ctx.spaceId, snapshot: ctx.snapshot, preset: ctx.preset, boardCut, media, tools, exists, statfs });
+    const check = await preflight({ spaceId: ctx.spaceId, snapshot: ctx.snapshot, preset: ctx.preset, variant: ctx.variant, boardCut, media, tools, exists, statfs });
     if (!check.ok) throw new JobStop(check.code, check.reason, { beat: check.beat });
     ctx.items = check.items;
     ctx.output = check.output;
+    ctx.planShape = check.plan_shape;
     ctx.audioEncoder = check.audio_encoder ?? 'aac_mf';
     ctx.report.skipped = check.skipped;
     await next();
+}
+
+/** The clip's picture as ffprobe reads it: stored size, pixel shape, rotation, and the size it shows at. */
+export function pictureOf(stream) {
+    const width = Number(stream?.width) || 1920;
+    const height = Number(stream?.height) || 1080;
+    const [n, d] = String(stream?.sample_aspect_ratio ?? '1:1').split(':').map(Number);
+    const sar = n > 0 && d > 0 ? n / d : 1;
+    const side = (stream?.side_data_list ?? []).find((x) => Number.isFinite(Number(x?.rotation)));
+    const rotation = Number(side?.rotation ?? stream?.tags?.rotate ?? 0) || 0;
+    return { width, height, sar, rotation, display: displaySize({ width, height, sar, rotation }) };
 }
 
 const couldNotRead = (item) => new JobStop('clip', `The export stopped at ${item.label}. That clip could not be read.`, { beat: item.beat_tag ?? null });
@@ -49,6 +62,8 @@ export async function probeSources(ctx, next) {
         const realMs = durationMs(info);
         if (!streams.some((s) => s.codec_type === 'video') || !realMs) throw couldNotRead(item);
         item.hasAudio = streams.some((s) => s.codec_type === 'audio');
+        Object.assign(item, pictureOf(streams.find((s) => s.codec_type === 'video')));
+        item.fit = fitFor({ item, shape: ctx.output.aspect, planShape: ctx.planShape, source: item.display, out: ctx.output, softBars: ctx.options?.soft_bars === true });
         if (item.out_ms > realMs) item.out_ms = realMs;
         if (toFrames(item.out_ms - item.in_ms) < 1) throw new JobStop('clip', `The export stopped at ${item.label}. Its trim is past the end of the clip.`, { beat: item.beat_tag ?? null });
     }
@@ -85,8 +100,9 @@ function weigh(ctx) {
         measure: total * 0.03,
         finish: total * 0.05,
         poster: 0.05,
+        gif: ctx.options?.gif === false ? 0 : Math.min(total, 6) * 0.1, // P6 preview GIF: a few seconds, small
     };
     const sum = ctx.layout.parts.reduce((a, p) => a + s(p.frames), 0) + ctx.layout.junctions.reduce((a, j) => a + s(j.frames), 0)
-        + ctx.weights.concat + ctx.weights.mix + ctx.weights.measure + ctx.weights.finish + ctx.weights.poster;
+        + ctx.weights.concat + ctx.weights.mix + ctx.weights.measure + ctx.weights.finish + ctx.weights.poster + ctx.weights.gif;
     ctx.tracker.start(PROBE_SHARE, sum);
 }

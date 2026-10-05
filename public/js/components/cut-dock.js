@@ -23,6 +23,8 @@ import { cutBringMethods } from './cut-bring.js';
 import { cutTurnMethods } from './cut-turn.js';
 import { cutMeasureMethods } from './cut-measure.js';
 import { cutCheckMethods } from './cut-check.js';
+import { cutShapeMethods } from './cut-shape.js';
+import { cutOutputMethods } from './cut-outputs.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -105,6 +107,7 @@ export default function CutDock() {
             this.cutInitPersistence();
             this.cutLoad();
             this.cutInitExport();
+            this.cutInitShape();
             if (this.cutOpen) this.$nextTick(() => this.cutWatchSize());
         },
 
@@ -173,6 +176,7 @@ export default function CutDock() {
                 voice: beds.find((b) => b.kind === 'voice') ?? null,
             };
             if (cut.settings) this.cutSettings = cut.settings;
+            this.cutAdoptOutputs(); // P6: the last preset of this space (cut-outputs.js)
             this.cutReceive(cut, { by: cut.updated_by }); // adopts, keeps the person's edits, or asks (cut-persistence.js)
             this.cutApplyTurn(data.turn); // the Director's last turn, while it is on top (cut-turn.js)
             this.cutLayout();
@@ -206,6 +210,7 @@ export default function CutDock() {
             this.cutVoice = voice ? bedSegments(items, Number(this.cutSound?.voice?.start_ms) || 0, this.cutBedMs(voice), this.cutPps) : [];
             if (!items.some((i) => i.key === this.cutSelectedKey)) this.cutSelectedKey = items.find((i) => i.ready)?.key ?? null;
             if (!this.cutDrag) this._cutPlayer?.refresh(); // a trim drag refreshes once, on release
+            this.cutReframe(); // P6: the preview's shape and crop boxes (cut-shape.js)
             this.cutTellMissing(); // the board's render readout (cut-render.js)
         },
 
@@ -466,5 +471,7 @@ export default function CutDock() {
         ...cutTurnMethods,
         ...cutMeasureMethods,
         ...cutCheckMethods,
+        ...cutShapeMethods,
+        ...cutOutputMethods,
     };
 }

@@ -44,7 +44,7 @@ test('export: preflight names the skipped beats, Export saves pending edits firs
     await dock.cutExportStart();
     assert.deepEqual(calls.filter((c) => c.method !== 'GET').map((c) => `${c.method} ${c.url}`), ['PUT /spaces/7/cut', 'POST /spaces/7/cut/exports']);
     const post = calls.at(-1);
-    assert.deepEqual(post.body, { preset: 'youtube', revision: 4 });
+    assert.deepEqual(post.body, { preset: 'youtube', revision: 4, shapes: ['16:9'], captions: { mode: 'off' }, gif: true, soft_bars: false }); // P6: the sheet's choices ride along
     assert.equal(post.headers['X-CSRF-Token'], 'csrf-test');
     assert.equal(store.get('bloop-studio:cut-export:7'), '31', 'a reload finds the running export');
     dock.onCutExport({ space_id: 8, export_id: 31, status: 'running', progress: 0.9 });
@@ -63,6 +63,9 @@ test('export: preflight names the skipped beats, Export saves pending edits firs
     dock.cutRevision = 5;
     assert.equal(dock.cutExportState(), 'stale');
     assert.equal(dock.cutExportText(), 'This export is from an older version of the cut.');
+    dock.cutCloseSheet();
+    dock.cutOpenSheet('export');
+    assert.equal(dock.cutExportState(), 'preflight', 'a finished export the person saw starts over at the choices (P6)');
 });
 
 test('export: a failed save never exports; a clip that could not be read is removed and exported again; Cancel and Pack', async (t) => {

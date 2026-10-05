@@ -8,7 +8,8 @@
 import { copy } from '/shared/katana-controls.js';
 import { fmtClock } from '/shared/cut-lanes.js';
 import { CUT_LIMITS } from '/shared/cut-rules.js';
-import { DEFAULT_PRESET, EXPORT_PRESETS, estimateBytes, presetLine, presetOutput } from '/shared/export-presets.js';
+import { DEFAULT_PRESET, estimateBytes, presetLine, presetOutput } from '/shared/export-presets.js';
+import { shippedPresets } from './cut-outputs.js';
 
 const SAVE_WAIT_MS = 10_000;
 const ACTIVE = new Set(['queued', 'running']);
@@ -59,6 +60,8 @@ export function jobRow(raw, base = null) {
     set('cut_revision', 'cut_revision', 'cutRevision', 'revision');
     set('duration_ms', 'duration_ms', 'durationMs');
     set('preset', 'preset');
+    set('variant', 'variant'); // P6: the file's shape
+    set('group_id', 'group_id', 'groupId'); // P6: the press it belongs to
     set('files', 'files');
     set('code', 'code', 'error_code');
     const report = raw.report && typeof raw.report === 'object' ? raw.report : null;
@@ -72,9 +75,8 @@ export function jobRow(raw, base = null) {
 }
 
 const megabytes = (bytes) => Math.max(1, Math.round(bytes / 1_000_000));
-/** The presets this phase offers, in the registry's words (export-presets.js is the one list). */
-const PRESETS = Object.freeze(Object.values(EXPORT_PRESETS).filter((p) => p.phase === 'P3')
-    .map((p) => Object.freeze({ id: p.id, label: p.label, note: copy(`preset${p.id[0].toUpperCase()}${p.id.slice(1)}`) })));
+/** The presets shipped so far, in the registry's words (export-presets.js is the one list; cut-outputs.js). */
+const PRESETS = Object.freeze(shippedPresets());
 
 export const cutExportMethods = {
     cutSheet: null, // 'export' | 'pack' while its sheet is open
@@ -118,8 +120,9 @@ export const cutExportMethods = {
         if (this.cutSheet === kind) { this.cutCloseSheet(); return; }
         if (this.cutSheet) this.cutCloseSheet();
         this.cutSheet = kind;
-        // A stop the person already saw starts over; a finished export stays (done, or stale after edits).
-        if (kind === 'export' && this.cutSeen(this.cutExport) && this.cutExport.status !== 'done') this.cutExport = null;
+        // An ended export the person already saw starts over at the choices (P6: preset, shapes, captions can change
+        // for the next press); one that ended while the sheet was closed shows once. Its file stays on the board.
+        if (kind === 'export' && this.cutSeen(this.cutExport)) { this.cutExport = null; this.cutGroup = null; }
         if (kind === 'pack' && this.cutSeen(this.cutPack)) this.cutPack = null;
         if (kind === 'export') this.cutCheckServer();
         this.$nextTick(() => document.querySelector?.(`.cut-sheet [data-sheet-focus="${kind}"]`)?.focus());
@@ -148,12 +151,13 @@ export const cutExportMethods = {
         if (!PRESETS.some((p) => p.id === id)) return;
         this.cutPreset = id;
         remember(presetKey(this.spaceId), id);
+        if (this.cutOutputs().preset !== id) this.cutSetOutput('preset', id); // P6: the last preset per space (settings.outputs)
         this.cutCheckServer();
     },
 
     /** One GET per sheet open or preset change (never a poll): what only the server knows before the press. */
     async cutCheckServer() {
-        const { status, data } = await call('GET', `/spaces/${this.spaceId}/cut/preflight?preset=${encodeURIComponent(this.cutPreset)}`);
+        const { status, data } = await call('GET', `/spaces/${this.spaceId}/cut/preflight?preset=${encodeURIComponent(this.cutPreset)}&shapes=${encodeURIComponent(this.cutShapesChosen().join(','))}`);
         this.cutServerCheck = status === 200 && data && typeof data === 'object' ? data : null;
     },
 
@@ -207,6 +211,7 @@ export const cutExportMethods = {
         if (this.cutExportLocal) return this.cutExportLocal;
         const row = this.cutExport;
         if (!row) return 'preflight';
+        if (row.status === 'done' && this.cutGroupPending()) return 'running'; // P6: more files of this press to come
         if (row.status === 'done') return row.cut_revision != null && row.cut_revision < this.cutRevision ? 'stale' : 'done';
         return row.status ?? 'queued';
     },
@@ -239,12 +244,13 @@ export const cutExportMethods = {
         }
         this.cutExportLocal = 'starting';
         const lengthMs = this.cutLay().export_ms;
-        const body = { preset: this.cutPreset, revision: this.cutRevision };
+        const body = { preset: this.cutPreset, revision: this.cutRevision, ...(await this.cutOutputsBody()) }; // P6: shapes, captions, GIF
         if (Number.isFinite(this.cutSettings?.poster_ms)) body.poster_ms = this.cutSettings.poster_ms;
         const { status, data } = await call('POST', `/spaces/${this.spaceId}/cut/exports`, body);
         const row = jobRow(data?.export ?? (data?.id ? data : null));
         if (status >= 200 && status < 300 && row?.id) {
             this.cutExport = jobRow({ status: 'queued', cut_revision: this.cutRevision, duration_ms: lengthMs, ...row });
+            this.cutGroupStart(data, { ...this.cutExport, group_id: data?.export?.group_id ?? null });
             this.cutExportLocal = null;
             remember(jobKey(this.spaceId, 'export'), row.id);
             this.cutAnnounce = copy('exportStarting');
@@ -313,8 +319,9 @@ export const cutExportMethods = {
             case 'starting': return copy('exportStarting');
             case 'refused': return this.cutExportRefusal;
             case 'queued': return copy('exportQueued');
-            case 'running': return row.step || copy('exportRunning');
-            case 'done': return copy('exportDone', { length: fmtClock(row.duration_ms ?? this.cutLay().export_ms), size: row.bytes ? `${megabytes(row.bytes)} MB` : this.cutPreflight().size });
+            case 'running': return [this.cutGroupStep(), row.status === 'done' ? '' : row.step].filter(Boolean).join(' · ') || copy('exportRunning');
+            case 'done': if (this.cutGroupFiles().length > 1) return copy('exportDoneMany', { n: this.cutGroupFiles().length, length: fmtClock(row.duration_ms ?? this.cutLay().export_ms) });
+                return copy('exportDone', { length: fmtClock(row.duration_ms ?? this.cutLay().export_ms), size: row.bytes ? `${megabytes(row.bytes)} MB` : this.cutPreflight().size });
             case 'stale': return copy('exportStale');
             case 'cancelled': return row.error || copy('exportCancelled');
             case 'failed': return row.error_beat ? copy('exportFailedAt', { beat: this.cutExportBeat() }) : (row.error || copy('exportFailed'));
@@ -323,7 +330,7 @@ export const cutExportMethods = {
     },
 
     cutExportPercent() {
-        return Math.round((this.cutExport?.progress ?? 0) * 100);
+        return this.cutGroupPercent() ?? Math.round((this.cutExport?.progress ?? 0) * 100);
     },
 
     /** The rail's short line while a job runs and its sheet is closed. */
@@ -386,6 +393,7 @@ export const cutExportMethods = {
         const id = Number(detail?.export_id ?? detail?.exportId ?? detail?.id);
         if (!id) return;
         const isPack = detail.kind === 'pack' || this.cutPack?.id === id;
+        if (!isPack) this.cutGroupNote(detail, jobRow(detail, this.cutGroup?.rows?.[id] ?? { id, kind: 'export' })); // P6: a file of this press
         const current = isPack ? this.cutPack : this.cutExport;
         // A job this page did not start (another window, or the Director's pack_assets) is shown once it is newer.
         if (current?.id !== id && current && ACTIVE.has(current.status)) return;
@@ -396,7 +404,7 @@ export const cutExportMethods = {
         if (!ENDED.has(row.status) || current?.status === row.status) return;
         // The job ended: one GET for its file and card (the event carries only the live fields).
         this.cutFetchJob(isPack ? 'pack' : 'export', id);
-        if (row.status === 'done' && !isPack) {
+        if (row.status === 'done' && !isPack && !this.cutGroupPending()) {
             this.refreshSoon?.(); // the new video card joins the board
             this.cutAnnounce = copy('exportAnnounceDone');
         } else if (row.status === 'failed') {

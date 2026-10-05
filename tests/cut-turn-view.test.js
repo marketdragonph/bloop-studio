@@ -221,7 +221,7 @@ test('Duck under lines: on at −10 dB in one undo step, the slider commits once
     assert.deepEqual(dock.cutSound.music.duck, { depth_db: -10, attack_ms: 120, release_ms: 400 });
     assert.equal(dock.cutSound.music.gain_db, -12, 'the bed gets its default level first');
     assert.equal(dock.cutDuckText(), 'Duck −10 dB under lines');
-    assert.deepEqual(dock.cutDuckWindows(), [{ from_ms: 1200, to_ms: 3400, beat_tag: null, text: '' }], 'measured lines until the server sends ducks');
+    assert.deepEqual(dock.cutDuckWindows(), [{ item_id: null, from_ms: 1200, to_ms: 3400, beat_tag: null, text: '' }], 'measured lines until the server sends ducks');
     assert.equal(dock.cutSaveState, 'unsaved');
     dock.cutSetDuck(-14);
     dock.cutSetDuck(-16);

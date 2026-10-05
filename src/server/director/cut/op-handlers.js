@@ -5,6 +5,7 @@
 import { cutClock } from '../../../shared/cut-clock.js';
 import { DISSOLVE, DUCK, MIN_CLIP_MS, CUT_LIMITS } from '../../../shared/cut-rules.js';
 import { snapToBeat } from '../../../shared/cut-sound.js';
+import { DEFAULT_PRESET, EXPORT_PRESETS, outputsFor } from '../../../shared/export-presets.js';
 import { itemFor } from '../../cut/cut-draft.js';
 import { isLocked, lockedReason } from './lock.js';
 
@@ -247,6 +248,41 @@ const HANDLERS = {
         w.row(op, item, 'Poster frame', op.why);
     },
 };
+
+/**
+ * P6 (05 §5.6): "make this ready for TikTok". Sets the preset, the shapes, captions on or off and caption text
+ * fixes in settings.outputs. Never a crop box (refused in validate.js) and never an export: the press is the
+ * person's. A fix for a clip the person owns needs them to name it, like any other edit of it.
+ */
+function outputs(w, n, op) {
+    const prev = w.settings?.outputs ?? {};
+    const next = { ...prev };
+    if (op.preset !== undefined) next.preset = op.preset;
+    if (op.shapes !== undefined) next.shapes = [...new Set(op.shapes)];
+    if (op.captions !== undefined) next.captions = op.captions;
+    const fixes = { ...(prev.caption_text ?? {}) };
+    for (const [beat, text] of Object.entries(op.caption_text ?? {})) {
+        const found = locate(w, beat);
+        if (!found) return w.reason(`op ${n}: ${beat} is not in the cut, so it has no caption to fix.${beatList(w)}`);
+        if (!w.mayEdit(found.item)) return w.reason(`op ${n}: ${lockedReason(found.item)}`);
+        if (text.trim()) fixes[found.item.beat_tag] = text.trim();
+        else delete fixes[found.item.beat_tag];
+    }
+    if (op.caption_text !== undefined) next.caption_text = fixes;
+    if (next.caption_text && !Object.keys(next.caption_text).length) delete next.caption_text;
+    w.settings = { ...w.settings, outputs: next };
+    const own = w.settings.aspect ?? w.slots.find((s) => s.plan_aspect)?.plan_aspect ?? '16:9';
+    const files = outputsFor(next.preset ?? DEFAULT_PRESET, next.shapes ?? null, own);
+    const cropped = files.map((f) => f.variant).filter((v) => v !== own);
+    if (cropped.length) w.hints.push(`The clips are ${own}, so ${cropped.join(' and ')} crops into each one from the middle and the picture gets softer: say that in one sentence. The person moves the crop boxes; you never do.`);
+    const label = (EXPORT_PRESETS[next.preset] ?? EXPORT_PRESETS[DEFAULT_PRESET]).label;
+    const parts = [`Set up for ${label}`, files.map((f) => f.variant).join(' + ')];
+    if (op.captions !== undefined) parts.push(op.captions === 'burned' ? 'captions burned in' : 'no captions');
+    if (op.caption_text !== undefined) parts.push(`${Object.keys(op.caption_text).length} caption fix${Object.keys(op.caption_text).length === 1 ? '' : 'es'}`);
+    w.count('outputs');
+    w.summary.push({ kind: 'outputs', track: null, text: parts.join(' · '), why: op.why ?? null });
+}
+HANDLERS.outputs = outputs;
 
 /** Applies one op to the working cut (or records why it cannot). */
 export function applyOp(w, n, op) {

@@ -1,0 +1,139 @@
+/* Shapes, the crop box, captions and the export sheet's P6 rows (Mini Katana P6, 05-irresistible.md §5.1–§5.5).
+   Tokens only. Orange is the crop box and the chosen shape (the action), the rest seam grey. The preview screen takes
+   its shape from --cut-screen-ratio (cut-shape.js) and is a container, so captions scale with the picture exactly as
+   the burned-in PNGs scale with the file (public/js/cut/caption-render.js holds the numbers). */
+
+/* ── The screen in a shape ── */
+.cut-preview { --cut-screen-h: 11rem; }
+.cut-screen.ae-player {
+    justify-self: center;
+    width: min(100%, calc(var(--cut-screen-h) * var(--cut-screen-ratio, 1.7778)));
+    max-height: var(--cut-screen-h);
+    aspect-ratio: var(--cut-screen-ratio, 16 / 9);
+    container-type: inline-size;
+}
+
+/* Crop: the video is sized and placed so the screen shows exactly the export's crop box (cut-frame.js cropBox). */
+.cut-screen.ae-player .cut-screen__video[data-fit='crop'] {
+    inset: auto;
+    top: var(--cut-crop-y);
+    left: var(--cut-crop-x);
+    width: var(--cut-crop-w);
+    height: var(--cut-crop-h);
+    max-width: none;
+    object-fit: fill;
+}
+
+/* Soft bars: the playing clip drawn tiny and scaled up behind the fitted picture, blurred and dimmed. */
+.cut-screen__bars {
+    --cut-bars-dim: 0.55;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: blur(0.5rem) brightness(var(--cut-bars-dim));
+    transform: scale(1.12);
+}
+.cut-screen__bars.is-on { opacity: 1; }
+
+/* ── Captions: Inter 700 on a dark plate, the orange cut on the left, on the shape's safe line ── */
+.cut-caption {
+    position: absolute;
+    bottom: var(--cut-caption-bottom);
+    left: 50%;
+    z-index: 3;
+    display: grid;
+    justify-items: center;
+    max-width: 90%;
+    margin: 0;
+    padding: calc(var(--cut-caption-pad-y) * var(--cut-caption-unit)) calc(var(--cut-caption-pad-x) * var(--cut-caption-unit));
+    border-left: calc(var(--cut-caption-cut) * var(--cut-caption-unit)) solid var(--accent);
+    background: var(--media-scrim-deck);
+    color: var(--on-media);
+    font: 700 calc(var(--cut-caption-font) * var(--cut-caption-unit)) / 1.25 var(--font-body);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+.cut-caption__line { display: block; }
+
+/* ── The crop box over the whole clip ── */
+.cut-screen.is-cropping .ae-player__deck,
+.cut-screen.is-cropping .ae-player__centre,
+.cut-screen.is-cropping .cut-preview__tags { display: none; }
+
+.cut-crop { position: absolute; inset: 0; z-index: 5; overflow: hidden; cursor: move; touch-action: none; }
+.cut-crop__box {
+    position: absolute;
+    top: var(--cut-box-y);
+    left: var(--cut-box-x);
+    width: var(--cut-box-w);
+    height: var(--cut-box-h);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 100vmax var(--media-scrim-strong);
+    outline: none;
+}
+.cut-crop__box:focus-visible { border-color: var(--on-media); box-shadow: 0 0 0 2px var(--accent), 0 0 0 100vmax var(--media-scrim-strong); }
+.cut-crop__third { position: absolute; pointer-events: none; border: 0 solid color-mix(in srgb, var(--on-media) 35%, transparent); }
+.cut-crop__third--v { inset: 0 33.333%; border-inline-width: 1px; }
+.cut-crop__third--h { inset: 33.333% 0; border-block-width: 1px; }
+.cut-crop__corner {
+    position: absolute;
+    right: -0.375rem;
+    bottom: -0.375rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    background: var(--accent);
+    cursor: nwse-resize;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 50%, 50% 50%, 50% 0);
+}
+
+/* ── Shape, Crop and Captions under the preview ── */
+.cut-shape-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
+.cut-shape { display: flex; align-items: center; gap: var(--space-1); min-width: 0; margin: 0; padding: 0; border: 0; }
+.cut-shape__label { margin-right: var(--space-1); color: var(--text-secondary); font-size: var(--fs-3xs); }
+.cut-shape__keys { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.cut-shape__hint { flex-basis: 100%; margin: 0; color: var(--text-secondary); font-size: var(--fs-2xs); }
+
+.cut-shape__pick, .cut-outputs__pick {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 1.75rem;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--ae-seam-strong);
+    color: var(--text-secondary);
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+}
+.cut-shape__pick.is-on, .cut-outputs__pick.is-on { border-color: var(--accent); color: var(--text-primary); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+.cut-shape__pick:has(:focus-visible), .cut-outputs__pick:has(:focus-visible), .cut-outputs__check:has(:focus-visible) { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.cut-shape__input, .cut-outputs__input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+
+.cut-shape__glyph { display: inline-block; height: 0.75rem; aspect-ratio: 16 / 9; border: 1.5px solid currentColor; }
+.cut-shape__glyph[data-shape='9:16'] { aspect-ratio: 9 / 16; }
+.cut-shape__glyph[data-shape='1:1'] { aspect-ratio: 1; }
+
+/* ── The export sheet: Shapes, soft bars, Captions, Preview GIF, the files of one press ── */
+.cut-outputs { display: grid; gap: var(--space-2); margin: 0; padding: var(--space-2) 0 0; border: 0; border-top: 1px solid var(--ae-seam); }
+.cut-outputs legend { padding: 0 0 var(--space-2); font-size: var(--fs-3xs); }
+.cut-outputs__row { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.cut-outputs__files { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; color: var(--text-secondary); font-size: var(--fs-2xs); }
+.cut-outputs__check { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-height: 1.75rem; font-size: var(--fs-sm); cursor: pointer; }
+.cut-outputs__check input { accent-color: var(--accent); }
+.cut-outputs__aside { color: var(--text-muted); font-size: var(--fs-2xs); }
+.cut-outputs__done { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.cut-outputs__file { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--ae-seam); }
+.cut-outputs__file .cut-sheet__path { flex-basis: 100%; }
+
+@media (pointer: coarse) {
+    .cut-shape__pick, .cut-outputs__pick, .cut-outputs__check { min-height: var(--touch-min); }
+    .cut-crop__corner { right: -0.75rem; bottom: -0.75rem; width: 1.5rem; height: 1.5rem; }
+}

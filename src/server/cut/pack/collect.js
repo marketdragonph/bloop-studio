@@ -98,7 +98,11 @@ export async function collect(board, { media, includePrompts = true }) {
     const last = board.lastExport;
     if (last?.media_path) {
         await add(`cut/${last.media_path.split('/').pop()}`, last.media_path, { node_id: last.node_id, export_id: last.id });
-        if (last.report?.poster_path) await add(`cut/${last.report.poster_path.split('/').pop()}`, last.report.poster_path, { node_id: last.node_id, export_id: last.id });
+        // P6: the .srt and the preview GIF beside it go with it.
+        for (const key of ['poster_path', 'srt_path', 'gif_path']) {
+            const side = last.report?.[key];
+            if (side) await add(`cut/${side.split('/').pop()}`, side, { node_id: last.node_id, export_id: last.id });
+        }
     }
 
     const notes = board.nodes

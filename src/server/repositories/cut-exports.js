@@ -40,12 +40,22 @@ export class CutExportsRepository {
         return hydrate(this.db.prepare(`SELECT * FROM cut_exports WHERE space_id = ? AND kind = ? AND ${ACTIVE} ORDER BY id DESC LIMIT 1`).get(spaceId, kind)) ?? null;
     }
 
-    /** The newest done export of this revision and preset (idempotent Export press). */
-    doneFor(spaceId, revision, preset) {
+    /**
+     * The newest done export of this revision and preset (idempotent Export press). P6: and of this shape; a P3 row
+     * (no variant) answers for its preset's own shape only when `variant` is not asked.
+     */
+    doneFor(spaceId, revision, preset, variant = undefined) {
+        const byShape = variant === undefined ? '' : ' AND variant IS ?';
         return hydrate(this.db.prepare(`
-            SELECT * FROM cut_exports WHERE space_id = ? AND kind = 'export' AND status = 'done' AND cut_revision = ? AND preset IS ?
+            SELECT * FROM cut_exports WHERE space_id = ? AND kind = 'export' AND status = 'done' AND cut_revision = ? AND preset IS ?${byShape}
             ORDER BY id DESC LIMIT 1
-        `).get(spaceId, revision, preset ?? null)) ?? null;
+        `).get(spaceId, revision, preset ?? null, ...(variant === undefined ? [] : [variant ?? null]))) ?? null;
+    }
+
+    /** The rows of one press, in queue order. */
+    group(groupId) {
+        if (!groupId) return [];
+        return this.db.prepare('SELECT * FROM cut_exports WHERE group_id = ? ORDER BY id').all(groupId).map(hydrate);
     }
 
     /** The newest done export of the space (Pack puts it in cut/). */
@@ -57,10 +67,10 @@ export class CutExportsRepository {
         return this.db.prepare('SELECT * FROM cut_exports WHERE space_id = ? ORDER BY id DESC LIMIT ?').all(spaceId, limit).map(hydrate);
     }
 
-    create(spaceId, { kind, revision = null, preset = null, snapshot = null, options = {} }) {
+    create(spaceId, { kind, revision = null, preset = null, snapshot = null, options = {}, variant = null, groupId = null }) {
         const { lastInsertRowid } = this.db.prepare(`
-            INSERT INTO cut_exports (space_id, kind, cut_revision, preset, snapshot, options) VALUES (?, ?, ?, ?, ?, ?)
-        `).run(spaceId, kind, revision, preset, snapshot == null ? null : JSON.stringify(snapshot), JSON.stringify(options ?? {}));
+            INSERT INTO cut_exports (space_id, kind, cut_revision, preset, snapshot, options, variant, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(spaceId, kind, revision, preset, snapshot == null ? null : JSON.stringify(snapshot), JSON.stringify(options ?? {}), variant, groupId);
         return this.find(Number(lastInsertRowid));
     }
 

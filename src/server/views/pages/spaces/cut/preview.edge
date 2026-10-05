@@ -1,9 +1,14 @@
 {{-- The left of the open dock: CutPlayer (public/js/components/cut-player.js), nested in CutDock's scope.
      Two stacked videos (A plays, B waits at the next clip's in point), the gap slate, the selected clip's chip and
      the shared deck (media-deck.edge, the MediaPlayer transport). One <audio> each for music and voice
-     (cut-bed-sync.js). Under it: the counter, As exported, and the selected clip's details. --}}
+     (cut-bed-sync.js). Under it: the counter, As exported, and the selected clip's details.
+     P6 (05 §5.4–§5.5): the screen takes the Shape picked under it and shows each clip exactly as the export frames
+     it (cut-shape.js); Crop opens the crop box on the selected clip (cut-reframe.js); Captions shows the script's
+     lines in the burned-in look; Soft bars draws a blurred copy behind a fitted clip (the bars canvas). --}}
 <div class="cut-preview" x-data="CutPlayer" data-control="cut.preview">
-  <div class="cut-screen ae-player" x-ref="cutScreen" :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing }">
+  <div class="cut-screen ae-player" x-ref="cutScreen" :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing, 'is-cropping': cutCropping() }"
+       :style="cutScreenVars()" :data-shape="cutShapeNow()">
+    <canvas class="cut-screen__bars" data-cut-part="bars" width="32" height="18" aria-hidden="true"></canvas>
     <video class="cut-screen__video" x-ref="cutVidA" playsinline preload="auto" disablepictureinpicture
            :class="{ 'is-front': front === 'a', 'is-incoming': incoming === 'a' }"
            @error="cpFailed('a')" @ended="cpEnded('a')"></video>
@@ -18,6 +23,10 @@
     <div class="cut-preview__tags" x-show="cutSelected()">
       <span class="cut-chip" x-text="cutSelected()?.title"></span>
     </div>
+    <p class="cut-caption" x-show="cutCaptionLines.length && !cutCropping()" x-cloak aria-hidden="true">
+      <template x-for="(line, i) in cutCaptionLines" :key="i"><span class="cut-caption__line" x-text="line"></span></template>
+    </p>
+    @include('pages/spaces/cut/crop-box')
     @include('pages/spaces/media-deck')
   </div>
   <audio class="cut-bed" x-ref="cutMusicEl" preload="auto"></audio>
@@ -28,6 +37,8 @@
     <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': cutAsExported }" @click="cutToggleExported()"
             :aria-pressed="cutAsExported ? 'true' : 'false'" data-control="cut.asExported">{{ controlLabel('cut.asExported') }}</button>
   </div>
+
+  @include('pages/spaces/cut/shape-bar')
 
   @include('pages/spaces/cut/details')
 </div>

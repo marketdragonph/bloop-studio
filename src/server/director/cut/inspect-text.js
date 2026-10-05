@@ -75,5 +75,10 @@ export function inspectText({ cut, analysisOf, wanted = null, scripts = new Map(
         else missing.push(`the ${kind} bed (${measuring(bed.media_path) ? 'queued' : 'not measured'})`);
     }
     if (missing.length) lines.push(`Not measured yet: ${missing.join(', ')}. Use only these numbers; do not guess the rest.`);
+    const out = cut.settings?.outputs;
+    if (out && !wanted) {
+        const fixes = Object.keys(out.caption_text ?? {});
+        lines.push(`Export set up: ${out.preset ?? 'master'}${out.shapes ? `, shapes ${out.shapes.join(' + ')}` : ''}${out.captions ? `, captions ${out.captions === 'burned' ? 'burned in' : 'off'}` : ''}${fixes.length ? `, caption fixes for ${fixes.join(', ')}` : ''}. Crop boxes are the person's.`);
+    }
     return lines.join('\n');
 }

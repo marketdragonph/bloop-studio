@@ -10,9 +10,14 @@ import { fileURLToPath } from 'node:url';
 
 const EXE = process.platform === 'win32' ? '.exe' : '';
 const MB = 1024 * 1024;
-/** Per-step cap = 2 × (seconds × 8 Mbit/s); the final file gets 1.5 GB. */
+/**
+ * Per-step cap = 2 × (seconds × 8 Mbit/s), never under 16 MB; the final file gets 1.5 GB. The floor (P6 gate): a
+ * 0.5 s dissolve junction at 1920 × 1080 is ~1.4 MB (its key frame alone is several hundred KB), and -fs cut it
+ * at 1 MB without an error, three frames short.
+ */
 export const FINAL_CAP_BYTES = 1536 * MB;
-export const capForSeconds = (seconds) => Math.ceil(2 * seconds * MB);
+export const STEP_CAP_FLOOR = 16 * MB;
+export const capForSeconds = (seconds) => Math.ceil(Math.max(STEP_CAP_FLOOR, 2 * seconds * MB));
 export const PROBE_TIMEOUT_MS = 20_000;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const INFO_TIMEOUT_MS = 10_000;
@@ -59,6 +64,24 @@ export function outputSeconds(args) {
     return null;
 }
 
+const IMAGE = /\.(png|jpe?g)$/i;
+
+/**
+ * P6 (05 §5.5): an input `-loop` repeats a picture forever, so it is allowed only as `-loop 1` on an image input
+ * with its own `-t` before that input's `-i`. An output `-loop` (the GIF muxer's play count) loops nothing.
+ */
+function assertImageLoop(args) {
+    const last = lastInputIndex(args);
+    args.forEach((arg, i) => {
+        if (arg !== '-loop' || i > last) return;
+        const input = args.indexOf('-i', i);
+        const own = args.slice(i, input);
+        if (args[i + 1] !== '1' || !IMAGE.test(args[input + 1] ?? '') || !own.includes('-t')) {
+            throw new FfmpegRefused('-loop is allowed only as -loop 1 on an image input with its own -t.');
+        }
+    });
+}
+
 /** Throws FfmpegRefused when a call could run long or grow without bound. */
 export function assertCapped(args) {
     if (!Array.isArray(args) || args.length < 2 || args.some((a) => typeof a !== 'string')) {
@@ -67,6 +90,7 @@ export function assertCapped(args) {
     if (lastInputIndex(args) < 0) throw new FfmpegRefused('ffmpeg call has no -i input.');
     if (outputSeconds(args) === null) throw new FfmpegRefused('ffmpeg call has no output -t; every output must be capped in time.');
     if (args.includes('-stream_loop')) throw new FfmpegRefused('-stream_loop is not allowed.');
+    assertImageLoop(args);
     for (const arg of args) {
         if (/\baloop\b/.test(arg)) throw new FfmpegRefused('aloop is not allowed.');
         for (const m of arg.matchAll(/\bapad\b(=[^,;[\]]*)?/g)) {

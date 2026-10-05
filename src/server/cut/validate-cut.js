@@ -7,6 +7,7 @@
 // removes it, so a save that still carries it is not refused. A card that was never in the cut must be on the board.
 import { randomUUID } from 'node:crypto';
 import { CUT_LIMITS, DISSOLVE, FADE_OUT, MUSIC_LEVEL, VOICE_LEVEL, DUCK, checkItems, checkSettings, checkSound } from '../../shared/cut-rules.js';
+import { cleanFrame } from '../../shared/cut-frame.js';
 
 const UNMEASURED_MS = 5000; // the length the dock shows for a clip nobody measured or asked a length for
 
@@ -23,6 +24,10 @@ const json = (text) => {
 const int = (value) => (value == null || value === '' ? null : Number.isFinite(Number(value)) ? Math.round(Number(value)) : Number.NaN);
 const positiveMs = (value) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Math.round(Number(value)) : null);
 const text = (value, max) => (typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null);
+
+/** Only the choices checkOutputs knows, caption fixes trimmed. */
+const cleanOutputs = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null)
+    .map(([k, v]) => [k, k === 'caption_text' ? Object.fromEntries(Object.entries(v).map(([t, w]) => [t, w.trim()])) : v]));
 
 const isClip = (n) => n.type === 'video' || (n.type === 'upload' && String(n.media_mime ?? '').startsWith('video/'));
 const isSound = (n) => n.type === 'audio' || (n.type === 'upload' && String(n.media_mime ?? '').startsWith('audio/'));
@@ -48,6 +53,11 @@ export class CutValidator {
         const snapshots = new Map([...(stored.previous_items ?? []), ...stored.items].map((i) => [i.id, i]));
         const items = input.items.map((raw, index) => this.#item(spaceId, raw, index, snapshots));
         this.#refuse(checkItems(items));
+        for (const item of items) {
+            const frame = cleanFrame(item.frame);
+            if (frame) item.frame = frame;
+            else delete item.frame;
+        }
 
         const sound = input.sound === undefined ? undefined : this.#sound(spaceId, input.sound, stored.sound);
         if (sound !== undefined) this.#refuse(checkSound(sound));
@@ -59,6 +69,7 @@ export class CutValidator {
             ...(settings.aspect ? { aspect: settings.aspect } : {}),
             ...(settings.poster_ms != null ? { poster_ms: settings.poster_ms } : {}), // Set as poster (05 §5.3), export ms
             ...(settings.target_lufs != null ? { target_lufs: settings.target_lufs } : {}), // the Director's level op (P4)
+            ...(settings.outputs != null ? { outputs: cleanOutputs(settings.outputs) } : {}), // P6: preset, shapes, captions, GIF
         } };
     }
 
@@ -121,6 +132,7 @@ export class CutValidator {
             sound: raw.sound === undefined ? true : raw.sound,
             join,
             ...(raw.note != null ? { note: raw.note } : {}),
+            ...(raw.frame != null ? { frame: raw.frame } : {}), // P6 crop boxes, checked by checkItems then cleaned below
         };
     }
 

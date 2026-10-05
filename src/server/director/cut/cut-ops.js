@@ -16,7 +16,8 @@ const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(valu
 const NOT_MEASURED_TOOLS = 'is not measured, so no time can be set. Say the cut could not be measured on this PC in one sentence.';
 const NOT_MEASURED_YET = 'is not measured yet, so no time can be set. Leave its times as they are and say it is still being measured.';
 const KIND_WORDS = { trim: ['trim', 'trims'], move: ['move', 'moves'], remove: ['removal', 'removals'], join: ['join', 'joins'], sound: ['sound change', 'sound changes'],
-    duck: ['duck', 'ducks'], level: ['level', 'levels'], snap: ['beat cut', 'beat cuts'], poster: ['poster frame', 'poster frames'], place: ['placed clip', 'placed clips'] };
+    duck: ['duck', 'ducks'], level: ['level', 'levels'], snap: ['beat cut', 'beat cuts'], poster: ['poster frame', 'poster frames'], place: ['placed clip', 'placed clips'],
+    outputs: ['export setup', 'export setups'] };
 
 /** The working copy one op list edits, with the checks the handlers share. */
 export class WorkingCut {
@@ -29,6 +30,7 @@ export class WorkingCut {
         this.rows = [];
         this.summary = [];
         this.snapped = [];
+        this.hints = []; // P6: sentences the model must say (the outputs op: a crop will be soft)
         this.notes = new Map();
         this.counts = {};
         const bed = cut.sound?.music ? analysisOf(cut.sound.music.media_path) : null;
@@ -153,7 +155,7 @@ export class CutOps {
         ledger.recordCut({ edits: edits_n, changed: [...changed, ...removed] });
         return {
             saved, before_ms: cutClock(cut.items).total_ms, after_ms: cutClock(saved.items).total_ms, counts: w.counts, snapped: w.snapped,
-            rows: w.rows, summary: w.summary, changed: [...new Set([...changed, ...removed])], turn: ledger.cutTurnId,
+            rows: w.rows, summary: w.summary, changed: [...new Set([...changed, ...removed])], turn: ledger.cutTurnId, hints: w.hints ?? [],
         };
     }
 

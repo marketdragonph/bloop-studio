@@ -20,7 +20,7 @@ const SNAP_KEY = 'bloop-studio:cut-snap';
 const ms = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
 const times = (v) => (Array.isArray(v) ? v.map(ms).filter((n) => n != null && n >= 0) : []);
 const spans = (v) => (Array.isArray(v) ? v : [])
-    .map((s) => ({ from_ms: ms(s?.from_ms), to_ms: ms(s?.to_ms), beat_tag: s?.beat_tag ?? null, text: typeof s?.text === 'string' ? s.text : '' }))
+    .map((s) => ({ item_id: s?.item_id ?? null, from_ms: ms(s?.from_ms), to_ms: ms(s?.to_ms), beat_tag: s?.beat_tag ?? null, text: typeof s?.text === 'string' ? s.text : '' }))
     .filter((s) => s.from_ms != null && s.to_ms != null && s.to_ms > s.from_ms);
 
 function readSnap() {
@@ -58,6 +58,7 @@ export const cutMeasureMethods = {
     cutDownbeatsMs: [],
     cutDucksMs: [], // duck windows, export ms, from the server
     cutSpeechMs: [], // measured spoken lines, export ms
+    cutCaptionPlan: null, // {default_on, why_off} from the server (captions-plan.js): Captions' default
     cutDuckBands: [], // on screen
     cutSpeechSpans: [],
     cutSnap: false, // read once on the first load (cutApplyMeasure); remembered per viewer
@@ -70,6 +71,7 @@ export const cutMeasureMethods = {
         this.cutDownbeatsMs = times(data?.downbeats_ms);
         this.cutDucksMs = spans(data?.ducks);
         this.cutSpeechMs = spans(data?.speech);
+        this.cutCaptionPlan = data?.captions && typeof data.captions === 'object' ? data.captions : null;
         this.cutAnalysis = readAnalysis(data?.analysis);
     },
 

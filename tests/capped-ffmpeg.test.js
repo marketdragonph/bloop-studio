@@ -173,3 +173,19 @@ test('locate: the dev copy in vendor/ffmpeg after the bundled one, never the eng
     locateFfmpeg({ env: {}, resourcesPath: '/r', appRoot: '/app', exists: (p) => { seen.push(p); return false; } });
     assert.ok(seen.every((p) => !/comfy|engine/i.test(p)));
 });
+
+test('P6: an input -loop only as -loop 1 on an image with its own -t; the GIF muxer -loop is an output flag', () => {
+    const out = ['-t', '2', 'out.mov'];
+    assert.doesNotThrow(() => assertCapped(['-i', 'clip.mp4', '-loop', '1', '-t', '2', '-i', 'c1.png', ...out]));
+    assert.doesNotThrow(() => assertCapped(['-i', 'final.mp4', '-c:v', 'gif', '-loop', '0', '-t', '6', 'preview.gif']));
+    assert.throws(() => assertCapped(['-loop', '1', '-i', 'c1.png', ...out]), /own -t/);
+    assert.throws(() => assertCapped(['-loop', '1', '-t', '2', '-i', 'clip.mp4', ...out]), /image input/);
+    assert.throws(() => assertCapped(['-loop', '0', '-t', '2', '-i', 'c1.png', ...out]), /-loop 1/);
+    assert.throws(() => assertCapped(['-i', 'a.mp4', '-loop', '1', '-i', 'c1.png', ...out]), FfmpegRefused);
+});
+
+test('P6 gate fix: a step cap is never under 16 MB (a 0.5 s 1080p junction is ~1.4 MB; -fs used to cut it short)', () => {
+    assert.equal(capForSeconds(0.5), 16 * 1024 * 1024);
+    assert.equal(capForSeconds(4), 16 * 1024 * 1024);
+    assert.equal(capForSeconds(60), 120 * 1024 * 1024);
+});

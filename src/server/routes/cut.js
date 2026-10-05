@@ -11,6 +11,7 @@ import { CutInvalidError } from '../cut/validate-cut.js';
 import { CutTurns } from '../cut/cut-turns.js';
 import { CutTurnsRepository } from '../repositories/cut-turns.js';
 import { checkCut, soundOnCut } from '../cut/cut-check.js';
+import { captionPlan } from '../cut/captions-plan.js';
 import { DirectorPlans } from '../repositories/director-plans.js';
 
 const int = (value) => Number.parseInt(value, 10);
@@ -66,6 +67,7 @@ export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDra
         const check = checkCut({ boardCut, plans: planRepo, analysis }, spaceId, cut);
         const read = check.read;
         const sound = soundOnCut(cut, check.analysisOf, read.beds, scriptsOf(spaceId));
+        const captions = captionPlan({ db: db ?? cuts.db, analysis }, spaceId, cut);
         return c.json({
             cut: cutView(cut),
             slots: read.slots,
@@ -78,6 +80,7 @@ export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDra
             downbeats_ms: sound.downbeats_ms,
             bpm: sound.bpm, // estimated
             speech: sound.speech, // [{item_id, from_ms, to_ms}] spoken lines in export time
+            captions: { default_on: captions.default_on, why_off: captions.why_off }, // P6: Captions' default, and why it is off
             music_peaks: sound.music_peaks, // {bars, ms_per_bar, values 0..100} or null
             voice_peaks: sound.voice_peaks,
             analysis: analysisState(check, cut), // {state: idle | measuring | missing | done, pending, unmeasured, tools_missing}

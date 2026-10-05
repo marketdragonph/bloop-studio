@@ -1,12 +1,32 @@
 // CutOpsValidator (03-director.md §3): every reason an op list is refused on its own shape, collected before
 // anything is read or applied, in the wording style of bloop's BoardOpsValidator. What depends on the cut (the
 // beat exists, the clip is long enough, the lock) is checked by cut-ops.js against the cut, also before any write.
-import { DISSOLVE, DUCK, MUSIC_LEVEL, TARGET_LUFS, WHY_MAX, CUT_LIMITS } from '../../../shared/cut-rules.js';
+import { DISSOLVE, DUCK, MUSIC_LEVEL, TARGET_LUFS, WHY_MAX, CUT_LIMITS, checkOutputs } from '../../../shared/cut-rules.js';
+import { CAPTIONS } from '../../../shared/cut-captions.js';
 
-export const CUT_OPS = ['place', 'trim', 'move', 'remove', 'join', 'sound', 'duck', 'level', 'snap', 'poster', 'undo_turn'];
+export const CUT_OPS = ['place', 'trim', 'move', 'remove', 'join', 'sound', 'duck', 'level', 'snap', 'poster', 'outputs', 'undo_turn'];
 export const MAX_CUT_OPS = 40;
 export const TRACKS = ['music', 'voice', 'clips'];
-export const UNDO_KINDS = ['trim', 'join', 'sound', 'duck', 'level'];
+export const UNDO_KINDS = ['trim', 'join', 'sound', 'duck', 'level', 'outputs'];
+/** P6 (05 §5.6): what an `outputs` op may set. Crop boxes are the person's; exports are the person's press. */
+export const OUTPUT_FIELDS = ['preset', 'shapes', 'captions', 'caption_text'];
+const NEVER_IN_OUTPUTS = { frame: 'Crop boxes are the person\'s to move; you never set them. Leave `frame` out.', crop: 'Crop boxes are the person\'s to move; you never set them. Leave `crop` out.',
+    export: 'You never start an export; the person does. Leave `export` out and say the cut is set up.', start: 'You never start an export; the person does. Leave `start` out.' };
+
+/** The shape problems of one `outputs` op. */
+function outputsProblems(op, n) {
+    const reasons = [];
+    for (const [key, text] of Object.entries(NEVER_IN_OUTPUTS)) if (op[key] !== undefined) reasons.push(`op ${n}: ${text}`);
+    if (!OUTPUT_FIELDS.some((k) => op[k] !== undefined)) reasons.push(`op ${n}: an outputs op sets \`preset\`, \`shapes\`, \`captions\` or \`caption_text\`.`);
+    if (op.caption_text !== undefined) {
+        const fixes = op.caption_text;
+        if (!fixes || typeof fixes !== 'object' || Array.isArray(fixes)) reasons.push(`op ${n}: \`caption_text\` maps a beat tag to its corrected words, {"s2-cup": "…"}.`);
+        else if (Object.values(fixes).some((t) => typeof t !== 'string' || t.length > CAPTIONS.textMax)) reasons.push(`op ${n}: a caption is words, at most ${CAPTIONS.textMax} characters.`);
+    }
+    const rule = checkOutputs({ preset: op.preset, shapes: op.shapes, captions: op.captions });
+    if (rule) reasons.push(`op ${n}: ${rule}`);
+    return reasons;
+}
 /** Ops that set a time and need measured clips (no video tools: refused). */
 export const TIMED = new Set(['trim', 'duck', 'snap']);
 const NEEDS_WHY = new Set(['trim', 'move', 'join']);
@@ -54,6 +74,8 @@ export function shapeProblems(ops) {
             if (op.gain_db !== undefined && (!num(op.gain_db) || op.gain_db < MUSIC_LEVEL.min || op.gain_db > MUSIC_LEVEL.max)) reasons.push(`op ${n}: \`gain_db\` is ${MUSIC_LEVEL.min} to +${MUSIC_LEVEL.max}.`);
             if (op.target_lufs !== undefined && !TARGET_LUFS.includes(op.target_lufs)) reasons.push(`op ${n}: \`target_lufs\` is one of ${TARGET_LUFS.join(', ')}.`);
         }
+        if (op.op === 'outputs') reasons.push(...outputsProblems(op, n));
+        else for (const key of ['frame', 'crop']) if (op[key] !== undefined) reasons.push(`op ${n}: ${NEVER_IN_OUTPUTS[key]}`);
         if (op.op === 'poster' && op.at_s !== undefined && (!num(op.at_s) || op.at_s < 0)) reasons.push(`op ${n}: \`at_s\` is seconds into the clip.`);
         if (op.op === 'undo_turn') {
             if (ops.length > 1) reasons.push(`op ${n}: undo_turn goes alone in its call.`);

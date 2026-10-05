@@ -176,8 +176,9 @@ of existing tokens. New layout tokens, no new colours: `--director-width: 26rem`
   elements are enough because J/L only sits on a cut join (01-core.md §2).
 - **Fades and loudness:** the bed fade starts at `fadeStart()`; the master gain uses the export's linear loudness
   gain (01-core.md §5), so the preview level matches the file.
-- **Caption chip** (the mockup's line on the frame) is preview only: the words from the beat's script card at the
-  measured speech span. The export burns no captions in Mini Katana; the export sheet says so.
+- **Captions** (P6, 05 §5.5): **Captions** under the preview shows the script's lines at the measured spoken spans in
+  the burned-in look (the cues of `cut-captions.js`); with Burned in, the export overlays the same captions, drawn
+  in the page as PNGs, and writes an .srt beside every file.
 - **Music and voice:** one `<audio>` each. They seek on play, seek and item change. Every 250 ms, if
   `|audio.currentTime − expected| > 0.15 s`, the player resets `currentTime`. Ducking ramps `music.volume` toward
   `level × 10^(db/20)` over the windows from `ducks`.

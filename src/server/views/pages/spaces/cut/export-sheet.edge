@@ -40,7 +40,7 @@
             </template>
           </fieldset>
 
-          <p class="cut-sheet__note" x-text="cutCopy('exportNoCaptions')"></p>
+          @include('pages/spaces/cut/export-outputs')
           <p class="cut-sheet__alert" role="alert" x-show="cutExportBlock() || cutExportState() !== 'preflight'">
             <span x-text="cutExportState() === 'preflight' ? cutExportBlock() : cutExportText()"></span>
             <a class="cut-sheet__link" href="/settings#video-tools" x-show="cutToolsMissing()" data-control="settings.videoTools">Open Settings › {{ controlLabel('settings.videoTools') }}</a>
@@ -78,7 +78,17 @@
       <template x-if="['done', 'stale'].includes(cutExportState())">
         <div class="cut-sheet__stack" role="status">
           <p class="cut-sheet__done" x-text="cutExportText()"></p>
-          <p class="cut-sheet__path" x-show="cutExport?.media_path" x-text="cutExport?.media_path"></p>
+          <ul class="cut-outputs__done" x-show="cutGroupFiles().length > 1">
+            <template x-for="file in cutGroupFiles()" :key="file.id">
+              <li class="cut-outputs__file">
+                <span class="ae-readout" x-text="file.variant + (file.size ? ' · ' + file.size : '')"></span>
+                <span class="cut-sheet__path" x-text="file.media_path"></span>
+                <button type="button" class="ae-key ae-key--sm" @click="cutShowFile(file)" data-control="cut.showFolder">{{{ icon('folder') }}}<span>{{ controlLabel('cut.showFolder') }}</span></button>
+                <button type="button" class="ae-key ae-key--sm" @click="cutCopyFile(file)" data-control="cut.copyPath">{{{ icon('copy') }}}<span>{{ controlLabel('cut.copyPath') }}</span></button>
+              </li>
+            </template>
+          </ul>
+          <p class="cut-sheet__path" x-show="cutExport?.media_path && cutGroupFiles().length < 2" x-text="cutExport?.media_path"></p>
           <div class="cut-sheet__keys">
             <button type="button" class="ae-key ae-key--sm" x-show="cutExport?.media_path" @click="cutShowFolder()" data-control="cut.showFolder">{{{ icon('folder') }}}<span>{{ controlLabel('cut.showFolder') }}</span></button>
             <button type="button" class="ae-key ae-key--sm" x-show="cutExport?.media_path" @click="cutCopyPath()" data-control="cut.copyPath">{{{ icon('copy') }}}<span>{{ controlLabel('cut.copyPath') }}</span></button>

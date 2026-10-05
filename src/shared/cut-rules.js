@@ -3,6 +3,9 @@
 // checks every save, and the Director's ops (P4) read the same numbers. Every check returns a plain reason the
 // person can act on, or null when the cut is fine.
 import { DISSOLVE_DEFAULT_MS, DISSOLVE_MAX_MS, DISSOLVE_MIN_MS, cutClock } from './cut-clock.js';
+import { SHAPES, checkFrame } from './cut-frame.js';
+import { CAPTIONS, checkCaptionText } from './cut-captions.js';
+import { PRESET_IDS } from './export-presets.js';
 
 export const CUT_LIMITS = Object.freeze({
     maxItems: 50, // the Director's beat cap (owner decision 3)
@@ -65,7 +68,7 @@ export function checkItem(item, index = 0, lengthMs = item?.seconds_ms) {
     if (item.note != null && (typeof item.note !== 'string' || item.note.length > CUT_LIMITS.noteMax)) {
         return `${label}: a clip note is at most ${CUT_LIMITS.noteMax} characters.`;
     }
-    return checkJoin(item.join, label);
+    return checkFrame(item.frame, label) ?? checkJoin(item.join, label);
 }
 
 function checkJoin(join, label) {
@@ -147,7 +150,31 @@ export function checkSettings(settings) {
     const poster = settings.poster_ms;
     if (poster != null && !(Number.isInteger(poster) && poster >= 0 && poster <= CUT_LIMITS.maxTotalMs)) return 'The poster frame must be a time inside the cut.';
     if (settings.target_lufs != null && ![-23, -16, -14].includes(settings.target_lufs)) return 'The loudness target is -23, -16 or -14 LUFS.';
-    return null;
+    return checkOutputs(settings.outputs);
+}
+
+/**
+ * P6 (05 §5.1, §5.4, §5.5): `settings.outputs` = {preset?, shapes?, captions?, caption_text?, soft_bars?, gif?}:
+ * the last preset, the Shapes row, captions off or burned in, caption text fixes by beat, soft bars for crops that
+ * blow the picture up, and the preview GIF. Crop boxes live on the items, never here. @returns {string|null}
+ */
+export function checkOutputs(outputs) {
+    if (outputs == null) return null;
+    if (typeof outputs !== 'object' || Array.isArray(outputs)) return 'The export choices are not readable.';
+    for (const key of Object.keys(outputs)) {
+        if (!['preset', 'shapes', 'captions', 'caption_text', 'soft_bars', 'gif'].includes(key)) return `The export has no ${key} choice.`;
+    }
+    if (outputs.preset != null && !PRESET_IDS.includes(outputs.preset)) return 'Pick Master, YouTube, TikTok, Reels or Shorts.';
+    if (outputs.shapes != null) {
+        const { shapes } = outputs;
+        if (!Array.isArray(shapes) || !shapes.length || shapes.length > SHAPES.length) return 'Pick one to three shapes: 16:9, 9:16, 1:1.';
+        if (shapes.some((s) => !SHAPES.includes(s)) || new Set(shapes).size !== shapes.length) return 'The shapes are 16:9, 9:16 and 1:1, each once.';
+    }
+    if (outputs.captions != null && !CAPTIONS.modes.includes(outputs.captions)) return 'Captions are off or burned in.';
+    for (const key of ['soft_bars', 'gif']) {
+        if (outputs[key] != null && typeof outputs[key] !== 'boolean') return `${key === 'gif' ? 'The preview GIF' : 'Soft bars'} is on or off.`;
+    }
+    return checkCaptionText(outputs.caption_text);
 }
 
 // ── P4: the Director's edits, the cut critic and the one-sentence cut (03-director.md §3, §6; 05 §1.1) ──

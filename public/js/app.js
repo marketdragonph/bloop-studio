@@ -10,6 +10,7 @@ import MediaPlayer from './components/media-player.js';
 import AudioPlayer from './components/audio-player.js';
 import CutDock from './components/cut-dock.js';
 import CutPlayer from './components/cut-player.js';
+import CutReframe from './components/cut-reframe.js';
 
 Alpine.data('Modal', Modal);
 Alpine.data('MechaSelect', MechaSelect);
@@ -20,6 +21,7 @@ Alpine.data('MediaPlayer', MediaPlayer);
 Alpine.data('AudioPlayer', AudioPlayer);
 Alpine.data('CutDock', CutDock);
 Alpine.data('CutPlayer', CutPlayer);
+Alpine.data('CutReframe', CutReframe);
 Alpine.data('SpaceBoard', SpaceBoard);
 
 window.Alpine = Alpine;

@@ -102,6 +102,11 @@ export class CutTurns {
             return next;
         });
         const sound = kinds.includes('duck') || kinds.includes('level') ? row.before.sound : cut.sound;
-        return { items, sound, settings: kinds.includes('level') ? row.before.settings : cut.settings, touched, turn: row.id };
+        // A level takes back the loudness target; 'outputs' (P6) the export set-up; each keeps the other's.
+        // A key the turn added goes back to null: the save merges with the stored settings, so a missing key would keep it.
+        let settings = { ...cut.settings };
+        if (kinds.includes('level')) settings = { ...row.before.settings, target_lufs: row.before.settings?.target_lufs ?? null, outputs: cut.settings?.outputs ?? null };
+        if (kinds.includes('outputs')) settings = { ...settings, outputs: row.before.settings?.outputs ?? null };
+        return { items, sound, settings, touched, turn: row.id };
     }
 }
