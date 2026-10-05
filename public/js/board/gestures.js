@@ -75,6 +75,14 @@ export const gestureMethods = {
         if (g.pointers.size > 1) return;
 
         const target = event.target;
+        // A press on a wire selects it (Delete removes it). It must not start a pan: the pan's
+        // pointer capture would send the click to the board, and the wire could never be selected.
+        const wire = target.closest('[data-conn-id]');
+        if (wire && event.button === 0 && !this.spaceHeld) {
+            this.selectedConnectionId = Number(wire.dataset.connId);
+            this.selectedNodeIds = [];
+            return;
+        }
         const card = target.closest('[data-node-id]');
         const onHead = card && target.closest('.card__head');
 
