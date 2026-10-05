@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1035
+
 - Fixed: the board no longer lags while the Director builds. It redraws only what changed, at most twice a second, instead of redrawing every card for each card it adds.
 
 - Changed: the Director talks before it builds. For a new film on an empty board it pitches the story, cast, shots and music and asks up to two questions first, then builds once you answer. Questions get answers instead of cards.
