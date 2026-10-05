@@ -1,6 +1,10 @@
 // Generate / cancel a card, the board's live event stream, and serving rendered media.
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
+import { parseByteRange } from '../media/byte-range.js';
 import { mimeFromName, UPLOADABLE, MAX_UPLOAD_BYTES } from '../generation/media-store.js';
 import { familiesFor } from '../generation/presets.js';
 import { cloudFamilies } from '../generation/cloud-models.js';
@@ -109,12 +113,20 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
         return c.body(null, 204);
     });
 
+    // Streams the file; a Range request gets 206 with only that slice, so seeking a long clip never reads it all.
     routes.get('/media/*', async (c) => {
         const relativePath = decodeURIComponent(c.req.path.slice('/media/'.length));
-        if (!media.resolve(relativePath)) return c.notFound();
+        const full = media.resolve(relativePath);
+        if (!full) return c.notFound();
         try {
-            const bytes = await media.read(relativePath);
-            const headers = { 'content-type': mimeFromName(relativePath), 'cache-control': 'private, max-age=31536000, immutable' };
+            const info = await stat(full);
+            if (!info.isFile()) return c.notFound();
+            const size = info.size;
+            const headers = {
+                'content-type': mimeFromName(relativePath),
+                'cache-control': 'private, max-age=31536000, immutable',
+                'accept-ranges': 'bytes',
+            };
             // ?download=<name> saves the original file under a readable name (the card's title).
             const name = c.req.query('download');
             if (name !== undefined) {
@@ -122,7 +134,16 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
                 const safe = (name || 'bloop-studio').replace(/[\\/:*?"<>|\x00-\x1f]+/g, ' ').trim().slice(0, 100) || 'bloop-studio';
                 headers['content-disposition'] = `attachment; filename*=UTF-8''${encodeURIComponent(safe + ext)}`;
             }
-            return c.body(bytes, 200, headers);
+            const range = parseByteRange(c.req.header('range'), size);
+            if (range === 'unsatisfiable') return c.body(null, 416, { ...headers, 'content-range': `bytes */${size}` });
+            const stream = (opts) => Readable.toWeb(createReadStream(full, opts));
+            if (!range) return c.body(size ? stream({}) : null, 200, { ...headers, 'content-length': String(size) });
+            const { start, end } = range;
+            return c.body(stream({ start, end }), 206, {
+                ...headers,
+                'content-range': `bytes ${start}-${end}/${size}`,
+                'content-length': String(end - start + 1),
+            });
         } catch {
             return c.notFound();
         }
