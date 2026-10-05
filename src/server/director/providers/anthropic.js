@@ -64,10 +64,11 @@ export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, 
         if (message.stop_reason === 'pause_turn') continue;
 
         // All tool results go back in ONE user message (keeps parallel tool use working).
-        const results = toolUses.map((use) => {
-            const { ok, content } = execute(use.name, use.input);
-            return { type: 'tool_result', tool_use_id: use.id, content, ...(ok ? {} : { is_error: true }) };
-        });
+        const results = [];
+        for (const use of toolUses) {
+            const { ok, content } = await execute(use.name, use.input); // a tool may wait (inspect_cut)
+            results.push({ type: 'tool_result', tool_use_id: use.id, content, ...(ok ? {} : { is_error: true }) });
+        }
         // The board check for what this round changed rides on the last result, for the model to fix.
         const check = afterRound?.();
         if (check) results.at(-1).content += `\n\n${check}`;

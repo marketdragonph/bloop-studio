@@ -58,6 +58,7 @@ export class CutValidator {
             resolution: settings.resolution, fps: settings.fps,
             ...(settings.aspect ? { aspect: settings.aspect } : {}),
             ...(settings.poster_ms != null ? { poster_ms: settings.poster_ms } : {}), // Set as poster (05 §5.3), export ms
+            ...(settings.target_lufs != null ? { target_lufs: settings.target_lufs } : {}), // the Director's level op (P4)
         } };
     }
 

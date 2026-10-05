@@ -46,3 +46,21 @@ export function duckExpr(windows, depthDb = DUCK.default, { attack = DUCK.attack
     const deepest = windows.map(one).reduce((acc, e) => (acc ? `max(${acc},${e})` : e), '');
     return `1-${n(1 - 10 ** (depthDb / 20))}*${deepest}`;
 }
+
+/** Cut on the beat (03-director.md §3, 05 §3.4): an out point this close to an estimated downbeat lands on it. */
+export const BEAT_SNAP_MS = 80;
+
+/**
+ * The beat `ms` snaps to, or null when none is within `windowMs`. ONE function for the dock's Snap to beats and
+ * the Director's validator, so a drag and an op land on the same frame. Beats are export ms, sorted or not.
+ */
+export function snapToBeat(ms, beatsMs, windowMs = BEAT_SNAP_MS) {
+    if (!Number.isFinite(ms) || !Array.isArray(beatsMs)) return null;
+    let best = null;
+    for (const beat of beatsMs) {
+        if (!Number.isFinite(beat)) continue;
+        const off = Math.abs(beat - ms);
+        if (off <= windowMs && (best === null || off < Math.abs(best - ms))) best = beat;
+    }
+    return best;
+}

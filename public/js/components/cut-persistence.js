@@ -74,6 +74,7 @@ export const cutPersistenceMethods = {
     /** Every person's change: keep it on this device, then save 800 ms after the last one. */
     cutChanged() {
         this._cutChanges++;
+        this.cutTurnEdited?.(); // the Director's strip folds into the undo history (cut-turn.js)
         writeCutDraft(this.spaceId, { revision: this.cutRevision, items: this.cutModel, sound: this.cutSound, at: Date.now() });
         if (this.cutSaveState !== 'saving') this.cutSaveState = 'unsaved';
         this.cutScheduleSave(SAVE_DELAY);
@@ -147,7 +148,7 @@ export const cutPersistenceMethods = {
     /** The saved copy replaces ours in place (no undo step, no save); the lanes redraw only if the person would see a change. */
     cutTakeSaved(cut) {
         // A trim drag or a level slider moves the model before its one commit: leave it be; the next save adopts.
-        if (this.cutDrag || this._cutLevelBefore) return;
+        if (this.cutDrag || this._cutLevelBefore || this._cutDuckBefore) return;
         const copy = { items: cut.items ?? [], sound: cut.sound ?? null };
         const visible = !same(this.cutSnapshot(), copy);
         this.cutModel = copy.items;
@@ -221,7 +222,7 @@ export const cutPersistenceMethods = {
         if (same(before, copy)) return;
         if (label) this.cutCommit(label, copy, { before, save: false });
         else this.cutRestore(copy, { save: false });
-        if (label && this._cutRingIds) this.cutRing(this._cutRingIds.map((id) => `c:${id}`));
+        if (label && this._cutRingIds) this.cutRing(this.cutKeysFor(this._cutRingIds)); // node ids from CutEdits
         this._cutRingIds = null;
         if (wasEmpty && copy.items.length) this.cutFirstDraftLanded();
     },

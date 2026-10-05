@@ -1,13 +1,18 @@
 {{-- One slot on the Video lane, sized by its time on screen (cut-timeline.js). A clip: first frame, tag, length,
      the Director's note (sensor dot + words), badges (new take, card deleted, could not play, sound off), the join
      chip before it and, when selected, the two orange trim handles hanging outside it. A beat with no clip:
-     hatched, "04 · Flashback / not rendered", Go to card (rendering: blue light; failed; deleted). --}}
+     hatched, "04 · Flashback / not rendered", Go to card (rendering: blue light; failed; deleted). P4, while the
+     Director's turn strip shows: the frames a trim took as faint blue ghosts past the clip, a blue mark on changed
+     clips while Show edits is open, and "Yours, untouched" on clips the Director left alone because they are the
+     person's (cut-turn.js). The note's tooltip is the stored reason. --}}
 <li class="cut-item" :class="['cut-item--' + cutKind(item), { 'is-lifted': cutDrag?.kind === 'move' && cutDrag.key === item.key }]"
     :style="Object.assign({ '--x': item.x + 'px', '--w': item.w + 'px' }, cutDragStyle(item))" :data-cut-key="item.key">
   <template x-if="item.ready">
     <div class="cut-clipbox" :class="{ 'is-first': item.x < 1 }">
+      <span class="cut-trimghost cut-trimghost--in" x-show="cutTurnMark(item).ghostIn > 0" :style="{ '--g': cutTurnMark(item).ghostIn + 'px' }" aria-hidden="true"></span>
+      <span class="cut-trimghost cut-trimghost--out" x-show="cutTurnMark(item).ghostOut > 0" :style="{ '--g': cutTurnMark(item).ghostOut + 'px' }" aria-hidden="true"></span>
       <button type="button" class="cut-clip"
-              :class="{ 'is-selected': item.key === cutSelectedKey, 'is-rung': cutRung.includes(item.key), 'is-gone': item.gone, 'is-unplayable': cutUnplayable.includes(item.key) }"
+              :class="{ 'is-selected': item.key === cutSelectedKey, 'is-rung': cutRung.includes(item.key), 'is-gone': item.gone, 'is-unplayable': cutUnplayable.includes(item.key), 'is-turn': cutTurnMark(item).marked }"
               @pointerdown="cutPointerDown($event, item)" @click="cutClick(item)"
               :aria-label="cutItemLabel(item)" :aria-pressed="item.key === cutSelectedKey ? 'true' : 'false'"
               aria-roledescription="clip" data-control="cut.clip">
@@ -21,8 +26,9 @@
           <span class="cut-badge cut-badge--alert" x-show="item.gone" x-text="cutStateText({ state: 'deleted' })"></span>
           <span class="cut-badge cut-badge--alert" x-show="cutUnplayable.includes(item.key)" x-text="cutCopy('unplayable')"></span>
           <span class="cut-badge" x-show="!item.sound">{{{ icon('mute') }}}<span>Sound off</span></span>
+          <span class="cut-badge" x-show="cutTurnMark(item).locked">{{{ icon('lock') }}}<span x-text="cutCopy('turnLocked')"></span></span>
         </span>
-        <span class="cut-note" x-show="item.note"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="item.note"></span></span>
+        <span class="cut-note" x-show="item.note" :title="cutTurnWhy(item)"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="item.note"></span></span>
         <span class="cut-clip__live status-light status-light--busy" x-show="item.live">
           <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
         </span>

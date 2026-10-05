@@ -26,6 +26,9 @@ const DEFAULTS = {
     engineAutostart: false,
     // Settings › Video tools › Choose ffmpeg.exe… ('' = the copy that ships with the app).
     ffmpegPath: '',
+    // Settings › Director › Editing style (Katana P4, 05 §3.8): how the person likes to cut, plain text, ≤ 600
+    // characters, read by the Director on every turn. Per install, so the prompt stays cache-stable.
+    editStyle: '',
 };
 
 export class SettingsStore {

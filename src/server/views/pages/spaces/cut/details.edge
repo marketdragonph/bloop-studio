@@ -8,6 +8,7 @@
       <dd x-text="cutSelected()?.ready ? cutTenths(cutSelected().in_ms) + ' – ' + cutTenths(cutSelected().out_ms) : ''"></dd></div>
   </dl>
   <p class="cut-details__note" x-show="cutSelected()?.note"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="cutSelected()?.note"></span></p>
+  <p class="cut-details__why" x-show="cutTurnWhy(cutSelected())" x-text="cutTurnWhy(cutSelected())"></p>
   <p class="cut-details__alert" x-show="cutSelected()?.gone" x-text="cutStateText({ state: 'deleted' })"></p>
   <p class="cut-details__alert" x-show="cutUnplayable.includes(cutSelected()?.key)">
     <span x-text="cutCopy('unplayable')"></span>

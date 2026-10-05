@@ -1,0 +1,17 @@
+{{-- Check your cut from the rail (05 §3.6), inside the export sheet's frame: the same lines as the export sheet,
+     plus Ask the Director when there is a key (the Director answers in words; it never renders or exports). --}}
+<template x-if="cutSheet === 'check'">
+  <div class="cut-sheet__body">
+    <header class="cut-sheet__head">
+      <h3 class="ae-stencil cut-sheet__title" id="cut-sheet-check" tabindex="-1" data-sheet-focus="check">{{ controlLabel('cut.check') }}</h3>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutCloseSheet()" data-control="cut.sheetClose"
+              aria-label="{{ controlLabel('cut.sheetClose') }}" title="{{ controlLabel('cut.sheetClose') }}">{{{ icon('close') }}}</button>
+    </header>
+    <div class="cut-sheet__stack">
+      @!component('pages/spaces/cut/check-list', { id: 'cut-check-rail' })
+      <p class="cut-sheet__note" x-show="cutToolsMissing()" x-text="cutCopy('toolsMissing')"></p>
+      <button type="button" class="ae-key ae-key--sm" x-show="directorReady && cutChecks().length" @click="cutCloseSheet(); cutAskDirector()"
+              data-control="cut.askDirector">{{{ icon('chat') }}}<span>{{ controlLabel('cut.askDirector') }}</span></button>
+    </div>
+  </div>
+</template>

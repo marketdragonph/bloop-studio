@@ -69,6 +69,23 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   The empty board shows the ghost strip with **Ask the Director** (only with a key), **Start from a starter** and
   **Bring my clips**. Where an untouched card renders is one rule, `src/shared/card-source.js` (engine first;
   bloop first with no engine; "Nothing can render yet…" with neither).
+  **The Director in the dock (P4 UI, 05-irresistible.md §3)**: after a Director turn a sensor-blue strip under the
+  rail reads "Director · 14 edits · 1:42 → 1:31" (`cut/turn-strip.edge`, `public/js/components/cut-turn.js`, from
+  the GET's `turn`): **Show edits** lists one row per change with its stored reason, marks the changed clips,
+  selects the first and scrolls to it; **Go to edit** on a row selects that clip and moves the playhead; **Undo
+  turn** posts `/cut/undo-turn {turn, revision}` (one press, one dock undo step; refused once later edits came).
+  Trimmed-off frames show as a blue ghost, the person's own clips as "Yours, untouched"; the strip folds into Ctrl+Z
+  at the person's next edit. Clip notes stay sensor blue, the reason is the note's tooltip and a "Why:" line in the
+  clip's details. `public/js/components/cut-measure.js`: "Measuring 3 clips…" on the rail; beat ticks only from
+  measured `beats_ms` (downbeats taller, "Beats · estimated", "Not measured" without video tools); **Snap to beats**
+  (track header, remembered per viewer) lands a dragged trim's cut point on a downbeat within 80 ms through
+  `snapToBeat` in `src/shared/cut-sound.js`, never on drafts or keyboard nudges; **Duck under lines** in the Music
+  level popover (−18..−3 dB, one undo step), duck bands and measured spoken lines from the server's `ducks` and
+  `speech`; the preview ducks on the export's envelope at 20 Hz. `public/js/components/cut-check.js`: **Check your
+  cut · N** on the rail with its own sheet; timed lines first with their time, **Show me** seeks there, a fix
+  that needs a new take shows **Go to card**, warn marks on the ruler. `public/css/cut-director.css`.
+  **Settings › Director › Editing style** (≤ 600 characters) holds how the person likes to cut; the Director reads
+  it on every turn. P4 controls are in the guide (`SHIPPED`).
 
 ## Rendering
 
@@ -154,6 +171,37 @@ A port of bloop's Spaces Director (docs/plans/director-port.md), adapted to loca
 - Runs in the background (director/runs.js); the panel shows what it is doing, the build lanes as they land,
   replies as markdown (escaped first), and bloop's example asks. It never renders and never tells you which
   buttons to press.
+
+- **The Director edits the Cut** (Katana P4 backend, docs/plans/katana/03-director.md): five tools after
+  `audit_board`, always listed. `stitch_cut {fill | add_new}` puts the rendered beats in through `CutDraft`
+  (gaps named, nothing rendered; a cut with the person's work gets a replace offer, never a write).
+  `inspect_cut` measures before any time is set: one line per clip (still head/tail, spoken lines with the
+  script's words, silence, loudness, scene changes, "can lose X s" from `fitPlan`) and one for the bed (BPM and
+  downbeats, "estimated"); it waits at most 3 s and names what is not measured yet, and with no video tools says
+  "Use no times." `propose_cut_ops` (place, trim, move, remove, join with J/L, sound, duck, level, snap, poster,
+  undo_turn) checks the whole list first and saves it in one write through `CutEdits`, all or nothing, with every
+  refusal back to the model as text; `why` is required on trims, moves and joins and kept (the why ledger); an
+  out point within 80 ms of a downbeat lands on it; clips the person placed or changed are locked unless the
+  person's own words this turn name the beat, "beat N" or the whole cut. One `cut_turns` row per turn holds the
+  cut as it was: Undo turn (`POST /spaces/:id/cut/undo-turn`) or "undo that" puts it back with every stamp, only
+  while nothing was saved after it; "keep the trims, undo the dissolves" takes back only some kinds. The cut
+  critic runs once per turn as "CHECK YOUR CUT" (GAP, LINE_CUT_OFF, DEAD_AIR, LOUDNESS_OFF, MUSIC_ENDS_EARLY,
+  OVER_RUNTIME, SHORT, JUMP and the untimed codes); `audit_board` adds THE CUT. `pack_assets` starts the same
+  Pack job only when the person asked in words. `remember_edit_style` saves Settings' `editStyle` when asked to
+  remember. No tool result names a control; no Director file reaches a render, an export, the job queue or the
+  bloop cloud (tests grep both). EditCraft and the phrase table (`prompts/doctrine-edit.js`) follow STORY_CRAFT;
+  the board state ends with `Cut: 6 of 8 beats, 1:42, revision 12` and, when needed, the locked beats, the gaps
+  with their reasons and the beats' roles (`build_board` takes a `role` per beat, kept in the beat's staging).
+- **Clip analysis** (`src/server/analysis/`): `AnalyzeMedia` measures a file once on the media-tools queue,
+  behind every export and pack, with the bundled ffmpeg (`silencedetect`, voice-band `silencedetect` for spoken
+  lines, `ebur128`, `freezedetect` and `scdet` on a 10 fps 64×36 grey scale-down, an 11 kHz PCM decode for the
+  bed's onsets, tempo, downbeats and waveform bars; a grid counts only when at least half its beats land on an onset,
+  so a beatless bed shows no ticks). Only what a cut holds, its beds, or what `inspect_cut` asks
+  for is measured (`CutAnalysis` listens to `cut` events and tells the dock "measuring" / "done"). Cached in
+  `media_analysis` by path, size, mtime and analyzer version. `GET /spaces/:id/cut` returns the duck windows
+  (under the voice bed and every measured line, J/L aware, `src/shared/cut-ducks.js`), beat ticks, spoken lines,
+  waveform bars, the analysis state, the timed findings and the newest Director `turn`; the export ducks on the same
+  windows and aims at `settings.target_lufs` when the Director set one.
 
 ## Bloop account (optional)
 

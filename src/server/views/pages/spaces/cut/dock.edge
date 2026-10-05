@@ -3,7 +3,8 @@
      .board__world (the board transform never repaints it). Folded it is one rail and holds no media; the body
      (preview videos, beds, lanes) exists only while open (x-if). Keys pressed in here are the dock's
      (cutOnKey); the board's onKeyDown skips them. The export and pack sheets open above the rail (P3); so does the
-     Render missing beats sheet (P2b). Files dropped on an empty dock are Bring my clips (cut-bring.js). --}}
+     Render missing beats sheet (P2b). Files dropped on an empty dock are Bring my clips (cut-bring.js). P4: the
+     Director's turn strip sits under the rail; Check your cut has its own sheet from the rail. --}}
 <section class="cut-dock" x-data="CutDock" aria-label="{{ controlLabel('cut.dock') }}" data-control="cut.dock"
          :class="{ 'is-open': cutOpen, 'is-beside-director': directorOpen, 'is-dragging': cutDrag }"
          @keydown="cutOnKey($event)"
@@ -14,6 +15,7 @@
   <input type="file" class="visually-hidden" data-cut-part="bring-input" multiple tabindex="-1" aria-hidden="true"
          accept="video/mp4,video/webm,audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/flac,audio/mp4" @change="cutBringPicked($event)">
   @include('pages/spaces/cut/rail')
+  @include('pages/spaces/cut/turn-strip')
   @include('pages/spaces/cut/banner')
   @include('pages/spaces/cut/export-sheet')
 

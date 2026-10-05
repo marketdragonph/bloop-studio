@@ -2,6 +2,7 @@
 // at the edges), drag an orange handle to trim (the time shows while dragging), and drag on the ruler to move
 // the playhead. Spread into CutDock. A drag changes only local state each frame and pushes ONE history
 // command on pointerup. Touch reorders with Move left / Move right in the clip's details instead.
+import { copy } from '/shared/katana-controls.js';
 import { itemsRefusal, trimItem } from '/shared/cut-edit.js';
 
 const DRAG_PX = 6;
@@ -84,7 +85,7 @@ export const cutStripMethods = {
         return this.cutDrag?.kind === 'move' && this.cutDrag.key === item.key ? { '--drag-dx': `${this.cutDrag.dx}px` } : {};
     },
 
-    /** An orange handle: in or out follows the pointer; ONE undo step on release. */
+    /** An orange handle: in or out follows the pointer (onto a downbeat with Snap to beats); ONE undo step on release. */
     cutTrimStart(event, item, edge) {
         if (event.button !== 0 || !item.ready || this.cutDraft) return;
         event.preventDefault();
@@ -97,9 +98,12 @@ export const cutStripMethods = {
         const base = edge === 'in' ? item.in_ms : item.out_ms;
         const pps = this.cutPps || 1;
         this.cutDrag = { kind: edge, key: item.key };
+        let beat = null;
         track((ev) => {
             const ms = base + ((ev.clientX - startX) / pps) * 1000;
-            this.cutModel = trimItem(before.items, item.clip, edge === 'in' ? { in_ms: ms } : { out_ms: ms });
+            const snapped = this.cutSnapped(trimItem(before.items, item.clip, edge === 'in' ? { in_ms: ms } : { out_ms: ms }), item.clip, edge);
+            beat = snapped.beat;
+            this.cutModel = snapped.items;
             this.cutLayout();
         }, () => {
             this.cutDrag = null;
@@ -110,6 +114,7 @@ export const cutStripMethods = {
                 return;
             }
             this.cutCommit(edge === 'in' ? 'Trim in' : 'Trim out', { items: this.cutModel }, { before });
+            if (beat != null) this.cutAnnounce = copy('snapped', { time: this.cutTenths(beat) });
         });
     },
 

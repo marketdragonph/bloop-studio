@@ -1,6 +1,7 @@
 {{-- The Cut's rail: always there, 32 px folded (44 px on touch). Stencil, Play, the readout, the save chip,
      the 8 s "Removed … Undo" line, Undo / Redo / Fit while open, and the fold key. Every key is a registry
-     control (katana-controls.js). P3 adds Pack assets, Export (accent) and a running job's line. --}}
+     control (katana-controls.js). P3 adds Pack assets, Export (accent) and a running job's line. P4 adds the analysis
+     line ("Measuring 3 clips…", sensor blue) and Check your cut with its count (its own sheet). --}}
 <div class="cut-rail">
   <h2 class="ae-stencil cut-rail__title">{{{ icon('cut') }}}<span>{{ controlLabel('cut.dock') }}</span></h2>
   <button type="button" class="ae-key ae-key--sm ae-key--square" x-show="cutStatus === 'ready' && cutLay().entries.length" x-cloak
@@ -11,6 +12,9 @@
   <span class="ae-readout cut-rail__readout" :class="{ 'is-alert': cutStatus === 'error' }" x-text="cutReadout()"></span>
   <span class="status-light status-light--busy cut-rail__busy" x-show="cutRendering()" x-cloak>
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
+  </span>
+  <span class="status-light status-light--busy cut-rail__job" x-show="cutMeasuring()" x-cloak role="status">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutMeasuringText()"></span>
   </span>
   <button type="button" class="ae-key ae-key--sm" x-show="cutRendering()" x-cloak @click="cutCancelAll()"
           data-control="cut.renderCancelAll">{{{ icon('close') }}}<span>{{ controlLabel('cut.renderCancelAll') }}</span></button>
@@ -55,6 +59,9 @@
   <span class="status-light status-light--busy cut-rail__job" x-show="cutJobLine('export') && cutSheet !== 'export'" x-cloak role="status">
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutJobLine('export')"></span>
   </span>
+  <button type="button" class="ae-key ae-key--sm cut-rail__check" x-show="cutCheckOnRail()" x-cloak @click="cutOpenSheet('check')"
+          data-control="cut.check" aria-controls="cut-sheet" :aria-expanded="cutSheet === 'check' ? 'true' : 'false'" aria-haspopup="dialog"
+          :class="{ 'is-ready': !cutChecks().length }">{{{ icon('check') }}}<span x-text="cutCheckTitle()">{{ controlLabel('cut.check') }}</span></button>
   <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'ready' && !cutEmpty()" x-cloak
           @click="cutOpenSheet('pack')" data-control="cut.pack" aria-controls="cut-sheet" :aria-expanded="cutSheet === 'pack' ? 'true' : 'false'"
           aria-haspopup="dialog">{{{ icon('sheet') }}}<span>{{ controlLabel('cut.pack') }}</span></button>

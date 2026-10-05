@@ -172,6 +172,22 @@ agent edit again.
 **Where it lands.** `cut/turn-strip.edge` (~60), `public/js/components/cut-turn.js` (~100, spread into
 CutDock), ghosts in `cut-strip.js`, `public/css/cut.css`. `cut_turns.ops_summary` in `007_cut_director.sql` for
 sound ops; other rows come from item notes. Data from the `cut` SSE event (`changed`, `turn`). No polling.
+**As built (P4 dock UI, 2026-10-05, katana-mini).** [x] Turn strip (`cut/turn-strip.edge`, `cut-turn.js`), Show edits
+rows (**Go to edit**, `cut.turnRow`) floating above the dock so the marked clips stay in view, Undo turn, trim ghosts,
+"Yours, untouched", the reason as the note's tooltip and a "Why:" line in the details. [x] Snap to beats (§3.4) on
+trims only: a drop cannot land on a beat in a sequence lane, so the registry and guide say "a dragged trim"; keyboard
+nudges are never snapped. [x] Duck under lines (§3.5) in the Music popover; the preview samples `duckGain` at 20 Hz.
+[x] Check your cut on the rail with its own sheet and timed lines (§3.6). [x] "Measuring 3 clips…". `--cut-label` grew
+4.5 → 6 rem so "Snap to beats" and "Beats · estimated" fit. **The dock reads** from `GET /spaces/:id/cut`: `turn`
+(CutTurns.view(): `turn`, `after_rev`, `before_total_ms`, `after_total_ms`, `edits`, `rows[{kind, item_id, node_id,
+beat_tag, text, at_ms, why?, was?: {in_ms, out_ms}}]`, `sound_rows`, `changed` node ids, `undoable`, optional `reasons`
+and `locked`), `beats_ms`, `downbeats_ms`, `ducks[{from_ms, to_ms}]`, `speech[{from_ms, to_ms, beat_tag, text}]` (export
+ms), `analysis {state: idle | measuring | missing | done, pending}`, and `at_ms` on timed findings; a `cut` event may
+carry `analysis` alone. Undo turn: `POST /cut/undo-turn {turn, revision}` → 200 `{cut}` | 409 `{cut}` | 422 `{error}`.
+Tests: `tests/cut-turn-view.test.js`, `tests/cut-dock-view.test.js`. Not yet: the 2 s ring is static (no pulse); no
+per-row undo in the list ("undo the dissolves" is words to the Director, §3.3). Gate: the strip shows tenths when
+both lengths round to the same second ("0:25.6 → 0:25.1"); the preview column scrolls on a short window instead of its
+details sliding under the player.
 
 ### 3.2 Why ledger: every cut point keeps its reason — P4, S
 
@@ -227,7 +243,8 @@ Settings › Director gets an **Editing style** box (plain text, ≤ 600 chars):
 shots breathe." When the person says "I never want dissolves" and agrees in chat to remember it, the Director
 saves it with `remember_edit_style`, and the result shows the saved text. Read on every cut turn as one budgeted
 line after EditCraft (per install, so cache-stable). **Where.** `editStyle` in `src/main/settings-store.js`
-DEFAULTS (there is no settings table), the Settings view, `skills/cut.js`, `prompts/compose.js`.
+DEFAULTS (there is no settings table), the Settings view, `skills/cut.js`, `prompts/compose.js`. **As built:** [x] the box
+(`data-control="settings.editingStyle"`), the route, the tool and the prompt line; P4 SHIPPED.
 
 ## 4. The Director as guide (one source of truth)
 

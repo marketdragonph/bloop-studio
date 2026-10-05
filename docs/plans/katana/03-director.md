@@ -1,4 +1,4 @@
-# Katana 03 — Director: stitch, smart editing, pack — PLANNED (phase P4)
+# Katana 03 — Director: stitch, smart editing, pack — COMPLETE (phase P4, built on katana-mini, see §11)
 
 Part of [../katana.md](../katana.md). Settled conflicts there win over this file.
 The Director is the port of bloop's Spaces Director (`src/server/director/`): skills in `skills/index.js`, one
@@ -240,3 +240,89 @@ SAY IT IN EDITING WORDS. "Tightened the open, cut on the swing, let her line run
   or critic line names a button (the word list in §6).
 - `tests/director-cut-ops.test.js` also: with no ffmpeg, timed ops refuse and untimed ops apply; no Katana tool
   adds a row to `cut_exports` with `kind: 'export'`, and none calls the GPU worker or the bloop cloud client.
+
+## 11. As built (P4 backend, 2026-10-05, katana-mini)
+
+- [x] `009_cut_director.sql` (007/008 shipped first): `media_analysis` (path, size, mtime, `ANALYZER_VERSION`, data
+  JSON) and `cut_turns` (`before`, `before_revision`, `after_rev`, totals, `edits`, `changed`, `rows`, `ops_summary`,
+  `reasons`, `undone_at`). Repositories `media-analysis.js`, `cut-turns.js`.
+- [x] §5 Analysis: `src/server/analysis/` — `parse.js` (args + stderr parsers), `stages.js` (`probe → loudness`
+  (ebur128 + silencedetect in one pass) `→ speech → motion → onsets → peaks → store`), `onsets.js` (spectral flux,
+  tempo by autocorrelation with a 120 BPM log-normal prior and a parabolic period, beat tracking from onset to onset,
+  downbeats on the strongest of 4 phases, waveform bars; yields every 300 frames), `analyze-media.js` (`AnalyzeMedia`
+  with in-flight de-dup, the 3 s `waitFor`, `toolsMissing` never cached; `CutAnalysis` measures what a saved cut holds
+  1 s after it settles and sends `cut` events `{by: 'analysis', analysis: {state, pending}}`). A music bed gets no
+  speech pass (its "speech" would be the song).
+- [x] §2 `stitch_cut` through `CutDraft`; texts as §2 (gaps named, "NOTHING WAS RENDERED"); a draft that wrote nothing
+  leaves no `cut_turns` row and counts as refused; `turn/closing.js` then adds "Nothing in the cut changed this turn."
+  unless the reply already says so.
+- [x] §3 `propose_cut_ops`: `director/cut/validate.js` (shape), `op-handlers.js` (each op against the cut as the earlier
+  ops left it), `cut-ops.js` (`CutOps`, one save through `CutEdits` by `'director'`), every reason collected and sorted
+  by op. **Added ops**: `snap {beat}` (out point to the nearest downbeat within 1.5 s that cuts no line), `poster {beat,
+  at_s}` (`settings.poster_ms`), `undo_turn {kinds?}` (alone in its call; `kinds` = trim, join, sound, duck, level for
+  "keep the trims, undo the dissolves"; moves, places and removes go back only with the whole turn). `why` (≤ 120) is
+  required on trim, move and join, as 05 §3.2 asks. `level track: clips` refuses (there is no per-clip gain in the item
+  schema yet); `level target_lufs` is stored as `settings.target_lufs` (validator + `checkSettings`) and the export's
+  loudness stage aims at it over the preset. Notes: phrases joined with " · ", whole phrases only, ≤ 40 chars.
+  Strip rows carry `at_ms` (where the clip now starts) and, for trims and snaps, `was {in_ms, out_ms}` for the ghost.
+- [x] §4 Lock: `director/cut/lock.js`. Locked = `placed_by 'person'` or a `person_rev`. Opened by the beat tag (dash,
+  space or underscore), "beat/shot/clip/scene N", "first … tenth / last / opening clip", or a whole-cut phrase. A lock
+  also covers move, remove and swapping a take; a join's lock is the clip after the join (the field lives there).
+- [x] One undo per turn: `src/server/cut/cut-turns.js` (`CutTurns.begin/record/undo/partial/view`, not a method on
+  `CutEdits`); `CutEdits.save` gained `restoreStamps` so an undo puts every stamp and note back exactly.
+  `POST /spaces/:id/cut/undo-turn {turn, revision}` → 200 `{cut, turn}` · 409 · 422 `LATER_EDITS` / no turn.
+- [x] §5 `inspect_cut` text (`director/cut/inspect-text.js`): clip lines add "at X in the cut", joins, "own sound off",
+  "THE PERSON'S (locked)", "can lose X s"; the bed line adds level and duck; `Last edit: … — why` for named beats;
+  "Not in the cut: …" for unknown tags.
+- [x] §6 Critic: pure rules in `src/server/cut/findings.js` (also the dock's list via `cut/cut-check.js`), Director
+  text in `director/cut/audit-cut.js` under the header **CHECK YOUR CUT** (the task's wording). `LOUDNESS_OFF` is the
+  clip-vs-neighbours rule (median of up to two each side, > 6 LU); the "mix > 2 LU from target" rule needs a mix
+  measurement and waits for one. `JUMP` reads shot size and angle words from the briefs and says it is a heuristic.
+  `audit_board` adds THE CUT whenever the cut has clips.
+- [x] §7 `pack_assets`: the person's words this turn must ask to pack/zip/collect/download/hand off; `Packer.estimate()`
+  gives files, bytes and the low-disk refusal before the job; then the same `Packer.start`.
+- [x] §8 EditCraft + the phrase table ("tighter", "punchy", "calmer", "end on", "cut on the beat", "more room", length
+  targets, "for Reels/TikTok/Shorts", levels) and the routing words, after STORY_CRAFT. The person's editing style is
+  one block after it (`editStyle(text)`), saved by `remember_edit_style` only when they ask to remember.
+- [x] §9 `skills/index.js`: the tools after `audit_board`; `runSkill` returns a promise for a tool that waits, and both
+  providers now `await` every tool result. `turn/ledger.js`: `cutTurnId`, `cutEdits[]`, `drafted`, `recordCut`,
+  `cutRefused`, `claimCutAudit`, `onlyCut`; `touched()` counts cut edits.
+- [x] Snapshot (compose.js, after the board snapshot): `Cut: 6 of 8 beats, 1:42, revision 12`, then only when needed
+  `Locked (the person changed them since): …`, `Gaps: s4-flashback (never rendered), …`, `Roles: s1-open hook, …`.
+  `build_board` takes `role` per beat (hook/setup/turn/climax/close) into `director_plan_beats.staging`.
+- [x] `src/shared/cut-ducks.js` (not `cut-sound.js`, where the dock builder put `snapToBeat`): `speechInCut` (J/L
+  aware), `cutDucks`, `beatsInCut`. `fitPlan`, `CRITIC`, `MIN_CLIP_MS`, `TARGET_LUFS`, `WHY_MAX` in `cut-rules.js`;
+  `fitPlan` never trims an unmeasured clip (it could hide a line).
+- [x] Tests: `tests/cut-analysis.test.js` (8), `tests/director-cut-tools.test.js` (15), `tests/cut-critic.test.js` (6),
+  `tests/fit-plan.test.js` (5), shared fixture `tests/director-cut-fixture.js`. They replace the planned file names in
+  §10 (stitch, ops, audit, analyze, pack, compose are all covered there).
+- [x] Gate (real bundled LGPL ffmpeg, `scratchpad/p4gate/real.mjs`): a tail freeze measured 4.0–5.0 s, a line
+  1.0–3.0 s (3.002), silence 0–1 / 3–5 s; a head still 0.0–1.0 s, line 0.5–1.5 s; a 120 BPM click bed → 120 BPM, 40/40
+  beats and 10/10 accented downbeats within ±0.1 s (first beat 232 ms for 250); ~190 ms per 5 s clip, 290 ms for a
+  20 s bed; a 5-minute bed in 2.5 s with event-loop delay p99 16.6 ms, max 36 ms; cache hit 1 ms. Real server: Fill
+  → the cut measured itself in 1.7 s; GET returned speech, 18 beats, downbeats; `propose_cut_ops` trimmed, ducked and
+  the critic caught a deliberate line cut; Undo turn over HTTP restored it; the person's Export (master) carried the
+  duck windows `[1000–3002, 4500–5501]` and reached −16 LUFS (+7.7 dB).
+- [x] Settings › Director › Editing style (`name="editStyle"`, `data-control="settings.editingStyle"`, ≤ 600, a form
+  without the field never wipes it; `tests/katana-settings.test.js`). P4 is in `SHIPPED`; the guide is 2,992 of 3,000.
+- [x] Beats only from a steady pulse (gate fix): a beat grid counts only when at least half its beats land on an onset
+  (`MIN_ON_BEAT`, `ANALYZER_VERSION` 2). Clicks and drums land 98–100 %; the gate's 75 s tone bed and a chord pad
+  landed 11–19 % and had been read as ~157 and 116 BPM. They now say "no steady beat found" and show no ticks.
+- [x] **Gate, end to end** (`scratchpad/p4e2e/run.mjs`): the real server on throwaway data/media, the bundled LGPL
+  ffmpeg, 4 real generated clips (LTX and a t2va model, 864×480, 8.0–10.1 s) and a 75 s bed on a 5-beat plan (one beat
+  never rendered), and the real Director service and Claude provider code pointed (`ANTHROPIC_BASE_URL`) at a local
+  fake model that reads the tool results. "Cut it together, under a minute, punchy": `stitch_cut` → `inspect_cut` →
+  `propose_cut_ops` in 3 model rounds, 1.56 s; 36.1 s → 25.9 s (s2 0.0–4.4 "out after the line ends at 4.2 s", s4
+  0.0–3.5, duck −10 dB; s1 and s3 kept whole, their sound reads as one long line); critic GAP + LOUDNESS_OFF ×3. Undo
+  turn over HTTP (403 without CSRF) put the cut back exactly (empty, sound null); a trim-only turn's undo restored
+  every clip's times, stamps and notes exactly; a second undo 422. The person trimmed s2 (PUT): "Make it punchier"
+  was refused with the lock text and the cut unchanged; "Take half a second off beat 2" applied (4.1 → 3.6 s) and the
+  critic caught the line it cut. No export, pack or job rows. In the browser: the strip ("Director · 1 edit · 0:25.6 →
+  0:25.1"), Show edits with the reason, the "Why:" line, Check your cut · 6 with times, Undo turn from the dock. Analysis
+  per real clip: 204–249 ms (8–10 s), bed 485–502 ms (75 s).
+- Deferred: a live turn with a real Claude/OpenAI key (the owner pastes a key in the dev app). Voice-band "speech" is
+  any sound between 300 and 3400 Hz: two of the four generated clips (ambience, no dialogue) read as one line covering
+  89–100 % of the clip, which keeps the Director from trimming them and ducks the music under them; proposal: a span
+  covering ≥ 85 % of a clip whose beat has no script card is "steady sound", not a line (owner call). 05 §3.7 ("hold it
+  longer" sets the card's length through `propose_board_ops`) relies on the existing board op and the doctrine's
+  words; no new tool.

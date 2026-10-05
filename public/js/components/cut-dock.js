@@ -10,7 +10,7 @@
 // only on the person's press. P2b: the live cut (cut-auto.js) and Bring my clips (cut-bring.js).
 import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
 import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerTicks, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
-import { entryKey, laneEntries, layoutLane, toScreen } from '/shared/cut-timeline.js';
+import { entryKey, laneEntries, layoutLane } from '/shared/cut-timeline.js';
 import { mono, reduceTrack } from './audio-player.js';
 import { cutHistoryMethods } from './cut-history.js';
 import { cutPersistenceMethods } from './cut-persistence.js';
@@ -20,6 +20,9 @@ import { cutExportMethods } from './cut-export.js';
 import { cutAutoMethods } from './cut-auto.js';
 import { cutRenderMethods } from './cut-render.js';
 import { cutBringMethods } from './cut-bring.js';
+import { cutTurnMethods } from './cut-turn.js';
+import { cutMeasureMethods } from './cut-measure.js';
+import { cutCheckMethods } from './cut-check.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -160,7 +163,7 @@ export default function CutDock() {
 
         cutApply(data) {
             const cut = data.cut ?? {};
-            this.cutBeatsMs = Array.isArray(data.beats_ms) ? data.beats_ms : [];
+            this.cutApplyMeasure(data); // beats, ducks, speech spans, the analysis state (cut-measure.js)
             this._cutSlots = Array.isArray(data.slots) ? data.slots : [];
             this.cutFindings = Array.isArray(data.findings) ? data.findings : [];
             this.cutGuessed = Boolean(data.guessed);
@@ -171,6 +174,7 @@ export default function CutDock() {
             };
             if (cut.settings) this.cutSettings = cut.settings;
             this.cutReceive(cut, { by: cut.updated_by }); // adopts, keeps the person's edits, or asks (cut-persistence.js)
+            this.cutApplyTurn(data.turn); // the Director's last turn, while it is on top (cut-turn.js)
             this.cutLayout();
             // With the lanes on screen, decode now; else the lanes' x-init does it once they render.
             if (this.cutOpen && this.cutPart('scroll')) this.cutLoadWave();
@@ -194,7 +198,7 @@ export default function CutDock() {
             this.cutIndex = index;
             this.cutSpan = Math.max(width, Math.ceil(layout.total_ms / 1000 * this.cutPps));
             this.cutTicks = rulerTicks(layout.total_ms, this.cutPps);
-            this.cutBeats = this.cutBeatsMs.map((ms, i) => ({ key: i, x: toScreen(layout, ms) / 1000 * this.cutPps }));
+            this.cutMeasureLayout(layout, this.cutPps); // beat ticks, duck bands, dialogue spans
             this.cutPauses = gapBlocks(items);
             const music = this.cutBeds.music;
             this.cutMusic = music ? bedSegments(items, 0, this.cutBedMs(music), this.cutPps) : [];
@@ -328,6 +332,7 @@ export default function CutDock() {
             const space = detail?.spaceId ?? detail?.space_id;
             if (space != null && space !== this.spaceId) return;
             if (detail?.offer === 'replace' && !this.cutBanner) this.cutBanner = 'replace';
+            if (detail?.analysis) this.cutAnalysisEvent(detail.analysis);
             if (Array.isArray(detail?.changed) && detail.changed.length) this._cutRingIds = detail.changed;
             // Our own save sends a `cut` event too; while it is in flight, wait and reload after it.
             if (this.cutSaveState === 'saving') { this._cutEventWaiting = true; return; }
@@ -458,5 +463,8 @@ export default function CutDock() {
         ...cutAutoMethods,
         ...cutRenderMethods,
         ...cutBringMethods,
+        ...cutTurnMethods,
+        ...cutMeasureMethods,
+        ...cutCheckMethods,
     };
 }

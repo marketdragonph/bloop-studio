@@ -5,6 +5,8 @@ import { NODE_TYPES, OPS, SOCKETS } from '../ops/validate.js';
 import { auditBoard, auditText } from '../audit.js';
 import { socketsOf } from '../../../shared/node-types.js';
 import { stateOf } from '../card-state.js';
+import { checkCut } from '../../cut/cut-check.js';
+import { cutSectionText } from '../cut/audit-cut.js';
 
 const PLAN_FIRST_STOP = 'STOP — do not build this yet. This board is empty and nobody has said what the work is for. Call plan_board instead: say how you would approach it, ask AT MOST TWO questions whose answers would change what you build, and say plainly what you are assuming. Nothing has been put on the board and nothing is wrong — you are one step early. Build it in the turn after they answer.';
 
@@ -108,6 +110,14 @@ export const inspectBoard = {
     },
 };
 
+/** audit_board's THE CUT (03 §6): the whole cut's findings, whenever the board has a cut with clips. */
+function cutSection(t) {
+    const cut = t.cut?.cuts.current(t.spaceId);
+    if (!cut?.items.length) return null;
+    const c = t.cut;
+    return cutSectionText(checkCut({ boardCut: c.boardCut, plans: c.plans, analysis: c.analysis }, t.spaceId, cut).findings);
+}
+
 export const auditBoardSkill = {
     name: 'audit_board',
     description: 'Check the whole board for real problems and get them back as a list: cards with nothing wired in, notes wired to nothing, people and places named in a shot but not wired into it, renders that failed. Use it whenever someone asks why something is not working, why a card looks wrong, whether the board is finished or ready, or asks you to check, review or tidy what is there. It reads only — it changes nothing.',
@@ -117,7 +127,8 @@ export const auditBoardSkill = {
         const plan = t.plans.latest(t.spaceId);
         const beats = plan ? t.plans.beats(plan.id) : [];
         const progress = beats.length ? { beats: beats.length, built: beats.filter((b) => b.state === 'written').length, failed: beats.filter((b) => b.state === 'failed').length } : null;
-        const text = auditText(auditBoard(t.spaces.board(t.spaceId), { plan: progress }), { ownWork: false });
+        const board = auditText(auditBoard(t.spaces.board(t.spaceId), { plan: progress }), { ownWork: false });
+        const text = [board, cutSection(t)].filter(Boolean).join('\n\n') || null;
         if (!text) return { ok: true, content: 'Nothing is wrong with the board: every card has something to render from, every note feeds something, and nothing has failed. Say so in a sentence.' };
         return { ok: true, content: `You are wearing the script supervisor's hat for this answer: report what is actually on the board, plainly, and do not soften it.\n\n${text}` };
     },

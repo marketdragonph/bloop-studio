@@ -18,7 +18,8 @@
 .cut-banner__keys { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* ── Preview: two stacked videos, the incoming one fades in over the outgoing one ── */
-.cut-preview { min-height: 0; overflow-y: auto; }
+/* max-content rows: on a short window the column scrolls; the clipped screen never shrinks under its details. */
+.cut-preview { min-height: 0; overflow-y: auto; grid-auto-rows: max-content; }
 
 .cut-screen.ae-player {
     position: relative;

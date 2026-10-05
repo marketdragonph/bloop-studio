@@ -1,0 +1,21 @@
+{{-- Check your cut's lines (05 §3.6), shared by the rail's sheet and the export sheet. Timed lines come first with
+     their time ("0:12"); Show me selects the clip and puts the playhead there. A fix that needs a new take shows
+     Go to card, never a render. Nothing to fix: "Ready" with a check mark, seam grey, never green. Prop: id. --}}
+<section class="cut-check" aria-labelledby="{{ id }}" data-control="cut.check">
+  <h4 class="ae-stencil cut-check__title" id="{{ id }}" x-text="cutCheckTitle()"></h4>
+  <p class="cut-check__ready" x-show="!cutChecks().length">{{{ icon('check') }}}<span x-text="cutCopy('checkReady')"></span></p>
+  <ul class="cut-check__list" x-show="cutChecks().length">
+    <template x-for="check in cutChecks()" :key="check.key">
+      <li class="cut-check__line">
+        <span class="cut-check__time ae-readout" x-show="check.time" x-text="check.time"></span>
+        <span class="cut-check__text" x-text="check.text"></span>
+        <span class="cut-check__keys">
+          <button type="button" class="ae-key ae-key--sm" x-show="check.target || check.at_ms != null" @click="cutShowMe(check)"
+                  data-control="cut.showMe">{{ controlLabel('cut.showMe') }}</button>
+          <button type="button" class="ae-key ae-key--sm" x-show="check.card" @click="cutCheckCard(check)"
+                  data-control="cut.goToCard">{{ controlLabel('cut.goToCard') }}</button>
+        </span>
+      </li>
+    </template>
+  </ul>
+</section>

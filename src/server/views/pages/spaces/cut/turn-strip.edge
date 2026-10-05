@@ -1,0 +1,25 @@
+{{-- The Director's turn (05 §3.1), one sensor-blue strip under the rail while that turn is still on top:
+     "Director · 14 edits · 1:42 → 1:31", Show edits (one row per change; a row selects the clip and moves the
+     playhead; the changed clips are marked while it is open) and Undo turn (the whole turn, one press). It goes the
+     moment the person edits; Ctrl+Z then steps back through the turn like any change (cut-turn.js). --}}
+<div class="cut-turn" x-show="cutTurnShown()" x-cloak role="region" aria-label="The Director's last turn">
+  <div class="cut-turn__bar">
+    <span class="cut-turn__dot" aria-hidden="true"></span>
+    <span class="ae-readout cut-turn__head" x-text="cutTurnHead()"></span>
+    <button type="button" class="ae-key ae-key--sm" @click="cutTurnToggle()" data-control="cut.turnShow"
+            aria-controls="cut-turn-list" :aria-expanded="cutTurnOpen ? 'true' : 'false'">{{{ icon('eye') }}}<span>{{ controlLabel('cut.turnShow') }}</span></button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutUndoTurn()" :disabled="cutTurnBusy" data-control="cut.undoTurn">{{{ icon('undo') }}}<span>{{ controlLabel('cut.undoTurn') }}</span></button>
+  </div>
+  <ol class="cut-turn__list" id="cut-turn-list" x-show="cutTurnOpen" aria-label="{{ controlLabel('cut.turnShow') }}">
+    <template x-for="row in cutTurn?.rows ?? []" :key="row.key">
+      <li>
+        <button type="button" class="cut-turn__row" @click="cutTurnGo(row)" data-control="cut.turnRow"
+                :aria-label="'{{ controlLabel('cut.turnRow') }}: ' + cutTurnRowLabel(row) + ', ' + row.text" :title="row.why || ''">
+          <span class="cut-turn__tag" x-text="cutTurnRowLabel(row)"></span>
+          <span class="cut-turn__text" x-text="row.text"></span>
+          <span class="cut-turn__why" x-show="row.why" x-text="row.why"></span>
+        </button>
+      </li>
+    </template>
+  </ol>
+</div>

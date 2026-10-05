@@ -16,6 +16,16 @@ that heading into the version number and uses the section as the release notes.
 - New: Start from a starter, on an empty board or the empty Spaces list, lays out a ready short film (Night drive, Product turn or Postcard from the sea) with every card wired and its words written. No key and no internet needed.
 - New: Bring my clips, or dropping files on an empty board or an empty Cut dock, puts your own videos into the cut in the order you dropped them, with one song under them as the music. Big files are copied without filling up memory.
 - Changed: an empty board shows what you can make and the ways to start. Ask the Director shows only when a Director key is set. With no engine but a bloop sign-in, new and starter cards start on bloop's models.
+- New: after the Director edits your cut, a blue strip under the Cut dock's rail says what changed ("Director · 14 edits · 1:42 → 1:31"). Show edits lists every change with the Director's reason, marks those clips and jumps to one when you pick it; Undo turn takes the whole turn back in one press. Trimmed-off frames show as a faint blue ghost, and clips you changed yourself say "Yours, untouched".
+- New: Snap to beats in the open Cut dock lands a dragged trim on the song's nearest downbeat. The blue ticks on the ruler are the song's beats, measured on this computer and marked as estimated.
+- New: Duck under lines, in the Music level, lowers the music under spoken lines by 3 to 18 dB. The preview plays it the way the export will, and the Music lane shows where it dips.
+- New: Check your cut sits on the Cut dock's rail with its count. Each line says when in the cut it happens, Show me jumps there, and a beat that needs a new take shows Go to card. While the clips are being measured the rail says so ("Measuring 3 clips…").
+- New: ask the Director to "cut it together", "tighten it", "cut on the beat" or "duck the music under the lines". It measures your clips on this computer first (still frames, silence, spoken lines, loudness and the song's beats) and edits the cut with those numbers, saying why for every cut. It never renders and never exports, leaves clips you changed alone unless you name them, and "undo that" takes its whole turn back.
+- New: ask the Director to pack the board's files ("pack everything up") and it makes the same zip as Pack assets.
+- New: tell the Director "remember that I never want dissolves" and it keeps your editing style for every cut after.
+- New: Settings › Director › Editing style, a box where you write how you like your cuts ("no dissolves, hold the last shot"). The Director reads it on every turn.
+- Changed: with ducking on, the music now also dips under the spoken lines inside your clips, in the preview and in the exported file.
+- Changed: Check your cut also finds a cut-off line, dead air, a clip much louder or quieter than the ones around it, music that stops before the picture, a cut that runs long, a clip shorter than its beat asked for, and two of the same shot in a row.
 
 ## 2026.1005.1232
 

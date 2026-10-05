@@ -1,22 +1,33 @@
 {{-- Ruler, Video / Voice / Music lanes and the playhead (02-dock.md §4). With gaps (default) every slot shows at
      its length; As exported hides them. Beds play in export time, so their lanes pause (hatched) under each gap.
      Positions are CSS variables from the shared time map; the lanes scroll sideways together past Fit. Drag on
-     the ruler to move the playhead; the player moves it by one CSS variable (--cut-x). --}}
+     the ruler to move the playhead; the player moves it by one CSS variable (--cut-x). P4: the corner holds Snap to
+     beats; the ruler's sensor-blue ticks are the bed's measured beats (downbeats taller, labelled estimated) and
+     the alert marks are timed Check your cut lines; the Voice lane shows measured spoken lines and the Music lane
+     its duck bands (dashed top), all from the server's numbers. --}}
 <div class="cut-tracks">
   <div class="cut-tracks__labels">
-    <span class="cut-tracks__corner" aria-hidden="true"></span>
+    <div class="cut-tracks__corner">
+      <button type="button" class="cut-snap" @click="cutSnapToggle()" :aria-pressed="cutSnap ? 'true' : 'false'"
+              :disabled="!cutSnapReady() && !cutSnap" data-control="cut.snap" :title="cutBeatsLabel()"
+              :aria-label="'{{ controlLabel('cut.snap') }}, ' + cutBeatsLabel()">{{ controlLabel('cut.snap') }}</button>
+    </div>
     <div class="cut-track-label cut-track-label--video">
       <span class="ae-stencil" data-control="cut.lane.video">{{ controlLabel('cut.lane.video') }}</span><span class="ae-readout">Beats</span>
     </div>
-    <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice">
+    <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice || cutSpeechSpans.length">
       <span class="ae-stencil" data-control="cut.lane.voice">{{ controlLabel('cut.lane.voice') }}</span>
-      @!component('pages/spaces/cut/level', { kind: 'voice', name: 'Voice' })
+      <span class="ae-readout" x-show="!cutBeds.voice">In clips</span>
+      <template x-if="cutBeds.voice">
+        @!component('pages/spaces/cut/level', { kind: 'voice', name: 'Voice' })
+      </template>
     </div>
     <div class="cut-track-label cut-track-label--music">
       <span class="ae-stencil" data-control="cut.lane.music">{{ controlLabel('cut.lane.music') }}</span>
       <template x-if="cutBeds.music">
         @!component('pages/spaces/cut/level', { kind: 'music', name: 'Music' })
       </template>
+      <span class="ae-readout cut-track-label__beats" x-show="cutBeatsShort()" x-text="cutBeatsShort()"></span>
     </div>
   </div>
 
@@ -29,7 +40,10 @@
           </span>
         </template>
         <template x-for="beat in cutBeats" :key="beat.key">
-          <span class="cut-ruler__beat" :style="{ '--x': beat.x + 'px' }"></span>
+          <span class="cut-ruler__beat" :class="{ 'is-down': beat.down }" :style="{ '--x': beat.x + 'px' }"></span>
+        </template>
+        <template x-for="check in cutChecks().filter((c) => c.at_ms != null)" :key="check.key">
+          <span class="cut-ruler__check" :style="{ '--x': cutCheckX(check) + 'px' }" :title="check.time + ' ' + check.text"></span>
         </template>
       </div>
 
@@ -39,7 +53,10 @@
         </template>
       </ol>
 
-      <div class="cut-lane cut-lane--voice" x-show="cutBeds.voice" aria-label="Voice lane" role="group">
+      <div class="cut-lane cut-lane--voice" x-show="cutBeds.voice || cutSpeechSpans.length" aria-label="Voice lane" role="group">
+        <template x-for="span in cutSpeechSpans" :key="span.key">
+          <span class="cut-speech" :style="{ '--x': span.x + 'px', '--w': span.w + 'px' }" x-text="cutSpeechLabel(span)"></span>
+        </template>
         <template x-for="span in cutVoice" :key="span.key">
           <span class="cut-voice" :style="{ '--x': span.x + 'px', '--w': span.w + 'px' }" x-text="cutBeds.voice?.label"></span>
         </template>
@@ -60,7 +77,11 @@
             <template x-for="pause in cutPauses" :key="pause.key">
               <span class="cut-pause" :style="{ '--x': pause.x + 'px', '--w': pause.w + 'px' }"></span>
             </template>
-            <span class="visually-hidden" x-text="cutBeds.music.label"></span>
+            <template x-for="band in cutDuckBands" :key="band.key">
+              <span class="cut-duck" :style="{ '--x': band.x + 'px', '--w': band.w + 'px' }"></span>
+            </template>
+            <span class="cut-lane__measure" x-show="cutToolsMissing()" x-text="cutCopy('laneNotMeasured')"></span>
+            <span class="visually-hidden" x-text="cutBeds.music.label + (cutDuckBands.length ? ', ' + cutDuckText() : '')"></span>
           </div>
         </template>
         <p class="cut-lane__note" x-show="!cutBeds.music" x-text="cutEmptyText.music"></p>

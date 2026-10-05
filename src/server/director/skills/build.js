@@ -5,6 +5,7 @@ import { namesOf } from '../audit.js';
 import { cleanPlates, railMap, railOps, slug } from '../plan/plates.js';
 import { DESTINATION_KEYS, clock, destination, runtimeField, runtimeShare } from '../plan/shape.js';
 import { BoardOpsRejected } from '../ops/board-ops.js';
+import { ROLES } from '../cut/cut-state.js';
 
 const MOST_BEATS = 50;
 const INLINE_BELOW = 3;
@@ -42,6 +43,7 @@ export const buildBoard = {
                             tag: { type: 'string', description: 'A short kebab-case handle, unique in the piece.' },
                             brief: { type: 'string', description: BRIEF_RULE },
                             refs: { type: 'array', items: { type: 'string' }, description: 'The plate tags this beat uses — who is in it, what is in it, where it is. FOUR AT MOST: name who the shot is ABOUT, what they are touching, and where they are — then stop. AND WIRE WHOEVER THE BRIEF NAMES. AND NEVER THE ROSTER: a character who is not in this beat is not in this list.' },
+                            role: { type: 'string', enum: ROLES, description: 'What this beat does in the story: hook (always beat 1), setup, turn, climax or close (always the last). The cut reads it: the hook opens fast, the turn is cut fastest, the close is held.' },
                             staging: {
                                 type: 'object',
                                 description: 'WHERE IN THE PLACE this beat happens, when refs names a location plate. KEEP THE SAME SPOT across consecutive beats in one place unless the story moves.',
@@ -66,6 +68,7 @@ export const buildBoard = {
             seen.add(tag);
             const staging = b.staging && typeof b.staging === 'object'
                 ? Object.fromEntries(['landmark', 'camera_side', 'distance'].filter((k) => b.staging[k]).map((k) => [k, String(b.staging[k]).slice(0, 120)])) : {};
+            if (ROLES.includes(b.role)) staging.role = b.role; // stored in staging JSON, no migration (05 §1.1)
             beats.push({ tag, brief, refs: [...new Set((b.refs ?? []).map(slug).filter(Boolean))], staging });
             if (beats.length >= MOST_BEATS) break;
         }

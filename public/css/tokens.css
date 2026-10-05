@@ -72,7 +72,7 @@
     --cut-rail: 2rem;
     --cut-rail-coarse: 2.75rem;
     --cut-open: 22.5rem;
-    --cut-label: 4.5rem;
+    --cut-label: 6rem; /* P4: room for Snap to beats and "Beats · estimated" */
     --cut-ruler-h: 1.25rem;
     --cut-video-h: 5.25rem;
     --cut-voice-h: 2.125rem;

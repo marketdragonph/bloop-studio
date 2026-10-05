@@ -5,7 +5,7 @@
 // over the board's event stream (`cut_export`, re-dispatched by generation.js as `board:cut-export`). No polling:
 // one GET when the sheet opens after a reload, one when a job ends (for the file's path and card).
 // Nothing here starts a render, and nothing starts an export or a pack until the person presses.
-import { controlLabel, copy } from '/shared/katana-controls.js';
+import { copy } from '/shared/katana-controls.js';
 import { fmtClock } from '/shared/cut-lanes.js';
 import { CUT_LIMITS } from '/shared/cut-rules.js';
 import { DEFAULT_PRESET, EXPORT_PRESETS, estimateBytes, presetLine, presetOutput } from '/shared/export-presets.js';
@@ -198,31 +198,6 @@ export const cutExportMethods = {
         const server = this.cutServerCheck;
         if (server?.ok === false && ['tools', 'disk'].includes(server.code) && server.reason) return server.reason;
         return '';
-    },
-
-    /** Check your cut (05 §3.6): the reader's findings, each with the beat Show me jumps to. */
-    cutChecks() {
-        return (this.cutFindings ?? []).map((f, i) => ({ key: `${f.code}:${i}`, code: f.code, text: f.text, target: this.cutFindingItem(f) }));
-    },
-
-    cutFindingItem(f) {
-        return this.cutItems.find((i) => (f.node_id != null && i.node_id === f.node_id)) ?? null;
-    },
-
-    cutCheckTitle() {
-        const n = this.cutChecks().length;
-        return n ? `${controlLabel('cut.check')} · ${n}` : controlLabel('cut.check');
-    },
-
-    /** Show me: closes the sheet, opens the dock, selects that beat and puts the playhead on it. */
-    cutShowMe(check) {
-        const item = check?.target;
-        if (!item) return;
-        this.cutSheet = null;
-        if (!this.cutOpen) this.cutToggle();
-        this.cutSelectedKey = item.key;
-        this.$nextTick(() => this._cutPlayer?.seek(item.board_ms));
-        this.cutAnnounce = check.text;
     },
 
     // ── Export ──────────────────────────────────────────────────────────

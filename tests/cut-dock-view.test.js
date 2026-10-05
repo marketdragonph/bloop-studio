@@ -14,7 +14,7 @@ import {
 import { fakeCut, fakeDock, flush, key, read, renderBoard, respond, root, store, stored, withItems } from './cut-dock-fakes.js';
 
 const CUT_VIEWS = 'src/server/views/pages/spaces/cut/';
-const DOCK_JS = ['cut-dock', 'cut-actions', 'cut-strip', 'cut-history', 'cut-persistence', 'cut-player', 'cut-bed-sync', 'cut-export'];
+const DOCK_JS = ['cut-dock', 'cut-actions', 'cut-strip', 'cut-history', 'cut-persistence', 'cut-player', 'cut-bed-sync', 'cut-export', 'cut-turn', 'cut-measure', 'cut-check'];
 const cutViews = () => readdirSync(new URL(CUT_VIEWS, root)).map((f) => ({ file: f, text: read(CUT_VIEWS + f) }));
 
 test('the board page includes the Cut dock once, in the board scope, outside the board transform', async () => {
@@ -61,10 +61,10 @@ test('every control in the dock is marked with a registry id and shows the regis
     assert.match(dock, /class="cut-join"[^>]*:aria-label="cutJoinLabel\(item\)"/s);
     assert.match(dock, /type="range" step="1"/);
     assert.match(dock, /:aria-valuetext="cutLevelText\('music'\)"/);
-    // P3 keys are on the page; no unshipped keys (Katana, the Director's turn) and nothing that starts a render.
-    const p3 = CONTROLS.filter((c) => c.surface === 'dock' && c.phase === 'P3').map((c) => c.id);
-    for (const id of p3) assert.ok(ids.includes(id), `${id} is on the page`);
-    for (const id of ['cut.openKatana', 'cut.snap', 'cut.undoTurn', 'cut.shapes']) assert.ok(!ids.includes(id), `${id} waits for its phase`);
+    // P3 and P4 keys are on the page; no unshipped keys (Katana, shapes) and nothing that starts a render.
+    const built = CONTROLS.filter((c) => c.surface === 'dock' && ['P3', 'P4'].includes(c.phase)).map((c) => c.id);
+    for (const id of built) assert.ok(ids.includes(id), `${id} is on the page`);
+    for (const id of ['cut.openKatana', 'cut.shapes', 'cut.captions', 'cut.gif']) assert.ok(!ids.includes(id), `${id} waits for its phase`);
     assert.doesNotMatch(dock, /generate\(/);
 });
 
@@ -73,7 +73,7 @@ test('the dock templates, CSS and scripts keep the house rules', () => {
         assert.doesNotMatch(text, /\sstyle="/, `${file}: no inline styles`);
         assert.ok(text.split('\n').length <= 500, `${file} under 500 lines`);
     }
-    for (const file of ['public/css/cut.css', 'public/css/cut-tracks.css', 'public/css/cut-edit.css', 'public/css/cut-export.css']) {
+    for (const file of ['public/css/cut.css', 'public/css/cut-tracks.css', 'public/css/cut-edit.css', 'public/css/cut-export.css', 'public/css/cut-director.css']) {
         const css = read(file);
         assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b/i, `${file}: no hex colours`);
         assert.doesNotMatch(css, /rgba?\(|hsla?\(/, `${file}: no raw colours`);
@@ -82,7 +82,7 @@ test('the dock templates, CSS and scripts keep the house rules', () => {
         assert.ok(css.split('\n').length <= 500);
     }
     const app = read('public/css/app.css');
-    for (const css of ['cut', 'cut-tracks', 'cut-edit', 'cut-export']) assert.match(app, new RegExp(`@import url\\('\\./${css}\\.css'\\)`));
+    for (const css of ['cut', 'cut-tracks', 'cut-edit', 'cut-export', 'cut-director']) assert.match(app, new RegExp(`@import url\\('\\./${css}\\.css'\\)`));
     for (const name of DOCK_JS) {
         const js = read(`public/js/components/${name}.js`);
         assert.ok(js.split('\n').length <= 500, `${name} under 500 lines`);
@@ -358,4 +358,50 @@ test('a refused save (422) says why, out loud and on the rail, and waits for the
     assert.equal(dock.cutAnnounce, dock.cutSaveError);
     assert.equal(calls.filter((c) => c.method === 'PUT').length, 1, 'no automatic retry of a refusal');
     assert.match(read('src/server/views/pages/spaces/cut/rail.edge'), /x-text="cutSaveError"/);
+});
+
+// ── P4: the Director in the dock (behaviour in cut-turn-view.test.js) ─────
+
+test('P4 views: the turn strip, Snap to beats, beat ticks, duck bands, Duck under lines, measuring and Check your cut on the rail', async () => {
+    const html = await renderBoard();
+    const dock = html.slice(html.indexOf('<section class="cut-dock"'));
+    // The strip sits between the rail and the banner, and holds Show edits, Undo turn and one row key per change.
+    const strip = dock.slice(dock.indexOf('class="cut-turn"'), dock.indexOf('class="cut-banner'));
+    assert.ok(dock.indexOf('class="cut-rail"') < dock.indexOf('class="cut-turn"'));
+    assert.match(strip, /x-show="cutTurnShown\(\)"/);
+    assert.match(strip, /data-control="cut.turnShow"[\s\S]*aria-controls="cut-turn-list"|aria-controls="cut-turn-list"[^>]*data-control="cut.turnShow"/);
+    assert.match(strip, /@click="cutUndoTurn\(\)"[^>]*data-control="cut.undoTurn">[\s\S]*?<span>Undo turn<\/span>/);
+    assert.match(strip, /data-control="cut.turnRow"/);
+    assert.match(strip, />Show edits</);
+    // Rail: the analysis line in sensor blue and Check your cut with its count, opening its own sheet.
+    assert.match(dock, /status-light--busy cut-rail__job" x-show="cutMeasuring\(\)"[\s\S]*?x-text="cutMeasuringText\(\)"/);
+    assert.match(dock, /@click="cutOpenSheet\('check'\)"\s+data-control="cut.check"/);
+    assert.match(dock, /<template x-if="cutSheet === 'check'">/);
+    assert.equal(dock.match(/<section class="cut-check" aria-labelledby="cut-check-(rail|export)"/g)?.length, 2, 'one list, in both sheets');
+    assert.match(dock, /x-show="check.card" @click="cutCheckCard\(check\)"\s+data-control="cut.goToCard"/);
+    assert.match(dock, /class="cut-check__time ae-readout"/);
+    // Tracks: Snap to beats in the corner (a toggle, off without measured beats), downbeats, findings on the ruler.
+    assert.match(dock, /class="cut-snap" @click="cutSnapToggle\(\)" :aria-pressed=/);
+    assert.match(dock, /data-control="cut.snap"[^>]*>Snap to beats</);
+    assert.match(dock, /cut-ruler__beat" :class="\{ 'is-down': beat.down \}"/);
+    assert.match(dock, /class="cut-ruler__check"/);
+    assert.match(dock, /x-text="cutBeatsShort\(\)"/);
+    assert.match(dock, /class="cut-speech"/);
+    assert.match(dock, /class="cut-duck"/);
+    assert.match(dock, /x-text="cutCopy\('laneNotMeasured'\)"/);
+    // Duck under lines lives only in the Music level popover: an on/off key, then a −18..−3 dB range.
+    assert.equal(dock.match(/data-control="cut.duck"/g)?.length, 1);
+    assert.match(dock, /id="cut-duck-input" type="range" step="1"[\s\S]*?:aria-valuetext="cutDuckText\(\)"/);
+    // Clips: trim ghosts, the lock mark, the turn mark; the note's tooltip and the details carry the reason.
+    assert.match(dock, /cut-trimghost--out" x-show="cutTurnMark\(item\).ghostOut > 0"/);
+    assert.match(dock, /x-show="cutTurnMark\(item\).locked">[\s\S]*?cutCopy\('turnLocked'\)/);
+    assert.match(dock, /'is-turn': cutTurnMark\(item\).marked/);
+    assert.match(dock, /class="cut-note" x-show="item.note" :title="cutTurnWhy\(item\)"/);
+    assert.match(dock, /class="cut-details__why" x-show="cutTurnWhy\(cutSelected\(\)\)"/);
+    // The Director never gets a render or export key here, and the views never say Generate.
+    assert.doesNotMatch(strip, /cutExport|cutRender|Generate/);
+    const css = read('public/css/cut-director.css');
+    assert.match(css, /\.cut-turn \{[\s\S]*?var\(--sensor\)/, 'the strip is sensor blue');
+    assert.match(css, /\.cut-duck \{[\s\S]*?border-top: 1px dashed var\(--sensor\)/, 'duck bands: sensor tint, dashed top');
+    assert.match(read('public/css/cut.css'), /\.cut-dock > \.cut-turn \{ grid-row: 2; \}/);
 });

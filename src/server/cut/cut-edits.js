@@ -13,6 +13,11 @@ import { CutValidator } from './validate-cut.js';
 const EDIT_FIELDS = ['node_id', 'take_id', 'in_ms', 'out_ms', 'sound', 'join'];
 const edited = (before, after) => EDIT_FIELDS.some((key) => JSON.stringify(before[key] ?? null) !== JSON.stringify(after[key] ?? null));
 const unique = (values) => [...new Set(values)];
+/** An item put back by Undo turn: its stamps and note as they were before the turn. */
+const exactStamp = (item, old) => {
+    const { note: _note, ...rest } = item;
+    return { ...rest, placed_by: old.placed_by ?? 'person', person_rev: old.person_rev ?? null, ...(old.note ? { note: old.note } : {}) };
+};
 
 export class CutEdits {
     /** @param {{ db: import('node:sqlite').DatabaseSync, cuts: import('../repositories/cuts.js').CutsRepository, events?: import('../generation/events.js').BoardEvents }} deps */
@@ -26,13 +31,14 @@ export class CutEdits {
      * @param {number} spaceId
      * @param {{ items: object[], sound?: object|null, settings?: object, revision: number,
      *   by?: 'person'|'director'|'auto', draft?: boolean, previous?: 'keep'|'set'|'clear', turn?: number|null,
-     *   missing?: string[], offer?: string|null, restore?: object[]|null }} save
+     *   missing?: string[], offer?: string|null, restore?: object[]|null, restoreStamps?: boolean }} save
      *   `draft`: new items are a draft's (placed by the Director). `previous`: what happens to the Undo draft
      *   (default: a person's save clears it, other saves keep it). `restore`: earlier items whose stamps come back.
+     *   `restoreStamps` (Undo turn, P4): items in `restore` get their stamps and note back exactly as they were.
      * @returns {object} the saved cut
      * @throws {CutConflictError} stale revision (the server copy rides on it) · {CutInvalidError} a rule refused it
      */
-    save(spaceId, { items, sound, settings, revision, by = 'person', draft = false, previous, turn = null, missing = [], offer = null, restore = null }) {
+    save(spaceId, { items, sound, settings, revision, by = 'person', draft = false, previous, turn = null, missing = [], offer = null, restore = null, restoreStamps = false }) {
         const stored = this.cuts.current(spaceId);
         if (Number(revision) !== stored.revision) throw new CutConflictError(stored);
         const clean = this.validator.validate(spaceId, { items, sound, settings }, stored);
@@ -40,11 +46,13 @@ export class CutEdits {
         const before = new Map(stored.items.map((item) => [item.id, item]));
         // Undo draft brings back items from an earlier revision: they keep the stamps they had then.
         const stampedBefore = new Map([...(restore ?? []), ...stored.items].map((item) => [item.id, item]));
+        const exact = new Map((restoreStamps ? restore ?? [] : []).map((item) => [item.id, item]));
         const changes = { added: [], changed: [] };
         const stamped = clean.items.map((item) => {
             const old = before.get(item.id);
             if (!old) changes.added.push(item.node_id);
             else if (edited(old, item)) changes.changed.push(item.node_id);
+            if (exact.has(item.id)) return exactStamp(item, exact.get(item.id));
             return this.#stamp(item, stampedBefore.get(item.id), { by, draft, nextRevision });
         });
         const kept = new Set(stamped.map((item) => item.id));

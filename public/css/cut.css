@@ -12,10 +12,11 @@
     background: var(--bg-secondary);
 }
 
-.cut-dock.is-open { grid-template-rows: auto auto minmax(0, 1fr); height: var(--cut-open); }
+.cut-dock.is-open { grid-template-rows: auto auto auto minmax(0, 1fr); height: var(--cut-open); }
 .cut-dock > .cut-rail { grid-row: 1; }
-.cut-dock > .cut-banner { grid-row: 2; }
-.cut-dock > .cut-dock__body { grid-row: 3; }
+.cut-dock > .cut-turn { grid-row: 2; }
+.cut-dock > .cut-banner { grid-row: 3; }
+.cut-dock > .cut-dock__body { grid-row: 4; }
 
 /* The dock ends where the Director panel starts (the panel stays absolute on the right, director.css). */
 .cut-dock.is-beside-director { margin-right: calc(var(--director-width) + 2 * var(--space-3)); }

@@ -54,6 +54,8 @@ export function settingsRoutes({ views, settings, onThemeChange, launcher }) {
             openaiModel: body.openaiModel?.trim() || undefined,
             anthropicApiKey: body.anthropicApiKey?.trim() ?? '',
             openaiApiKey: body.openaiApiKey?.trim() ?? '',
+            // Editing style: only when the form sends the field, so a form without it never wipes it.
+            ...(typeof body.editStyle === 'string' ? { editStyle: body.editStyle.trim().slice(0, 600) } : {}),
         });
         launcher?.install({ refresh: true }); // a new folder is looked at now, not on the next start
         return c.redirect('/settings?saved=1');

@@ -1,6 +1,7 @@
 {{-- A bed's level key on its lane label (05 §3.5): the key reads "Music −12 dB"; it opens a small popover with a
      −24..+6 dB slider in 1 dB steps (a native range: role slider, arrow keys, aria-valuetext "Music −14 dB").
-     Moving it changes the preview at once; letting go saves it as one undo step. Props: kind, name. --}}
+     Moving it changes the preview at once; letting go saves it as one undo step. Props: kind, name. P4: the Music
+     popover adds Duck under lines (an on/off key, then −18..−3 dB), the same duck setting the Director's op sets. --}}
 <div class="cut-level" @click.outside="cutLevelOpen === '{{ kind }}' && (cutLevelOpen = null)">
   <button type="button" class="cut-level__key ae-readout" @click="cutLevelToggle('{{ kind }}')" data-control="cut.level"
           aria-controls="cut-level-{{ kind }}" :aria-expanded="cutLevelOpen === '{{ kind }}' ? 'true' : 'false'"
@@ -13,5 +14,17 @@
            @input="cutSetLevel('{{ kind }}', $event.target.value)"
            @change="cutSetLevel('{{ kind }}', $event.target.value, { commit: true })">
     <span class="ae-readout cut-level__value" x-text="cutLevelText('{{ kind }}')" aria-hidden="true"></span>
+    @if(kind === 'music')
+    <div class="cut-level__duck">
+      <button type="button" class="ae-key ae-key--sm" @click="cutDuckToggle()" data-control="cut.duck"
+              :aria-pressed="cutDuckDb() != null ? 'true' : 'false'">{{ controlLabel('cut.duck') }}</button>
+      <label class="visually-hidden" for="cut-duck-input">{{ controlLabel('cut.duck') }}</label>
+      <input class="cut-level__range" id="cut-duck-input" type="range" step="1" x-show="cutDuckDb() != null"
+             :min="cutDuckRange().min" :max="cutDuckRange().max" :value="cutDuckDb() ?? cutDuckRange().default"
+             :aria-valuetext="cutDuckText()"
+             @input="cutSetDuck($event.target.value)" @change="cutSetDuck($event.target.value, { commit: true })">
+      <span class="ae-readout cut-level__value" x-text="cutDuckDb() != null ? cutDuckText() + ' · ' + cutDuckLinesText() : cutDuckLinesText()"></span>
+    </div>
+    @end
   </div>
 </div>

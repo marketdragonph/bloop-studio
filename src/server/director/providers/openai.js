@@ -61,7 +61,7 @@ export async function runOpenAITurn({ apiKey, model, system, history, userConten
                 input.push({ type: 'function_call_output', call_id: call.call_id, output: JSON.stringify({ INVALID_JSON: call.arguments }) });
                 continue;
             }
-            const { content } = execute(call.name, args);
+            const { content } = await execute(call.name, args); // a tool may wait (inspect_cut)
             input.push({ type: 'function_call_output', call_id: call.call_id, output: content });
         }
         // The board check for what this round changed rides on the last result, for the model to fix.

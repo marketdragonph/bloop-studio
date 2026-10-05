@@ -3,9 +3,12 @@
 // exactly what the file will hold. Four times a second (and on play, pause, seek and level changes) each bed
 // is checked: more than 150 ms off its expected time and it is put back. A bed plays once, never loops.
 // Level: the saved gain in dB (05 §3.5 Music level), then the 1.5 s fade at the end, times the deck volume.
+// P4: the music ducks under spoken lines on the same envelope the export uses (cut-sound.js duckGain), sampled
+// every 50 ms while ducks exist (cpDuckStep), so a 120 ms attack is heard, not stepped at 250 ms.
 // Above 0 dB needs gain past 1, so the beds go through a Web Audio gain node once a press has unlocked audio.
 import { levelOf } from '/shared/cut-edit.js';
 import { bedGain, bedTime, bedWindow, drifted, fadeStart } from '/shared/cut-timeline.js';
+import { duckGain } from '/shared/cut-sound.js';
 
 const NODES = new WeakMap(); // <audio> → { ctx, gain }: a media element can be routed through Web Audio only once
 
@@ -41,7 +44,7 @@ export const cutBedSyncMethods = {
                 el.src = url;
                 el.dataset.src = url;
             }
-            this.cpBedLevel(el, bedGain({ gainDb: levelOf(this.cutSound, b.kind), fadeFromMs: b.fadeFrom }, exportMs));
+            this.cpBedLevel(el, this.cpBedGain(b, exportMs));
             const expected = bedTime(b.window, exportMs);
             if (expected == null || silent) {
                 if (!el.paused) el.pause();
@@ -51,6 +54,21 @@ export const cutBedSyncMethods = {
             if (force || drifted(el.currentTime * 1000, expected)) this.cpBedSeek(el, expected);
             if (el.paused) el.play().catch(() => {});
         }
+    },
+
+    /** The bed's level at an export time: saved gain, the end fade and, for music, the duck under lines. */
+    cpBedGain(b, exportMs) {
+        const gain = bedGain({ gainDb: levelOf(this.cutSound, b.kind), fadeFromMs: b.fadeFrom }, exportMs);
+        if (b.kind !== 'music') return gain;
+        const depth = this.cutDuckDb?.();
+        return depth == null ? gain : gain * duckGain(this.cutDuckWindows(), depth, exportMs);
+    },
+
+    /** Between the 250 ms bed checks: only the music's level, only while there are ducks. */
+    cpDuckStep() {
+        if (this.cutDuckDb?.() == null || !this.cutDuckWindows().length) return;
+        const music = this.cpBedList()[0];
+        if (music.el && !music.el.paused) this.cpBedLevel(music.el, this.cpBedGain(music, this.cpExportTime()));
     },
 
     cpBedSeek(el, ms) {

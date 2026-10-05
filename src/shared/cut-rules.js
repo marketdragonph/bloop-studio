@@ -146,5 +146,81 @@ export function checkSettings(settings) {
     if (settings.aspect != null && !ASPECTS.includes(settings.aspect)) return 'The cut is 16:9, 9:16 or 1:1.';
     const poster = settings.poster_ms;
     if (poster != null && !(Number.isInteger(poster) && poster >= 0 && poster <= CUT_LIMITS.maxTotalMs)) return 'The poster frame must be a time inside the cut.';
+    if (settings.target_lufs != null && ![-23, -16, -14].includes(settings.target_lufs)) return 'The loudness target is -23, -16 or -14 LUFS.';
     return null;
+}
+
+// ── P4: the Director's edits, the cut critic and the one-sentence cut (03-director.md §3, §6; 05 §1.1) ──
+
+/** Thresholds for the cut critic (src/server/cut/findings.js) and the Director's validator. */
+export const CRITIC = Object.freeze({
+    runtimeSlack: 0.15, // OVER_RUNTIME: more than 15 % over the plan's runtime
+    lineInsideMs: 150, // LINE_CUT_OFF: an in or out point this far inside a spoken line
+    deadAirMs: 1200, // DEAD_AIR: still frames with nothing to hear for this long
+    loudnessTargetLu: 2, // LOUDNESS_OFF: the mix this far from its target
+    loudnessJumpLu: 6, // LOUDNESS_OFF: a clip this far from its neighbours
+    musicEarlyMs: 1000, // MUSIC_ENDS_EARLY: the bed stops this long before the picture
+    shortMs: 500, // SHORT: a clip this much shorter than its beat asked for
+});
+/** The shortest clip an edit may leave. */
+export const MIN_CLIP_MS = 500;
+/** Loudness targets the export may aim for (level target_lufs). */
+export const TARGET_LUFS = Object.freeze([-23, -16, -14]);
+/** The Director's reason for a cut point, and its note on a clip. */
+export const WHY_MAX = 120;
+
+const overlaps = (a, b, [from, to]) => a < to && b > from;
+const insideLine = (ms, spans, margin) => spans.some(([a, b]) => ms > a + margin && ms < b - margin);
+
+/**
+ * fitPlan (05 §1.1): can the cut reach `targetS`, and by which trims? Pure. Per clip it may lose, in order:
+ * still frames at the head and tail, then up to 20 % of the hold. Never inside a spoken line, never under
+ * MIN_CLIP_MS, and the last clip keeps at least 2 s (the ending lands). When trims are not enough, `drops` lists
+ * what dropping one beat would give, best first. Lengths by the one clock (dissolves count).
+ * @param {object[]} items cut items in order
+ * @param {Map<string, object>|object} analysis media_path → {still_head, still_tail, speech}
+ * @param {number} targetS
+ */
+export function fitPlan(items, analysis, targetS) {
+    const of = (path) => (analysis instanceof Map ? analysis.get(path) : analysis?.[path]) ?? null;
+    const total = cutClock(items).total_ms;
+    const target = Math.round(Number(targetS) * 1000);
+    const trims = items.map((item, index) => {
+        const a = of(item.media_path);
+        if (!a) return { item_id: item.id, beat_tag: item.beat_tag, in_ms: item.in_ms, out_ms: item.out_ms, lose_ms: 0 }; // never a guess
+        const speech = a.speech ?? [];
+        const last = index === items.length - 1;
+        const keepMin = last ? 2000 : MIN_CLIP_MS;
+        let inMs = item.in_ms;
+        let outMs = item.out_ms;
+        // Dead frames first: the still head and tail, unless a line is spoken there.
+        const head = a?.still_head;
+        if (head && head[1] > inMs && !speech.some((s) => overlaps(inMs, head[1], s))) inMs = Math.min(head[1], outMs - keepMin);
+        const tail = a?.still_tail;
+        if (!last && tail && tail[0] < outMs && !speech.some((s) => overlaps(tail[0], outMs, s))) outMs = Math.max(tail[0], inMs + keepMin);
+        // Then up to 20 % of the hold, from the tail, stopping before any line.
+        const hold = Math.round((item.out_ms - item.in_ms) * 0.2);
+        let cut = Math.max(0, Math.min(hold - (item.out_ms - outMs), outMs - inMs - keepMin));
+        const lineEnd = speech.filter(([s, e]) => e > inMs && s < outMs).reduce((m, [, e]) => Math.max(m, e), inMs);
+        cut = Math.max(0, Math.min(cut, outMs - Math.max(lineEnd, inMs + keepMin)));
+        if (!last) outMs -= Math.round(cut / 100) * 100;
+        const quiet = insideLine(inMs, speech, 0) || insideLine(outMs, speech, 0);
+        if (quiet) return { item_id: item.id, beat_tag: item.beat_tag, in_ms: item.in_ms, out_ms: item.out_ms, lose_ms: 0 };
+        return { item_id: item.id, beat_tag: item.beat_tag, in_ms: inMs, out_ms: outMs, lose_ms: Math.max(0, (item.out_ms - item.in_ms) - (outMs - inMs)) };
+    });
+    const trimmed = items.map((item, i) => ({ ...item, in_ms: trims[i].in_ms, out_ms: trims[i].out_ms }));
+    const best = cutClock(trimmed).total_ms;
+    const reachable = best <= target;
+    const drops = reachable ? [] : items.map((item, i) => ({ beat_tag: item.beat_tag, item_id: item.id, total_ms: cutClock(trimmed.filter((_, j) => j !== i)).total_ms }))
+        .filter((_, i) => i !== items.length - 1) // the ending stays
+        .sort((x, y) => Math.abs(x.total_ms - target) - Math.abs(y.total_ms - target));
+    // Only the trims a target needs: biggest losses first, until the target is reached.
+    const needed = [];
+    let running = total;
+    for (const t of [...trims].filter((t) => t.lose_ms > 0).sort((x, y) => y.lose_ms - x.lose_ms)) {
+        if (running <= target) break;
+        needed.push(t);
+        running -= t.lose_ms;
+    }
+    return { total_ms: total, target_ms: target, best_ms: best, reachable, trims: reachable ? needed : trims.filter((t) => t.lose_ms > 0), can_lose: trims, drops: drops.slice(0, 3) };
 }

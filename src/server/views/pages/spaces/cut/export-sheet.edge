@@ -25,19 +25,7 @@
           </dl>
           <p class="cut-sheet__note" :class="{ 'cut-sheet__note--warn': cutPreflight().skipped.length }" x-text="cutPreflight().skippedText"></p>
 
-          <section class="cut-check" aria-labelledby="cut-check-title" data-control="cut.check">
-            <h4 class="ae-stencil cut-check__title" id="cut-check-title" x-text="cutCheckTitle()"></h4>
-            <p class="cut-check__ready" x-show="!cutChecks().length">{{{ icon('check') }}}<span x-text="cutCopy('checkReady')"></span></p>
-            <ul class="cut-check__list" x-show="cutChecks().length">
-              <template x-for="check in cutChecks()" :key="check.key">
-                <li class="cut-check__line">
-                  <span x-text="check.text"></span>
-                  <button type="button" class="ae-key ae-key--sm" x-show="check.target" @click="cutShowMe(check)"
-                          data-control="cut.showMe">{{ controlLabel('cut.showMe') }}</button>
-                </li>
-              </template>
-            </ul>
-          </section>
+          @!component('pages/spaces/cut/check-list', { id: 'cut-check-export' })
 
           <fieldset class="cut-presets" data-control="cut.preset">
             <legend class="ae-stencil">{{ controlLabel('cut.preset') }}</legend>
@@ -123,4 +111,5 @@
 
   @include('pages/spaces/cut/pack-sheet')
   @include('pages/spaces/cut/render-sheet')
+  @include('pages/spaces/cut/check-sheet')
 </div>

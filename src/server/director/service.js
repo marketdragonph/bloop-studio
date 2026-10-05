@@ -8,6 +8,7 @@ import { aspectOnBoard } from './plan/shape.js';
 import { ACTIVITY, definitions, runSkill } from './skills/index.js';
 import { TurnLedger } from './turn/ledger.js';
 import { closeTurn } from './turn/closing.js';
+import { cutState } from './cut/cut-state.js';
 
 const PROVIDERS = {
     anthropic: { run: runClaudeTurn, complete: completeClaude, describe: describeClaudeError, keyName: 'anthropicApiKey', modelName: 'anthropicModel', label: 'Claude' },
@@ -18,9 +19,12 @@ const HISTORY_ROWS = 24; // bloop: the last 12 exchanges, text only
 export const MISSING_KEY = 'Add a Claude or OpenAI API key in Settings to use the Director.';
 
 export class DirectorService {
-    /** engineInfo() → { lengths, withSound, clipFamily }: what this PC's clip model can do. */
-    constructor({ settings, spaces, director, plans, stages, ops, runner, engineInfo }) {
-        Object.assign(this, { settings, spaces, director, plans, stages, ops, runner, engineInfo });
+    /**
+     * engineInfo() → { lengths, withSound, clipFamily }: what this PC's clip model can do.
+     * cut (P4): { cuts, boardCut, edits, drafts, turns, ops, analysis, packer, exportsRepo, plans, db } for the Cut's tools.
+     */
+    constructor({ settings, spaces, director, plans, stages, ops, runner, engineInfo, cut = null }) {
+        Object.assign(this, { settings, spaces, director, plans, stages, ops, runner, engineInfo, cut });
     }
 
     /** The chosen provider, or the other one when only the other has a key (and say so). */
@@ -66,6 +70,7 @@ export class DirectorService {
         const ledger = new TurnLedger();
         const t = {
             spaceId, spaces: this.spaces, plans: this.plans, stages: this.stages, ops: this.ops, runner: this.runner, ledger, emit,
+            request, cut: this.cut, settings: this.settings, // the edit lock and pack_assets read the person's own words this turn
             lengths: engine.lengths, withSound: engine.withSound, clipFamily: engine.clipFamily, editFamily: engine.editFamily,
         };
         const board = this.spaces.board(spaceId);
@@ -77,6 +82,8 @@ export class DirectorService {
             aspect: plan?.aspect ?? aspectOnBoard(board.nodes),
             beatCount: plan ? this.plans.beats(plan.id).length : 0,
             lengths: engine.lengths, withSound: engine.withSound,
+            cut: this.cut ? cutState(this.cut, spaceId, plan) : null,
+            editStyle: this.settings.get('editStyle'),
         });
 
         try {

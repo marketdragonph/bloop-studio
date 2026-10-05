@@ -48,6 +48,27 @@ export class Packer {
         return row && row.kind === 'pack' ? this.view(row) : null;
     }
 
+    /**
+     * What a pack would hold, before it starts (the Director's pack_assets says it in one sentence): files, bytes,
+     * free disk and whether it is enough. Reads only; no row, no job.
+     * @returns {Promise<{ files: number, bytes: number, free: number|null, enough: boolean, name: string }>}
+     */
+    async estimate(spaceId) {
+        const { db, cuts, exportsRepo, media, statfs } = this.deps;
+        const board = readBoard(db, spaceId, { exportsRepo, cuts });
+        const packed = await collect(board, { media, includePrompts: true });
+        let free = null;
+        try {
+            const { bavail, bsize } = await statfs(media.getRoot());
+            free = Number(bavail) * Number(bsize);
+        } catch { /* unknown: the job checks again */ }
+        return {
+            files: packed.files.length + packed.notes.length + 1, bytes: packed.bytes, free,
+            enough: !Number.isFinite(free) || free >= Math.ceil(DISK_FACTOR * packed.bytes),
+            name: safeName(board.space?.name ?? 'board', { max: 60 }),
+        };
+    }
+
     view(row) {
         const view = jobView(row);
         if (view?.media_path) view.full_path = this.deps.media.resolve(view.media_path);

@@ -3,6 +3,8 @@
 // a silent turn says it did not manage; a turn that changed the board but said nothing gets the ledger's words.
 
 const OP_NAMES = ['note', 'node', 'wire', 'update', 'title'];
+const CUT_UNCHANGED = 'Nothing in the cut changed this turn.';
+const SAID_NOTHING_CHANGED = /\b(nothing (in the cut )?(was |has )?(changed|written)|did not change|didn't change|no change|left (it|the cut) as it (was|is))\b/i;
 
 /** OpsFromProse: an op list written into the reply — whole message, a fenced block, or the first balanced span. */
 export function opsFromProse(reply) {
@@ -48,6 +50,10 @@ function firstBalanced(text) {
 
 /** The ledger's own words when the board changed and the model said nothing. */
 export function ledgerWords(ledger) {
+    if (ledger.touchedCut?.() && !ledger.nodeIds.length && !ledger.wires) {
+        const edits = ledger.cutEdits.reduce((sum, e) => sum + (e.edits || 0), 0);
+        return ledger.drafted && !edits ? 'I put the clips into the cut in beat order.' : edits === 1 ? 'I made one edit to the cut.' : `I made ${edits || 'some'} edits to the cut.`;
+    }
     const cards = ledger.actions.filter((a) => a.kind === 'card').length;
     if (!cards) return 'I wired that up on the board.';
     return cards === 1 ? 'I put one card on the board.' : `I put ${cards} cards on the board.`;
@@ -80,7 +86,11 @@ export function closeTurn({ streamed, ledger, recover }) {
         }
     }
     const refused = ledger.proposed() && !ledger.touched() && !ledger.built;
-    if (refused && !explained) {
+    if (refused && !explained && ledger.onlyCut?.()) {
+        // A refused cut write (or a draft that wrote nothing, 03 §2): the reply may not claim an edit.
+        if (!SAID_NOTHING_CHANGED.test(text)) text = [text, CUT_UNCHANGED].filter(Boolean).join('\n\n');
+        replaced = true;
+    } else if (refused && !explained) {
         text = [text, 'None of that reached the board, though — the board turned the changes down and I could not fix them in time. Nothing has changed. Say it again, or more plainly, and I will try a different shape.'].filter(Boolean).join('\n\n');
         replaced = true;
     }

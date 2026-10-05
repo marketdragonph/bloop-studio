@@ -7,6 +7,7 @@ import { BEAT_CAST, BREVITY, CINEMATOGRAPHY, CRAFT_ROLES, PLATE_SHEET, PROP_FACI
 import { OPS_CONTRACT, PERSONA, RECIPES, VOCABULARY } from './doctrine-board.js';
 import { CAST_NAMES, GUIDE, PLAN_FIRST, buildStages } from './doctrine-plan.js';
 import { SOUND_CRAFT, VOICE_PROFILE, voiceCraft } from './doctrine-voice.js';
+import { EDIT_CRAFT, editStyle } from './doctrine-edit.js';
 
 const BUDGET = 24_000;
 const PLACEHOLDER = /^(untitled|new (space|board)|test|demo|space \d+|board \d+)$/i;
@@ -78,11 +79,30 @@ export function systemPrompt(ctx) {
         PROP_FACING,
         look(intent.look),
         STORY_CRAFT,
+        EDIT_CRAFT,
+        editStyle(ctx.editStyle),
         PLATE_SHEET,
         PLAN_FIRST,
         GUIDE,
         // ── board state below: not cache-stable ──
         buildStages(plan, ctx.owed ?? []),
         `\n${boardSnapshot({ space: ctx.space, nodes: ctx.board.nodes, connections: ctx.board.connections })}\n`,
+        cutSnapshot(ctx.cut),
     ].join('');
+}
+
+const GAP_WORDS = { never_rendered: 'never rendered', failed: 'render failed', card_deleted: 'card deleted', file_missing: 'file missing', rendering: 'rendering now' };
+
+/**
+ * The Cut's lines after the board snapshot (03 §2, 05 §1.1, §4.3): the snapshot line (verbatim format), then only
+ * when needed the lock line, the gaps with their reasons, and the beats' roles. Empty when the board has no clips
+ * and no cut. `cut` comes from director/cut/cut-state.js.
+ */
+export function cutSnapshot(cut) {
+    if (!cut || (!cut.beats && !cut.items)) return '';
+    const lines = [`Cut: ${cut.inCut} of ${cut.beats} beats, ${cut.clock}, revision ${cut.revision}`];
+    if (cut.locked.length) lines.push(`Locked (the person changed them since): ${cut.locked.join(', ')}.`);
+    if (cut.gaps.length) lines.push(`Gaps: ${cut.gaps.map((g) => `${g.tag} (${GAP_WORDS[g.reason] ?? 'no video'})`).join(', ')}.`);
+    if (cut.roles.length) lines.push(`Roles: ${cut.roles.map((r) => `${r.tag} ${r.role}`).join(', ')}.`);
+    return `\n${lines.join('\n')}\n`;
 }

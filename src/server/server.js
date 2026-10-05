@@ -56,6 +56,11 @@ import { cardSources } from './generation/offered.js';
 import { uploadRoutes } from './routes/uploads.js';
 import { renderPlanRoutes } from './routes/render-plan.js';
 import { starterRoutes } from './routes/starters.js';
+import { MediaAnalysisRepository } from './repositories/media-analysis.js';
+import { AnalyzeMedia, CutAnalysis } from './analysis/analyze-media.js';
+import { CutTurnsRepository } from './repositories/cut-turns.js';
+import { CutTurns } from './cut/cut-turns.js';
+import { CutOps } from './director/cut/cut-ops.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -92,27 +97,34 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const toolsQueue = new ToolsQueue();
     const videoTools = new VideoTools({ ffmpeg, settings });
     await recoverToolsJobs({ exportsRepo, media });
-    const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue: toolsQueue });
+    // P4: clip analysis on the same queue, behind every export and pack, only for what a cut holds or inspect_cut asks.
+    const analysis = new AnalyzeMedia({ ffmpeg, media, repo: new MediaAnalysisRepository(db), queue: toolsQueue });
+    const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue: toolsQueue, analysis });
     const packer = new Packer({ db, cuts, exportsRepo, media, events, queue: toolsQueue });
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer });
     const director = new DirectorRepository(db);
+    // One write path for the cut (P2b) and one undo per Director turn (P4), shared by the dock and the Director.
+    const cutEdits = new CutEdits({ db, cuts, events });
+    const cutDraft = new CutDraft({ boardCut, cuts, edits: cutEdits });
+    const cutTurns = new CutTurns({ cuts, repo: new CutTurnsRepository(db), edits: cutEdits });
     // The Director (a port of bloop's Spaces Director): plans, the board ops, the staged rail, and the beat writers.
     const plans = new DirectorPlans(db);
     const ops = new BoardOps({ spaces });
     const stages = new BuildStages({ plans, ops, spaces });
     let directorService = null;
     const runner = new BuildRunner({ plans, stages, ops, events, write: (call) => directorService.complete(call) });
-    directorService = new DirectorService({ settings, spaces, director, plans, stages, ops, runner, engineInfo: engineInfoFor(engine) });
+    const cutOps = new CutOps({ cuts, boardCut, edits: cutEdits, turns: cutTurns, analysis, plans, db });
+    const cutTools = { cuts, boardCut, edits: cutEdits, drafts: cutDraft, turns: cutTurns, ops: cutOps, analysis, packer, exportsRepo, plans, db };
+    directorService = new DirectorService({ settings, spaces, director, plans, stages, ops, runner, engineInfo: engineInfoFor(engine), cut: cutTools });
     const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
     directorRuns.recover();
     runner.resume();
     // First run (P2b): one write path for the cut, the live cut that fills it while the person has not edited, and the
     // one rule for where an untouched card renders (card-source.js) shared by Generate, Render missing beats, starters.
-    const cutEdits = new CutEdits({ db, cuts, events });
-    const cutDraft = new CutDraft({ boardCut, cuts, edits: cutEdits });
     new LiveCut({ events, cuts, drafts: cutDraft, plans, spaces, measurer }).start();
+    new CutAnalysis({ events, cuts, analysis }).start();
     const sources = cardSources({ engine, account, launcher });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, sources, ops };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, cutTurns, analysis, sources, ops };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

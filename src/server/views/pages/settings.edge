@@ -99,6 +99,13 @@
           @end
         </div>
       </div>
+
+      <div class="field" data-control="settings.editingStyle">
+        <label class="field__label ae-stencil" for="field-editStyle">{{ controlLabel('settings.editingStyle') }}</label>
+        <textarea class="field__input field__input--area" id="field-editStyle" name="editStyle" rows="3" maxlength="600"
+                  placeholder="Fast cuts, cut on the beat, hold the last shot." aria-describedby="field-editStyle-hint">{{ old?.editStyle ?? settings.editStyle ?? '' }}</textarea>
+        <p class="field__hint" id="field-editStyle-hint">How you like to cut, in your words. The Director reads it on every turn. Up to 600 characters.</p>
+      </div>
     @end
 
     @component('components/plate', { heading: 'Bloop account', labelledBy: 'bloop-h' })

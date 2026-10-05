@@ -15,6 +15,7 @@ import { cutBedSyncMethods } from './cut-bed-sync.js';
 
 const UI_MS = 100; // the counter and the deck update at 10 Hz; the playhead every frame
 const BED_MS = 250; // beds are checked for drift 4 times a second
+const DUCK_MS = 50; // the music's duck envelope is sampled 20 times a second (01-core.md §5)
 const LEAD_RAF_MS = 16;
 const GUARD_MS = 200;
 const LEAD_FRAME_MS = 34; // one frame early at 30 fps, so the next clip shows on time
@@ -225,6 +226,9 @@ export default function CutPlayer() {
             if (now - s.lastBed >= BED_MS) {
                 s.lastBed = now;
                 this.cpBeds();
+            } else if (now - (s.lastDuck ?? 0) >= DUCK_MS) {
+                s.lastDuck = now;
+                this.cpDuckStep(); // cut-bed-sync.js: the duck envelope at 20 Hz
             }
         },
 
