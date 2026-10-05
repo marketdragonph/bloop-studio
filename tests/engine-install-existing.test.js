@@ -28,12 +28,14 @@ test('into the person\'s own ComfyUI: only the models it lacks, looked for in it
     const { dir, root } = existingComfy();
     const store = {};
     const fetched = [];
+    const refreshed = [];
     const installer = new EngineInstaller({
         settings: { get: (k) => store[k], update: (v) => Object.assign(store, v) },
         launcher: { start: () => assert.fail('an existing ComfyUI is not restarted behind the person\'s back') },
         freeGb: () => 5000,
         download: async (_file, target) => fetched.push(target),
         unpack: async () => assert.fail('nothing to unpack'),
+        engine: { current: async ({ refresh }) => (refreshed.push(refresh), { detected: true }) },
     });
     try {
         installer.start(plan12(), { folder: '', families: ['zimage'], into: { root, kind: 'portable' } });
@@ -46,6 +48,8 @@ test('into the person\'s own ComfyUI: only the models it lacks, looked for in it
             join(root, 'ComfyUI', 'models', 'text_encoders', 'qwen_3_4b_fp8_mixed.safetensors'),
         ]);
         assert.equal(store.comfyPath, undefined); // still the person's own setting
+        // ComfyUI sees the new files at once; the app checks again, so the families show without Re-detect.
+        assert.deepEqual(refreshed, [true]);
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }

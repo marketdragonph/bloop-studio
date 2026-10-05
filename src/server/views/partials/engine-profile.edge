@@ -17,7 +17,7 @@
         @else
           <span class="status-light status-light--idle">
             <span class="status-light__dot" aria-hidden="true"></span>
-            <span class="ae-readout">Hidden · not installed</span>
+            <span class="ae-readout">{{ item.missing.some((line) => line.includes('graphics memory')) ? 'Hidden · too big for this card' : 'Hidden · not installed' }}</span>
           </span>
           <details class="engine-list__missing">
             <summary>Missing ({{ item.missing.length }})</summary>

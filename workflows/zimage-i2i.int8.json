@@ -1,6 +1,7 @@
 {
   "id": "zimage-i2i",
   "variant": "int8",
+  "minVramGb": 8,
   "priority": 1,
   "label": "Z-Image Turbo (from picture)",
   "card": "image",

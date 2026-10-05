@@ -136,6 +136,22 @@ export class EngineInstaller {
         }
         this.settings.update({ engineInstall: null });
         this.#state.phase = 'added';
+        // ComfyUI sees new model files at once (no restart: tried 2026-10-05); the app's own check is
+        // cached for minutes, so it looks again now and the new families show on cards straight away.
+        await this.#redetect();
+    }
+
+    /**
+     * Re-runs the engine check until the engine answers (a just-started ComfyUI takes 10–60 s), so new
+     * families appear without waiting out the cache or pressing Re-detect models.
+     */
+    async #redetect({ tries = 36, everyMs = this.redetectEveryMs ?? 5000 } = {}) {
+        if (!this.engine) return;
+        for (let i = 0; i < tries; i++) {
+            const profile = await this.engine.current({ refresh: true }).catch(() => null);
+            if (profile?.detected) return;
+            await new Promise((resolve) => setTimeout(resolve, everyMs));
+        }
     }
 
     async #run(plan, folder, files, signal) {
@@ -172,6 +188,7 @@ export class EngineInstaller {
         }
         this.launcher.start();
         this.#state.phase = 'done';
+        this.#redetect(); // in the background: the install is done, the engine is starting
     }
 
     /**
@@ -208,6 +225,7 @@ export class EngineInstaller {
             this.#progress(`${file.folder}/${file.name}`)(file.size, file.size);
         }
         this.#state.phase = 'repaired';
+        if (this.#state.fixed) await this.#redetect();
     }
 
     /**

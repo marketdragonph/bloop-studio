@@ -41,6 +41,11 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   nodes and model files are all installed. Families with no runnable variant are hidden from cards.
 - **Settings → Engine → Workflows on this PC** shows the GPU, VRAM, backend (CUDA/ROCm), ComfyUI version,
   the variant each workflow uses, and the exact missing files for the others. *Re-detect models* refreshes it.
+- **The card's memory counts too** (2026-10-05): every variant states `minVramGb` (scripts/set-min-vram.mjs:
+  full precision 20, int8/fp8 11, Z-Image int8 and Wan 5B 8). A variant bigger than the card is skipped even
+  with all its files there; Settings shows *Hidden · too big for this card* and the reason.
+- New model files need no ComfyUI restart (tried: a file added to models/vae appears in /object_info at
+  once). After an install, Download missing models or a Repair the app re-runs this check itself.
 - A wired picture the chosen workflow cannot use (e.g. a last frame on Wan) stops the render with a clear message.
 - **Lip sync** (2026-10-05): a Video card's **Voice / audio** socket takes a voice or song (Upload or Audio
   card). With a First frame it renders `workflows/ltx-ia2v.json` (built from ltx-i2v by

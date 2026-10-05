@@ -1,6 +1,7 @@
 {
   "id": "zimage-i2i",
   "variant": "bf16",
+  "minVramGb": 20,
   "label": "Z-Image Turbo (from picture)",
   "card": "image",
   "needs": ["reference"],

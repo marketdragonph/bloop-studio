@@ -116,6 +116,7 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [ ] Start modes (with the app / when I render + idle stop / manual) and the top-bar Start/Stop/Free switch
 - [x] Install modal: this PC + verdict, families (suggested ticked, installed marked), folder, licenses
       consent; progress per file, Cancel, carries on after a restart (2026-10-05)
+- [x] VRAM-aware engine check (`minVramGb` per variant) and an automatic re-check after installs (2026-10-05)
 - [x] Settings → Engine: disk used, Repair (SHA-256 of every known model file, broken ones fetched again;
       the person's own files untouched), Remove (only `engineManaged`, stopped first) (2026-10-05)
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint

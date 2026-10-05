@@ -40,15 +40,29 @@ export function missingFor(preset, objectInfo) {
     return [...missing];
 }
 
+/** A card reports a little under its size (a 12 GB card ~11.99 GB, a 24 GB card ~23.99): round up. */
+const SLACK_GB = 0.5;
+
+/** Why this card is too small for the variant, or null when it fits (or the card's memory is unknown). */
+export function tooBigFor(preset, vramGb) {
+    if (!vramGb || !preset.minVramGb || preset.minVramGb <= vramGb + SLACK_GB) return null;
+    return `needs ${preset.minVramGb} GB of graphics memory; this card has ${Math.round(vramGb)} GB`;
+}
+
 /**
- * Picks, per preset id, the first variant this engine can run.
+ * Picks, per preset id, the first variant this engine can run: every node and model file there, AND
+ * small enough for the card. Files alone are not enough: a 12 GB card that also holds the 24 GB
+ * (bf16) Z-Image files would otherwise take that variant and crawl or run out of memory.
  * Returns { presets: Map<id, preset>, report: [{ id, card, label, variant, missing }] }.
  */
-export function pickVariants(catalog, objectInfo) {
+export function pickVariants(catalog, objectInfo, { vramGb = 0 } = {}) {
     const presets = new Map();
     const report = [];
     for (const [id, variants] of catalog) {
-        const checked = variants.map((preset) => ({ preset, missing: missingFor(preset, objectInfo) }));
+        const checked = variants.map((preset) => {
+            const tooBig = tooBigFor(preset, vramGb);
+            return { preset, missing: [...(tooBig ? [tooBig] : []), ...missingFor(preset, objectInfo)] };
+        });
         const runnable = checked.find((c) => !c.missing.length);
         if (runnable) presets.set(id, runnable.preset);
         // When none runs, name what the closest variant lacks: the shortest shopping list.

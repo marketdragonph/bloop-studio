@@ -1,6 +1,7 @@
 {
   "id": "ltx-ia2v",
   "variant": "distilled-fp8",
+  "minVramGb": 11,
   "label": "LTX-2.3 Distilled (lip sync a picture to audio)",
   "card": "video",
   "needs": [

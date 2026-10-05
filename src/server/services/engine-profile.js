@@ -37,7 +37,8 @@ export class EngineProfile {
     async #detect(client) {
         try {
             const [hardware, objectInfo] = await Promise.all([client.hardware(), client.objectInfo()]);
-            const { presets, report } = pickVariants(this.catalog, objectInfo);
+            // Only variants this card has the memory for (engine-check.js tooBigFor).
+            const { presets, report } = pickVariants(this.catalog, objectInfo, { vramGb: hardware.vramTotalGb });
             this.#snapshot = { detected: true, url: client.baseUrl, detectedAt: this.now(), hardware, presets, report };
             return this.#snapshot;
         } catch (error) {

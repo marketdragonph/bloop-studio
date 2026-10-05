@@ -1,6 +1,7 @@
 {
   "id": "wan5b-t2v",
   "variant": "fp16",
+  "minVramGb": 8,
   "label": "Wan 2.2 5B (draft video)",
   "card": "video",
   "needs": [],

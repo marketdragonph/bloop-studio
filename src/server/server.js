@@ -54,7 +54,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
     const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
     const launcher = new ComfyLauncher({ settings }); // the person's own ComfyUI, started from the top bar
-    const installer = new EngineInstaller({ settings, launcher }); // "Install offline engine"
+    const installer = new EngineInstaller({ settings, launcher, engine }); // "Install offline engine"
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });

@@ -1,6 +1,7 @@
 {
   "id": "h3-fl2va",
   "variant": "int8",
+  "minVramGb": 11,
   "priority": 1,
   "knobs": "h3-int8",
   "label": "MiniMax-H3 Turbo (animate picture + sound)",

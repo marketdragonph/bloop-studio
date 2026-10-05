@@ -1,6 +1,7 @@
 {
   "id": "h3-t2va",
   "variant": "gguf",
+  "minVramGb": 20,
   "label": "MiniMax-H3 Turbo (video + sound)",
   "card": "video",
   "needs": [],

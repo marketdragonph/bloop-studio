@@ -90,3 +90,21 @@ test('a card set to a family this PC lacks renders with one it has', () => {
     assert.equal(preset.id, 'h3-t2va');
     assert.equal(choosePreset(presets, { type: 'video', wired: ['first_frame'] }).id, 'h3-fl2va');
 });
+
+test('the card must have the memory: a 12 GB card with the 24 GB files too still runs int8', () => {
+    const both = infoFor([variant('zimage-t2i', 'bf16'), variant('zimage-t2i', 'int8')]);
+    const pick = (vramGb, info = both) => pickVariants(new Map([['zimage-t2i', catalog.get('zimage-t2i')]]), info, { vramGb });
+
+    assert.equal(pick(11.99).presets.get('zimage-t2i').variant, 'int8'); // a 12 GB card reports ~11.99
+    assert.equal(pick(23.99).presets.get('zimage-t2i').variant, 'bf16');
+    assert.equal(pick(0).presets.get('zimage-t2i').variant, 'bf16'); // memory unknown: files decide, as before
+
+    // Only the big files on a small card: hidden, and Settings says why.
+    const bigOnly = pick(11.99, infoFor([variant('zimage-t2i', 'bf16')]));
+    assert.equal(bigOnly.presets.has('zimage-t2i'), false);
+    assert.ok(bigOnly.report[0].missing.some((line) => line === 'needs 20 GB of graphics memory; this card has 12 GB'));
+});
+
+test('every shipped variant states the graphics memory it needs', () => {
+    for (const preset of [...catalog.values()].flat()) assert.ok(preset.minVramGb > 0, `${preset.id}.${preset.variant} has no minVramGb`);
+});

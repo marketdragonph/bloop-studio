@@ -1,6 +1,7 @@
 {
   "id": "ltx-t2v",
   "variant": "distilled-fp8",
+  "minVramGb": 11,
   "label": "LTX-2.3 Distilled (video + sound)",
   "card": "video",
   "needs": [],

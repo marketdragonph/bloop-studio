@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: models you download show up on your cards right away. No restart and no Re-detect needed.
+- Changed: each model now uses the version your graphics card has the memory for. A 12 GB card no longer picks a 24 GB version just because its files are there; Settings → Engine says *too big for this card* instead.
+
 ## 2026.1005.756
 
 - New: **lip sync**. Wire a picture into a Video card's First frame and a voice or song into its new **Voice / audio** socket: the picture talks or sings to it, on your own GPU (LTX-2.3).

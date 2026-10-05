@@ -1,6 +1,7 @@
 {
   "id": "ltx-flf2v",
   "variant": "distilled-fp8",
+  "minVramGb": 11,
   "label": "LTX-2.3 Distilled (first to last frame + sound)",
   "card": "video",
   "needs": ["first_frame", "last_frame"],
