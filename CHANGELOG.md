@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1026
+
 - Changed: the Director finishes big builds by itself. No Continue button: when it needs more steps it carries on in the same reply, and a build cut off by closing the app picks up again when you reopen it. Its replies say what it built instead of telling you which buttons to press; what to render stays your choice.
 
 ## 2026.1005.939
