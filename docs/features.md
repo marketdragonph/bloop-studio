@@ -22,6 +22,17 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   loads (an older take, a cloud model or an upload can differ from the Aspect knob), as bloop's noteClipShape. No browser control bars left. `public/js/components/
   media-player.js`, `audio-player.js`, `public/css/player.css`.
 
+- **Mini Katana: the Cut** (2026-10-05, branch `katana-mini`, plan `docs/plans/katana.md`): a dock along the bottom
+  of the board. It folds to a rail ("3 of 4 beats · 0:09") and opens to a preview on the left and Video, Voice and
+  Music tracks with an orange playhead. One reader (`src/server/cut/board-cut.js`) puts each beat's newest clip in
+  plan order (board order without a plan); beats with no video show as hatched slots with **Go to card**. Takes
+  are measured with ffprobe when ffmpeg is present. Editing: **Fill the cut**, reorder (drag, Alt+arrows, Move
+  left/right), trim (handles, `[` `]`, Shift+arrows), remove with an 8 s Undo, cut or dissolve joins (D), clip
+  sound (M), newer take swap, music and voice levels, 50-step undo in the dock. Autosave with a local draft and
+  "changed in another window" recovery (409). The preview plays the cut on two stacked players with dissolves,
+  gap slates, music and voice in sync, and an "As exported" toggle. Nothing in the dock renders or exports.
+  Media is served with byte ranges, so long clips seek without loading the whole file.
+
 ## Rendering
 
 - **Generate** on an Image or Video card queues a job; one GPU worker renders on the local ComfyUI.
