@@ -149,7 +149,7 @@ route; the sheet listed 4 beats, 9 cards. Live cut: beat 2 landed first (9960 ms
 beat 1 went in front of it, the person trimmed beat 1 (auto off), beat 3 then waited for Add new clips. In the
 browser pane: the empty bay, the starter modal, the laid-out board and the sheet opened from the board's key.
 
-**Deferred.** Uploads Bring my clips makes are not in the board's undo history, and a failed upload leaves its
+**Deferred at P2b (the first four sentences and Cancel all are done in P5, 02-dock.md §13).** Uploads Bring my clips makes are not in the board's undo history, and a failed upload leaves its
 empty Upload card. With two or more songs none becomes the bed. Add new clips also counts a clip the person took
 out of the cut. Render missing beats skips a beat whose picture failed BEFORE the press; one that fails during the
 run makes its clip fail with "has no render yet". Cancel all stops every render of the board, also ones started

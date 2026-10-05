@@ -171,7 +171,8 @@ the output path must sit under the job's temp dir. It always adds `-nostdin -hid
 -progress pipe:1 -threads 2` and `-fs` (`capForSeconds`: 2 × seconds × 1 MB/s per step, `FINAL_CAP_BYTES` 1.5 GB).
 It spawns with `windowsHide: true`, no shell, then below-normal priority. Timeout or abort kills the child. stderr
 goes to the log only, never to the page. `spawn` is injected so tests use a fake. `locateFfmpeg()` looks in
-Settings, then `BLOOP_FFMPEG`, then `resources/ffmpeg`, then `PATH`.
+Settings, then `BLOOP_FFMPEG`, then `resources/ffmpeg`, then `<repo>/vendor/ffmpeg` (the dev app, P5; Electron's own
+resources have no ffmpeg), then `PATH`.
 
 **Exact commands.** `W×H` from settings and the plan aspect (16:9 1920×1080, 9:16 1080×1920, 1:1 1080×1080; 720
 variants). `VENC` = `-c:v h264_mf -b:v 8M -g 60` (LGPL path, owner decision 1). No `libx264` fallback: it is GPL and not in
@@ -257,8 +258,10 @@ ffmpeg <guards> -i joined.mp4 -i <music> -i <voice> -filter_complex
      per-step `-fs` cap); `-rate_control quality -quality 70` gave 2.7 Mbit/s at SSIM 0.988 on the real clip.
   **Licence:** BtbN's LGPL builds configure `--enable-version3`, so the bundle is **LGPL-3.0-or-later** (no
   `--enable-gpl`, no `--enable-nonfree`); `fetch-ffmpeg.mjs` refuses GPL/nonfree and reads the licence from `ffmpeg -L`.
-  It lands in `vendor/ffmpeg/` (git-ignored), 120 MB unpacked (avcodec 63 MB). Owner item: LGPL-3.0 incorporates the
-  GPL-3.0 text by reference; ship `COPYING.GPLv3` beside `LICENSE.txt` before release.
+  It lands in `vendor/ffmpeg/` (git-ignored), 120 MB unpacked (avcodec 63 MB). LGPL-3.0 incorporates the GPL-3.0 text
+  by reference: since P5 `fetch-ffmpeg.mjs` writes `COPYING.GPLv3` beside `LICENSE.txt` from gnu.org's `gpl-3.0.txt`
+  (35,149 bytes, sha256 `3972dc97…b36986`, pinned; a verified copy in `vendor/.cache` works offline), the notices
+  carry both texts, and `build-installer.mjs` refuses a `vendor/ffmpeg` without either.
 
 ## 7. Range / 206 on `/media/*` (P0, built)
 

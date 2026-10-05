@@ -1,4 +1,4 @@
-# Katana 02 — Mini Katana UI: the Cut dock — PLANNED
+# Katana 02 — Mini Katana UI: the Cut dock — COMPLETE (P1, P2, P5 on branch katana-mini; §13 is the P5 record)
 
 Part of [../katana.md](../katana.md). Settled conflicts there win over this file.
 The Cut dock is Mini Katana. It sits at the bottom of a Space board. The approved look is the mockup
@@ -64,7 +64,7 @@ watch on nodes".
 - **Director panel:** `.director` stays absolute on the right (`public/css/director.css`). While it is open the dock
   gets `margin-right: calc(var(--director-width) + 2 * var(--space-3))`, so the dock ends where the panel starts.
   `director.css` switches its `26rem` to `--director-width`.
-- **Narrow (< 40rem):** the Director is a 60 vh bottom sheet; the dock opens as a 60 vh sheet too. Only one is open
+- **Narrow (< 48rem since P5; was 40rem):** the Director is a 60 vh bottom sheet; the dock opens as a 60 vh sheet too. Only one is open
   at a time. Tracks scroll sideways with snap. Trim uses the item sheet (two-handle range, ±0.1 s keys).
 - `.toasts` (`public/css/board.css`) moves up by the dock height: `.board-page:has(.cut-dock.is-open) .toasts`.
 
@@ -248,3 +248,41 @@ One EventSource per board (`initGeneration()` in `public/js/board/generation.js`
 - Key scoping: Ctrl+Z in the dock does not reach board history.
 - Gap mode: with gaps, a 3 s slate holds the bed clock; as exported, the playhead total equals `cutClock` export total.
 - Slot update from a fake `node` event; reload vs banner on a fake `cut` event.
+
+## 13. As built (P5, 2026-10-05, katana-mini)
+
+- [x] **P2b follow-ups.** Cancel all stops only `jobs.origin = 'render-plan'` (`011_job_origin.sql`; the rail key shows
+  while such renders are in the board's `queue` stream). `settings.left_out` (card + take, `cut-edits.js leftOutAfter`)
+  keeps a clip taken out on purpose out of Add new clips and the live cut. Bring my clips: a failed copy deletes its
+  empty Upload card; the cards are one board undo step ("Bring 3 files"); two or more songs: **Use as music** per song or
+  **No song**, the pick is one dock undo step. A card's DELETE answers `{takes}` and restore puts them back (the board's
+  undo used to lose a clip's take). The preview tag follows the clip on screen. The CSP console error came from the
+  board marquee (`:style="marquee && {…}"` gave Alpine null; since Phase 1a, 93cb4f6); a test checks every `:style`.
+- [x] **ffmpeg licence and dev path.** `COPYING.GPLv3` (gnu.org `gpl-3.0.txt`, pinned sha256) beside `LICENSE.txt`;
+  notices carry both; the installer build refuses without them. `locateFfmpeg()` finds `<repo>/vendor/ffmpeg` in dev.
+- [x] **Contrast (§10).** `scripts/katana-contrast.mjs` resolves the tokens (light-dark, var, color-mix with premultiplied
+  alpha) and checks 40 pairs per theme. Before: 22 of 74 failed (light playhead and handles 2.80, clip edge 1.69 / 2.06,
+  hatch and ruler ticks 1.69 / 2.06, key hover text 3.81 / 4.40, media chip over a white frame 4.40, measuring line 4.50
+  light). After: 80 of 80 (lowest 3.51 for marks, 4.76 for text). Token changes only (`--accent-mark`, `--cut-clip-edge`,
+  `--cut-hatch`, `--cut-tick`, `--cut-wave`, a deeper light `--accent-text` #A8380A and `--sensor-text` #1D4ED8,
+  `--media-chip` 0.6, key hover fill 14%); gap words on a solid patch; a dark keyline round the crop box.
+- [x] **Narrow and touch (§2, §6).** Under 48rem: the 60 dvh sheet, one of dock and Director, lanes with scroll snap; a tap
+  opens the item sheet (Trim: a slider per end, one undo step per drag, snapped to 0.1 s; −0.1 s / +0.1 s; Done). In the
+  browser pane at 375×812 with touch: 42 dock controls and 13 export-sheet controls, none under 44 px.
+- [x] **Performance (§11).** Electron 44 (the app's Chromium) offscreen at 60 fps on a throwaway server: 300 cards, a
+  50-item cut over a bed; fold/open ×3, play 6 s, a real mouse trim drag, wheel zoom with the dock open and folded
+  (scratchpad `p5/gate/perf-main.cjs`; the browser pane was hidden and ran no frames). Before (2 clean runs): 2,593 dock
+  nodes; open 104–161 ms press to two frames; fold-open 0 and 4 long tasks (max 61 ms), trim 4 and 7 (max 54 / 58 ms).
+  After (5 runs): 1,542 dock nodes; open 46–80 ms (the lanes land one task later); **0 long tasks** in fold-open, play
+  (360 frames in 6 s), trim and wheel-with-dock-open. Wheel with the dock folded still shows the board's own zoom tasks
+  (up to 106 ms), so it is not the dock's. How: `cut-patch.js` patches `cutItems` and the ruler in place during a drag;
+  minor ticks are one gradient; rare clip parts render under one x-if each; lanes render one task after the preview;
+  `cutPart` searches inside the dock. Found on the way: the out handle sat under the next clip's join chip (fixed).
+- [x] **bloop 04-qa.md.** `tests/katana-qa.test.js`: undo/redo 20-step script and the 50 cap, debounce (one PUT
+  800 ms after 10 changes), remove + undo in place, no new poll, plain words, every state's way forward, status in words.
+  Look check (scratchpad `p5/gate/look-main.cjs`, Electron, 1440×900 and 390×844 with touch, light and dark, reduced
+  motion): painted-stack text contrast with the dead-token control (fails at 1.0:1 as it must), page width, clipped text,
+  hit targets (24 px desktop, 44 px touch), running animations, toast and Director overlap. It found and P5 fixed: Check
+  your cut 4.13:1 (dark), a picked preset's note 4.39:1 (light), the deck's seek bar 14 px, volume 20 px and Snap to beats
+  18 px. Two clean runs after: 58–73 text nodes per view, lowest 5.93:1 light / 6.24:1 dark, 0 problems.
+- Not done: the clean-PC export run (owner, needs a second PC); a real phone (a headless touch PASS is not a phone).

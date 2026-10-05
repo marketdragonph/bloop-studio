@@ -108,6 +108,23 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   ≤ 8 MB). Files are named per shape (`night-market-master-9x16-r12.mp4`) with the `.srt` and `-preview.gif` beside
   them, and Pack takes them along. The Director's `outputs` op sets up preset, shapes and captions (and fixes caption
   words) but never moves a crop box or starts an export.
+  **Polish and QA (P5, 02-dock.md §13)**: **Cancel all** stops only the renders Render missing beats queued
+  (`jobs.origin = 'render-plan'`, `011_job_origin.sql`), never a card started with Generate. A clip taken out on
+  purpose is remembered in `settings.left_out` (card + take; `cut-edits.js` `leftOutAfter`), so Add new clips and
+  the live cut never put it back; a new take of that card counts as new. Bring my clips: a failed copy deletes its
+  empty Upload card, the cards that came in are one board undo step ("Bring 3 files"), two or more songs ask which
+  one goes under the clips (**Use as music** per song, **No song**). Undoing a card delete brings its takes back
+  (DELETE answers `{takes}`, restore re-inserts them). The preview's tag names the clip on screen. On a window under
+  48rem the open dock is a 60 dvh sheet and only one of it and the Director's sheet is open; a tap on a clip opens
+  its item sheet (`cut-narrow.js`, `cut-narrow.css`): **Trim** has a slider per end (one undo step per drag) and
+  **−0.1 s** / **+0.1 s**, **Done** closes it. Touch targets are 44 px, desktop ones 24 px. AA contrast in light and
+  dark is measured from the tokens (`scripts/katana-contrast.mjs`, 40 pairs, `tests/katana-contrast.test.js`):
+  `--accent-mark` for orange marks on a theme ground, `--cut-clip-edge`, `--cut-hatch`, `--cut-tick`, `--cut-wave`.
+  On a 300-card board with a 50-clip cut nothing in the dock makes a long task over 50 ms: the view lists are
+  patched in place (`cut-patch.js`), the ruler's minor ticks are a gradient, rare clip parts render under one x-if,
+  the lanes render one task after the preview. The board's CSP console error (a `:style` that gave Alpine null)
+  is fixed. ffmpeg ships with `COPYING.GPLv3` beside its `LICENSE.txt`; the dev app finds `vendor/ffmpeg` by
+  itself. P5 controls are in the guide (`SHIPPED`).
 
 ## Rendering
 
