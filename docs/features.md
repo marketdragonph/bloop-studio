@@ -125,6 +125,12 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   the lanes render one task after the preview. The board's CSP console error (a `:style` that gave Alpine null)
   is fixed. ffmpeg ships with `COPYING.GPLv3` beside its `LICENSE.txt`; the dev app finds `vendor/ffmpeg` by
   itself. P5 controls are in the guide (`SHIPPED`).
+  **Final gate (2026-10-05, katana.md "Final gate")**: the whole flow walked once in the real app (empty Space →
+  starter → Render missing beats sheet → Bring my clips → live cut → trim / reorder / dissolve → play → a Director
+  turn and Undo turn → Reels 9:16 with captions → Show on board → Pack). With only missing beats the preview shows
+  just the gap slate (no "No clips yet" on top); under 48rem Export and the fold key stay pinned at the rail's right
+  edge while the rest scrolls (`.cut-rail__end`); the Director panel keeps one reply and settles when a fast turn
+  streams before its POST answers (`public/js/board/director.js` `followRun`).
 
 ## Rendering
 

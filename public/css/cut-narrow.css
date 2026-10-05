@@ -23,6 +23,16 @@
     /* The rail keeps one line: it scrolls sideways instead of wrapping under the board. */
     .cut-rail { overflow-x: auto; scrollbar-width: none; }
     .cut-rail > * { flex-shrink: 0; }
+    /* ...but Export and the fold key stay pinned at the right edge, the rest of the rail scrolling under them. */
+    .cut-rail__end {
+        position: sticky;
+        right: calc(-1 * var(--space-4));
+        z-index: 1;
+        margin-right: calc(-1 * var(--space-4));
+        padding: 0 var(--space-4) 0 var(--space-2);
+        background: var(--bg-secondary);
+        box-shadow: -0.75rem 0 0.75rem -0.25rem var(--bg-secondary);
+    }
 
     /* One column that scrolls: a smaller screen, then the lanes (the body is the only scroller). */
     .cut-dock__body { grid-auto-rows: max-content; padding: var(--space-2) var(--space-3); }

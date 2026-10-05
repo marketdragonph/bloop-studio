@@ -40,6 +40,7 @@
 .cut-rail__readout { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cut-rail__readout.is-alert { color: var(--status-alert-text); }
 .cut-rail__spacer { flex: 1; }
+.cut-rail__end { display: flex; flex: none; align-items: center; gap: var(--space-3); }
 .cut-rail__chevron { transform: rotate(-90deg); transition: transform var(--duration-base) var(--ease-out); }
 .cut-dock.is-open .cut-rail__chevron { transform: rotate(90deg); }
 

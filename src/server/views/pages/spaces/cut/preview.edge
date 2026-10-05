@@ -19,7 +19,7 @@
       <span class="cut-slate__title" x-text="slate?.title"></span>
       <span class="cut-slate__text" x-text="slate?.text"></span>
     </div>
-    <p class="cut-preview__empty" x-show="!cutLay().entries.some((e) => e.kind === 'clip')" x-text="cutCopy('noClips')"></p>
+    <p class="cut-preview__empty" x-show="!slate && !cutLay().entries.some((e) => e.kind === 'clip')" x-text="cutCopy('noClips')"></p>
     <div class="cut-preview__tags" x-show="cpTag()">
       <span class="cut-chip" x-text="cpTag()"></span>
     </div>

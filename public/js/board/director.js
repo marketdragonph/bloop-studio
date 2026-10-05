@@ -78,6 +78,12 @@ export const directorMethods = {
 
     /** Shows a run's reply bubble; its events arrive through onDirectorStream. */
     followRun(runId, partial = {}) {
+        // A fast turn can stream (even finish) before the POST answers: keep that one bubble, never a second one.
+        const known = this.directorLog.find((entry) => entry.runId === runId);
+        if (known) {
+            if (known.streaming) Object.assign(this, { directorBusy: true, directorRunId: runId });
+            return;
+        }
         this.directorBusy = true;
         this.directorRunId = runId;
         this.directorLog.push({ id: `a${runId}`, runId, role: 'assistant', text: partial.text ?? '', actions: partial.actions ?? [], info: partial.info ?? null, activity: partial.activity ?? null, streaming: true });

@@ -286,3 +286,12 @@ One EventSource per board (`initGeneration()` in `public/js/board/generation.js`
   your cut 4.13:1 (dark), a picked preset's note 4.39:1 (light), the deck's seek bar 14 px, volume 20 px and Snap to beats
   18 px. Two clean runs after: 58–73 text nodes per view, lowest 5.93:1 light / 6.24:1 dark, 0 problems.
 - Not done: the clean-PC export run (owner, needs a second PC); a real phone (a headless touch PASS is not a phone).
+
+## 14. Final gate (2026-10-05, katana-mini; the record is in [../katana.md](../katana.md) "Final gate")
+
+- [x] A cut of only missing beats (a starter, nothing rendered) showed the gap slate and "No clips yet" on top of each
+  other in the preview. The empty line now shows only while no slate is up (`cut/preview.edge`).
+- [x] Under 48rem the rail scrolls sideways (P5), which left **Export** and the fold key off the right edge at 390 px
+  with no sign they were there. They sit in `.cut-rail__end`, pinned to the right edge (`position: sticky`, the dock's
+  ground behind them) while the rest of the rail scrolls under them; on a wide window nothing moves.
+- Test: `tests/cut-final-gate-view.test.js`.
