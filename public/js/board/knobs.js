@@ -78,6 +78,19 @@ export const knobMethods = {
 
     previewAspect(node) {
         if (node.type === 'audio') return 'auto'; // the player sets its own height, not a frame
-        return aspectCss(this.knobValue(node, 'aspect'));
+        // A finished render's real frame wins over the setting: an older take, a cloud model or an upload
+        // can be another shape, and the card takes that shape instead of letterboxing it (bloop's noteClipShape).
+        return node._mediaShape ?? aspectCss(this.knobValue(node, 'aspect'));
+    },
+
+    /** Once a clip or picture loads: keep its real shape on the card (not saved) when it differs from the box. */
+    noteMediaShape(node, el) {
+        const w = el?.videoWidth || el?.naturalWidth;
+        const h = el?.videoHeight || el?.naturalHeight;
+        if (!w || !h) return;
+        const [bw, bh] = String(this.previewAspect(node)).split('/').map(Number);
+        if (bw > 0 && bh > 0 && Math.abs(w / h - bw / bh) <= 0.02) return;
+        node._mediaShape = `${w} / ${h}`;
+        this.tidyAfterRender(); // the card is a new height now: nothing may overlap the cards below it
     },
 };

@@ -40,13 +40,14 @@
       <template x-if="node.type === 'upload'">
         {{-- `for` ties the label to the file input: without it a label clicks its FIRST control, which is
              the hidden "View full screen" key in media-actions, so clicking the drop area did nothing. --}}
-        <label class="card__drop" :class="{ 'has-media': mediaUrl(node) }" :for="'upload-file-' + node.id"
+        <label class="card__drop" :class="{ 'has-media': mediaUrl(node), 'has-shape': mediaUrl(node) && node._mediaShape }" :for="'upload-file-' + node.id"
+               :style="mediaUrl(node) && node._mediaShape ? { aspectRatio: node._mediaShape } : {}"
                @dragover.prevent @drop="onUploadDrop($event, node)" @dblclick.prevent="openViewer(node)">
           @include('pages/spaces/media-actions')
           <input type="file" class="visually-hidden" :id="'upload-file-' + node.id" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/flac,audio/mp4"
                  @change="uploadFile(node, $event.target.files[0]); $event.target.value = ''">
           <template x-if="mediaUrl(node) && !isVideo(node) && !isAudio(node)">
-            <img :src="mediaUrl(node)" :alt="node.label || 'Uploaded picture'">
+            <img :src="mediaUrl(node)" :alt="node.label || 'Uploaded picture'" @load="noteMediaShape(node, $el)">
           </template>
           <template x-if="mediaUrl(node) && isAudio(node)">
             @include('pages/spaces/media-audio')

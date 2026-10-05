@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: cards take the real shape of their clip or picture. A vertical clip makes a tall card instead of sitting in a wide box with black bars, on rendered cards and uploads alike.
+
 ## 2026.1005.1119
 
 - Changed: the audio player matches bloop's: a framed player with mute, download and Show in folder keys under the waveform, in light and dark mode.

@@ -4,7 +4,7 @@
   <div class="card__media" :style="{ aspectRatio: previewAspect(node) }" @dblclick="openViewer(node)">
     @include('pages/spaces/media-actions')
     <template x-if="mediaUrl(node) && node.type === 'image'">
-      <img :src="mediaUrl(node)" alt="" loading="lazy">
+      <img :src="mediaUrl(node)" alt="" loading="lazy" @load="noteMediaShape(node, $el)">
     </template>
     <template x-if="mediaUrl(node) && node.type === 'video'">
       @include('pages/spaces/media-video')
