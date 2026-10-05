@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1134
+
 - Fixed: Audio cards show their progress again while they render (the percentage, the bar and the step).
 
 ## 2026.1005.1122
