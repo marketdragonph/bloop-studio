@@ -62,6 +62,26 @@ Lane = row, stage = column, `x = (stage − 1) × 380`, `y = (lane − 1) × pit
   Wires: brief + still note + the beat's plate look notes + look → image; image → clip (first frame);
   motion + sound + script + the beat's cast look notes → clip.
 
+## Voice: dialogue and VO
+
+Ported from bloop unchanged:
+- Voice is the Director's call, ON by default, never asked (questions about it are dropped in code); only the person's
+  own words turn it off. `narration` (a narrator carries the film) and `voice_over` (dialogue, default true) on the build.
+- One `<tag> · script` card per beat: `[VO] …` and `[@tag (direction)] …` lines in order; outfit tags speak as the person.
+- Narration is positional: every lane when a narrator carries it, otherwise only the hook and the resolution may have one.
+- Briefs never carry spoken words or the says/asks frame; they name the act ("admits to Aiko that…").
+- Lines first, then SECONDS: about 2.5 words a second; never cut a line to fit; a longer exchange is the next beat.
+- `language` on the build; the person's own lines kept word for word, in quotes, in the brief that says them.
+- Speaking cast get a voice profile (timbre, register, accent, cadence, delivery, under pressure), in prose.
+- ScriptRepeats (no exact line twice across beats); checks CAST_BUT_SILENT, DIALOGUE_THIN, LINE_UNNAMED.
+
+Local rendering:
+- On-camera lines: the script card and the speakers' voice profile cards are wired into the clip; LTX-2.3 and
+  MiniMax-H3 voice them (they make their own sound). Wan is silent: its lanes get no script card.
+- VO: OPEN. No local text to speech. Test first on this PC (a two-hander and a narrated beat, LTX and H3). If the
+  video models cannot carry an off-screen narrator, VO renders on bloop's cloud voices when signed in: one Audio card
+  per narrated beat fed by the `[VO]` lines.
+
 ## Phases
 
 ### Phase 1 — conversation core (this replaces the current Director)
