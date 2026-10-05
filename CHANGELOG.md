@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1051
+
 - New: you can see the Director working. While it builds, its reply shows what it is doing (adding cards, wiring, checking its work) with a running count of cards and wires, and the panel header lights up.
 - Fixed: reloading the board while the Director was working showed your message twice.
 
