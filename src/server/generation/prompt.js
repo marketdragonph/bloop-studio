@@ -28,6 +28,17 @@ export class UpstreamTextPrompt {
     }
 }
 
+/** The Text card wired into an Audio card's Lyrics socket: the words a song sings. */
+export class LyricsPrompt {
+    constructor(upstream) {
+        this.upstream = upstream;
+    }
+
+    create() {
+        return this.upstream.find((n) => n.to_socket === 'lyrics')?.text_content?.trim() ?? '';
+    }
+}
+
 /**
  * MiniMax-H3 expects three labelled sections. Text already in that shape passes through;
  * plain text becomes the scene, with neutral sound and music lines so the model still scores it.

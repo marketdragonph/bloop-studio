@@ -2,10 +2,11 @@
 import { randomInt } from 'node:crypto';
 import { basename } from 'node:path';
 import { choosePreset, compileGraph, familyOf, knobsOf } from './presets.js';
-import { composePrompt } from './prompt.js';
+import { composePrompt, LyricsPrompt } from './prompt.js';
 import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
 import { knobInputs } from '../../shared/formats.js';
+import { isTextSocket } from '../../shared/node-types.js';
 
 const MAX_SEED = 2 ** 32 - 1;
 
@@ -13,13 +14,16 @@ export async function resolvePreset(ctx, next) {
     const { spaces, engine } = ctx.deps;
     ctx.upstream = spaces.upstreamOf(ctx.node.space_id, ctx.node.id);
     // A picture wired in but not rendered must not silently turn image-to-video into text-to-video.
-    const unrendered = ctx.upstream.find((n) => n.to_socket !== 'prompt' && !n.media_path);
+    const unrendered = ctx.upstream.find((n) => !isTextSocket(n.to_socket) && !n.media_path);
     if (unrendered) {
         throw new StageError(`The ${unrendered.type} card wired into ${unrendered.to_socket.replace('_', ' ')} has no render yet. Generate it first.`);
     }
-    const wired = ctx.upstream.filter((n) => n.to_socket !== 'prompt').map((n) => n.to_socket);
+    const wired = ctx.upstream.filter((n) => !isTextSocket(n.to_socket)).map((n) => n.to_socket);
     const { presets } = await engine.current();
     ctx.preset = choosePreset(presets, { type: ctx.node.type, settings: ctx.node.settings, wired });
+    if (!ctx.preset && ctx.node.type === 'audio') {
+        throw new StageError('No music model on this PC. Install ACE-Step or MiniMax Music in Settings → Engine, or sign in to bloop for voices.');
+    }
     if (!ctx.preset) throw new StageError('No workflow on this PC fits this card and its wires. Settings → Engine lists what is missing.');
     // A wired picture the workflow cannot take (a last frame on Wan, or without a first frame) must not be dropped silently.
     const ignored = wired.find((socket) => !(ctx.preset.needs ?? []).includes(socket));
@@ -34,6 +38,7 @@ export async function resolvePreset(ctx, next) {
 
 export async function buildPrompt(ctx, next) {
     ctx.prompt = composePrompt({ upstream: ctx.upstream, dialect: ctx.preset.dialect });
+    ctx.lyrics = new LyricsPrompt(ctx.upstream).create(); // none: the preset's instrumental default
     if (!ctx.prompt && !(ctx.preset.needs ?? []).length) {
         throw new StageError('Wire a Text card with your idea into the Words socket of this card.');
     }
@@ -76,6 +81,7 @@ export async function compile(ctx, next) {
         ...knobInputs(knobsOf(ctx.preset), settings), // aspect, resolution, duration, quality → pixels, frames, steps
         ...pick(settings, ['strength']),
         ...ctx.uploads,
+        ...(ctx.lyrics ? { lyrics: ctx.lyrics } : {}),
         prompt: ctx.prompt,
         seed: ctx.seed,
     };
@@ -155,7 +161,7 @@ async function pollUntilDone(comfy, promptId, ctx) {
 export async function collectOutput(ctx, next) {
     const { comfy, media, spaces, jobs } = ctx.deps;
     const entry = await comfy.history(ctx.promptId);
-    const files = Object.values(entry?.outputs ?? {}).flatMap((out) => [...(out.images ?? []), ...(out.videos ?? []), ...(out.gifs ?? [])]);
+    const files = Object.values(entry?.outputs ?? {}).flatMap((out) => [...(out.images ?? []), ...(out.videos ?? []), ...(out.gifs ?? []), ...(out.audio ?? [])]);
     const file = files.find((f) => f.type === 'output') ?? files[0];
     if (!file) throw new StageError('ComfyUI finished but returned no file.');
 

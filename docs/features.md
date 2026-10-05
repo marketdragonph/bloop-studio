@@ -54,7 +54,13 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   this PC even for a cloud pick. Tried on the RTX 3080 Ti: 4 s at 480p in 65–80 s.
 - **Audio card** (2026-10-05): voices, sound effects and music from its words on bloop's audio models
   (`kind=audio`, bloop's StudioAudioModels); a **Voice** knob reads `voice` / `voice_id` / `speaker`.
-  No local audio models: signed out, the card says to sign in.
+  Signed out it renders music locally (below); voices (text to speech) stay on bloop.
+- **Local music** (2026-10-05): Audio cards render songs on this PC with ACE-Step 1.5 Turbo
+  (`workflows/acestep-t2a.json`, default, 8 GB) or MiniMax Music 3 int8 (`music3-t2a.json`, 11 GB). Words is
+  the style (tags / caption), the new **Lyrics** socket the sung words (`LyricsPrompt`; none → instrumental),
+  **Duration** 15 s–3 min (formats.js `acestep` / `music3`, 30 s default). On 12 GB a 30 s song took 10 s
+  (ACE-Step) and 75 s (MiniMax Music 3). Lyrics on a bloop cloud model are refused, not dropped. Both are
+  in the engine installer (NVIDIA, offered unticked; Apache-2.0).
 - **Install offline engine** (Settings → Engine, and *Download missing models* under Workflows on this PC):
   reads the graphics card from the registry and the free disk per drive, suggests the model families the card
   can run (`engine-install/plan.js`), and downloads ComfyUI portable v0.38.0 plus the picked model files from

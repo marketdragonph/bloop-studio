@@ -24,6 +24,10 @@ export async function resolveCloudModel(ctx, next) {
     if (!ctx.model) throw new StageError('That bloop model is not available. Check Settings → Bloop account.');
 
     ctx.upstream = spaces.upstreamOf(ctx.node.space_id, ctx.node.id);
+    // Lyrics are sung by the music models on this PC; bloop's audio models take only their words.
+    if (ctx.upstream.some((n) => n.to_socket === 'lyrics')) {
+        throw new StageError('Lyrics are sung by the music models on this PC: pick ACE-Step or MiniMax Music in Model, or remove the Lyrics wire.');
+    }
     const unrendered = ctx.upstream.find((n) => n.to_socket !== 'prompt' && !n.media_path);
     if (unrendered) throw new StageError(`The ${unrendered.type} card wired into ${unrendered.to_socket.replace('_', ' ')} has no render yet. Generate it first.`);
 

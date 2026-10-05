@@ -1,11 +1,11 @@
 // The single GPU worker: claims queued jobs one at a time and runs them through the pipeline.
-import { runPipeline, StageError } from './pipeline.js';
+import { runPipeline } from './pipeline.js';
 import { GENERATION_STAGES } from './stages.js';
 import { CLOUD_STAGES } from './cloud-stages.js';
 import { cloudModelKey, isCloudFamily } from './cloud-models.js';
 
 const IDLE_POLL_MS = 1000;
-const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b' };
+const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b', audio: 'acestep' };
 
 /** The model family a queued job will load (the card's chosen family, else the type's default). */
 function jobFamily(job) {
@@ -64,10 +64,6 @@ export class GenerationWorker {
             // A bloop model renders on bloop; one this PC is no longer offered falls back to the
             // card's local default, exactly as the card's Model list shows it.
             ctx.cloud = await this.#offersCloud(node);
-            // No local audio models: an Audio card renders on bloop or not at all.
-            if (!ctx.cloud && node.type === 'audio') {
-                throw new StageError('Audio cards use bloop’s voice, sound and music models. Sign in to bloop, then pick one in Model.');
-            }
             await runPipeline(ctx.cloud ? CLOUD_STAGES : GENERATION_STAGES, ctx);
             jobs.finish(job.id, 'succeeded');
             report({ status: 'done', progress: 1, ...ctx.result });

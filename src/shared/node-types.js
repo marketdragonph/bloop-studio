@@ -8,7 +8,7 @@ export const NODE_TYPES = {
     note: { label: 'Note', icon: 'note', tone: 'warn', creatable: true },
     image: { label: 'Image', icon: 'image', tone: 'accent', creatable: true, generates: 'image' },
     video: { label: 'Video', icon: 'video', tone: 'sensor', creatable: true, generates: 'video' },
-    // A voice, a sound effect or music from its words, on bloop's audio models (signed in).
+    // Music from its words (and lyrics) on this PC; a voice, sound or music on bloop's models (signed in).
     audio: { label: 'Audio', icon: 'voice', tone: 'sensor', creatable: true, generates: 'audio' },
 };
 
@@ -29,9 +29,14 @@ export const SOCKETS = {
         { key: 'audio', label: 'Voice / audio', accepts: ['audio'], icon: 'voice' },
     ],
     audio: [
+        // For music, Words is the style (genre, mood, instruments); Lyrics is what is sung.
         { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
+        { key: 'lyrics', label: 'Lyrics', accepts: ['text'], icon: 'text' },
     ],
 };
+
+/** Sockets that carry words, not a picture or sound: nothing to render or upload first. */
+export const isTextSocket = (key) => key === 'prompt' || key === 'lyrics';
 
 const isFull = (socket, taken) => !socket.multiple && taken.includes(socket.key);
 

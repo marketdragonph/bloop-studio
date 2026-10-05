@@ -9,13 +9,13 @@ import { mimeFromName } from '../src/server/generation/media-store.js';
 const presets = firstVariants(loadCatalog());
 const findTitle = (graph, title) => Object.values(graph).find((n) => n._meta?.title === title);
 
-test('a voice goes into a Video card\'s Voice / audio socket; an Audio card offers a voice too', () => {
+test('a voice goes into a Video card\'s Voice / audio socket; an Audio card offers a voice and takes lyrics', () => {
     const video = { type: 'video' };
     assert.ok(socketsOf('video').some((s) => s.key === 'audio' && s.accepts.includes('audio')));
     const voice = { type: 'upload', media_mime: 'audio/mpeg' };
     assert.equal(socketsOf('video')[pickSocket(voice, video)].key, 'audio');
     assert.deepEqual(sourceKinds({ type: 'audio' }), ['audio']);
-    assert.deepEqual(socketsOf('audio').map((s) => s.key), ['prompt']);
+    assert.deepEqual(socketsOf('audio').map((s) => s.key), ['prompt', 'lyrics']);
     assert.equal(mimeFromName('line-01.mp3'), 'audio/mpeg');
     assert.equal(mimeFromName('line-01.wav'), 'audio/wav');
 });

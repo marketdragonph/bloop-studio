@@ -119,6 +119,7 @@ cloud models and the app is fully usable with no ComfyUI at all.
 - [x] VRAM-aware engine check (`minVramGb` per variant) and an automatic re-check after installs (2026-10-05)
 - [x] Settings → Engine: disk used, Repair (SHA-256 of every known model file, broken ones fetched again;
       the person's own files untouched), Remove (only `engineManaged`, stopped first) (2026-10-05)
+- [x] Local music families in the installer: ACE-Step 1.5 Turbo, MiniMax Music 3 (NVIDIA, unticked) (2026-10-05)
 - [ ] Online / offline / both as the person's choice: launch screen, Settings → Engine, card hint
 - [ ] AMD (ROCm) path, behind beta
 - [ ] Tested end to end on a clean Windows PC (12 GB NVIDIA) and the 24 GB AMD desktop

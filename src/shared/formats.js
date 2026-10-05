@@ -58,7 +58,17 @@ export const FAMILIES = {
         frames: (seconds) => Math.round((seconds * 25) / 8) * 8 + 1,
         qualities: [{ id: 'final', label: 'Final (8 steps)', steps: 8 }],
     },
+    // Music (Audio cards): only a length. The song may end a little early (MiniMax Music 3 decides).
+    acestep: { durations: [15, 30, 60, 90, 120, 180], defaultDuration: 30 },
+    music3: { durations: [15, 30, 60, 90, 120, 180], defaultDuration: 30 },
 };
+
+/** "30 s", "1 min", "1 min 30 s"; a video clip past 5 s says it is slower. */
+function durationLabel(seconds, isClip) {
+    if (seconds < 60) return isClip && seconds > 5 ? `${seconds} s (slower)` : `${seconds} s`;
+    const rest = seconds % 60;
+    return `${Math.floor(seconds / 60)} min${rest ? ` ${rest} s` : ''}`;
+}
 
 export const DEFAULT_KNOBS = { aspect: '16:9', resolution: null, duration: 5, quality: 'final' };
 
@@ -76,30 +86,41 @@ export function knobOptions(family) {
     const f = FAMILIES[family];
     if (!f) return null;
     return {
-        aspects: ASPECTS.map(({ id, label }) => ({ value: id, label })),
-        resolutions: f.resolutions.map(({ id, label }) => ({ value: id, label })),
+        // Music has no picture: no aspect, resolution or quality.
+        aspects: f.resolutions ? ASPECTS.map(({ id, label }) => ({ value: id, label })) : [],
+        resolutions: (f.resolutions ?? []).map(({ id, label }) => ({ value: id, label })),
         // Long clips take much longer (10 s ≈ 2–4 min on 12 GB, against ~1 min for 5 s): the label says so.
-        durations: (f.durations ?? []).map((s) => ({ value: s, label: s > 5 ? `${s} s (slower)` : `${s} s` })),
+        durations: (f.durations ?? []).map((s) => ({ value: s, label: durationLabel(s, Boolean(f.frames)) })),
         // The longest clip per resolution, where a high resolution is not tried that long yet.
         longest: f.longest ?? {},
-        qualities: f.qualities.map(({ id, label }) => ({ value: id, label })),
+        qualities: (f.qualities ?? []).map(({ id, label }) => ({ value: id, label })),
+        defaults: f.defaultDuration ? { duration: f.defaultDuration } : {},
     };
 }
 
-/** Turns a card's knob settings into preset inputs: width, height, length (frames), steps. */
+/** The clip or song length a card asks for, in seconds: its pick when offered, else the default. */
+function secondsFor(f, settings, resolution) {
+    const cap = f.longest?.[resolution?.id] ?? Infinity;
+    const offered = f.durations.filter((s) => s <= cap);
+    if (offered.includes(Number(settings.duration))) return Number(settings.duration);
+    return f.defaultDuration ?? Math.min(5, offered.at(-1));
+}
+
+/** Turns a card's knob settings into preset inputs: width, height, length (frames), steps; a song's duration. */
 export function knobInputs(family, settings = {}) {
     const f = FAMILIES[family];
     if (!f) return {};
-    const resolution = f.resolutions.find((r) => r.id === settings.resolution) ?? f.resolutions[0];
-    const quality = f.qualities.find((q) => q.id === settings.quality) ?? f.qualities.at(-1);
-    const inputs = { ...sizeFor(settings.aspect ?? DEFAULT_KNOBS.aspect, resolution.mp), steps: quality.steps };
+    const inputs = {};
+    const resolution = f.resolutions?.find((r) => r.id === settings.resolution) ?? f.resolutions?.[0];
+    const quality = f.qualities?.find((q) => q.id === settings.quality) ?? f.qualities?.at(-1);
+    if (resolution) Object.assign(inputs, sizeFor(settings.aspect ?? DEFAULT_KNOBS.aspect, resolution.mp));
+    if (quality) inputs.steps = quality.steps;
     if (f.frames) {
-        const cap = f.longest?.[resolution.id] ?? Infinity;
-        const offered = f.durations.filter((s) => s <= cap);
-        const seconds = offered.includes(Number(settings.duration)) ? Number(settings.duration) : Math.min(5, offered.at(-1));
-        inputs.length = f.frames(seconds);
+        inputs.length = f.frames(secondsFor(f, settings, resolution));
         // The clip's exact length in seconds: a wired audio track is trimmed to it (lip sync, ltx-ia2v).
         if (f.fps) inputs.seconds = (inputs.length - 1) / f.fps;
+    } else if (f.durations) {
+        inputs.duration = secondsFor(f, settings, resolution);
     }
     return inputs;
 }

@@ -48,8 +48,8 @@ export const knobMethods = {
         const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities, voice: options.voices }[key];
         const match = (v) => offered?.find((o) => String(o.value) === String(v))?.value;
         if (value !== undefined && value !== null && (!offered?.length || match(value) !== undefined)) return offered?.length ? match(value) : value;
-        // A cloud model's own default (e.g. 5 s, not its longest and dearest).
-        const own = this.familyFor(node)?.defaults?.[key];
+        // A cloud model's own default (e.g. 5 s, not its longest and dearest); a song's 30 s.
+        const own = this.familyFor(node)?.defaults?.[key] ?? options.defaults?.[key];
         if (own !== undefined && match(own) !== undefined) return match(own);
         if (key === 'aspect' && offered?.length && match(DEFAULT_KNOBS.aspect) === undefined) return offered[0].value;
         if (key === 'resolution') return options.resolutions[0]?.value;

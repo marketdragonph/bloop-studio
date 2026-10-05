@@ -21,6 +21,9 @@ const UNPACKED_FACTOR = 2.6; // the portable .7z grows about this much once unpa
 export const MAX_FOLDER_CHARS = 70;
 const GB = 1e9;
 
+// Music on NVIDIA (tested on 12 GB): offered, not pre-checked, so a picture-and-video install stays its size.
+const MUSIC = { acestep: ['turbo', false], music3: ['int8', false] };
+
 /**
  * Per vendor and memory: which variant of each family runs, and whether it is suggested.
  * `null` = not offered on this card. Tested: RTX 3080 Ti 12 GB (int8 set), RX 7900 XTX 24 GB.
@@ -30,13 +33,13 @@ const GB = 1e9;
 function tierFor(gpu) {
     const vram = gpu?.vramGb ?? 0;
     if (gpu?.vendor === 'nvidia' && vram >= 20) {
-        return { verdict: 'Ready for pictures and video with sound.', picks: { zimage: ['bf16', true], ltx: ['distilled-fp8', true], h3: ['int8', false], wan5b: ['fp16', false] } };
+        return { verdict: 'Ready for pictures and video with sound.', picks: { zimage: ['bf16', true], ltx: ['distilled-fp8', true], h3: ['int8', false], wan5b: ['fp16', false], ...MUSIC } };
     }
     if (gpu?.vendor === 'nvidia' && vram >= 11) {
-        return { verdict: 'Ready for pictures and video with sound.', picks: { zimage: ['int8', true], ltx: ['distilled-fp8', true], h3: ['int8', false], wan5b: ['fp16', false] } };
+        return { verdict: 'Ready for pictures and video with sound.', picks: { zimage: ['int8', true], ltx: ['distilled-fp8', true], h3: ['int8', false], wan5b: ['fp16', false], ...MUSIC } };
     }
     if (gpu?.vendor === 'nvidia' && vram >= 8) {
-        return { verdict: 'Pictures and light silent video. Video with sound needs 12 GB: use bloop cloud for it.', picks: { zimage: ['int8', true], wan5b: ['fp16', false] } };
+        return { verdict: 'Pictures and light silent video. Video with sound needs 12 GB: use bloop cloud for it.', picks: { zimage: ['int8', true], wan5b: ['fp16', false], acestep: MUSIC.acestep } };
     }
     if (gpu?.vendor === 'amd' && vram >= 16) {
         return { verdict: 'Pictures and silent draft video (AMD support is in beta). Use bloop cloud for video with sound.', picks: { zimage: ['bf16', true], wan5b: ['fp16', false] }, beta: true };

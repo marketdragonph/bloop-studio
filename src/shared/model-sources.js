@@ -218,5 +218,102 @@ export const MODEL_FAMILIES = [
                 }
             ]
         }
+    },
+    {
+        "id": "acestep",
+        "label": "ACE-Step 1.5 Turbo",
+        "what": "Music and songs from words and lyrics, fast",
+        "kind": "audio",
+        "variants": {
+            "turbo": [
+                {
+                    "folder": "diffusion_models",
+                    "name": "acestep_v1.5_turbo.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/diffusion_models/acestep_v1.5_turbo.safetensors",
+                    "size": 4787825604,
+                    "sha256": "3f6e0797fad420a39bd33979eb6e840e30989e34a3794e843d23b60ec6e422d7",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files"
+                    }
+                },
+                {
+                    "folder": "text_encoders",
+                    "name": "qwen_0.6b_ace15.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors",
+                    "size": 1191588248,
+                    "sha256": "fd4590c82153b8ddb67e15a2e7aaa8afa8b83a858c8a9b82a4831063156aa7a7",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files"
+                    }
+                },
+                {
+                    "folder": "text_encoders",
+                    "name": "qwen_1.7b_ace15.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors",
+                    "size": 3708523360,
+                    "sha256": "ed63e9247d1f55f3ace04fa11e95b085fc82d459c82c5626f0b2e37b91ebd710",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files"
+                    }
+                },
+                {
+                    "folder": "vae",
+                    "name": "ace_1.5_vae.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors",
+                    "size": 337431732,
+                    "sha256": "6de92e3a862acd287e08b024ac90f0783a8635451b728721a33ff03565bcb2bb",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "id": "music3",
+        "label": "MiniMax Music 3",
+        "what": "Music and songs from words and lyrics, best quality",
+        "kind": "audio",
+        "variants": {
+            "int8": [
+                {
+                    "folder": "diffusion_models",
+                    "name": "minimax_music3_dit_int8_convrot.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/diffusion_models/minimax_music3_dit_int8_convrot.safetensors",
+                    "size": 2502161682,
+                    "sha256": "d6b959633e69899f99f3a92d6741c0fe79f26958a30811e50e372ef978b24d5f",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/MiniMax-Music-3"
+                    }
+                },
+                {
+                    "folder": "text_encoders",
+                    "name": "minimax_music3_text_encoder_pruned_int8_convrot.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors",
+                    "size": 9196611886,
+                    "sha256": "010b7416d2336a08c711bc22ee65849c9623069ddb7d89bec011a75699e52014",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/MiniMax-Music-3"
+                    }
+                },
+                {
+                    "folder": "vae",
+                    "name": "minimax_music3_dav.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/vae/minimax_music3_dav.safetensors",
+                    "size": 216696128,
+                    "sha256": "2a32155b769be01445fcc2a8663b910fc9e1751e18dc1c3ec528064512d9ef0c",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/MiniMax-Music-3"
+                    }
+                }
+            ]
+        }
     }
 ];

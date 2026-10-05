@@ -48,7 +48,7 @@ for (;;) {
     const entry = await comfy.history(promptId).catch(() => null);
     if (entry?.status?.status_str === 'error') throw new Error(JSON.stringify(entry.status.messages).slice(0, 800));
     if (entry?.status?.completed) {
-        const file = Object.values(entry.outputs).flatMap((o) => [...(o.images ?? []), ...(o.videos ?? []), ...(o.gifs ?? [])])[0];
+        const file = Object.values(entry.outputs).flatMap((o) => [...(o.images ?? []), ...(o.videos ?? []), ...(o.gifs ?? []), ...(o.audio ?? [])])[0];
         const out = `C:/ComfyUI/output/test/try-${presetId}-${preset.variant}-${Date.now()}${file.filename.slice(file.filename.lastIndexOf('.'))}`;
         await writeFile(out, await comfy.download(file));
         console.log(`done in ${Math.round((Date.now() - started) / 1000)}s -> ${out}`);

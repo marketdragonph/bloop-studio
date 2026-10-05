@@ -10,6 +10,8 @@ const HF = 'https://huggingface.co';
 const zi = `${HF}/Comfy-Org/z_image_turbo/resolve/main/split_files`;
 const mm = `${HF}/Comfy-Org/MiniMax-H3/resolve/main`;
 const wan = `${HF}/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files`;
+const ace = `${HF}/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files`;
+const mu = `${HF}/Comfy-Org/MiniMax-Music-3/resolve/main`;
 
 // Family → variant (the workflow variant id it unlocks) → files [ComfyUI models folder, url].
 const FAMILIES = [
@@ -44,6 +46,22 @@ const FAMILIES = [
         variants: {
             fp16: [['diffusion_models', `${wan}/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors`],
                 ['text_encoders', `${wan}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors`], ['vae', `${wan}/vae/wan2.2_vae.safetensors`]],
+        },
+    },
+    {
+        id: 'acestep', label: 'ACE-Step 1.5 Turbo', what: 'Music and songs from words and lyrics, fast', kind: 'audio',
+        variants: {
+            turbo: [['diffusion_models', `${ace}/diffusion_models/acestep_v1.5_turbo.safetensors`],
+                ['text_encoders', `${ace}/text_encoders/qwen_0.6b_ace15.safetensors`],
+                ['text_encoders', `${ace}/text_encoders/qwen_1.7b_ace15.safetensors`], ['vae', `${ace}/vae/ace_1.5_vae.safetensors`]],
+        },
+    },
+    {
+        id: 'music3', label: 'MiniMax Music 3', what: 'Music and songs from words and lyrics, best quality', kind: 'audio',
+        variants: {
+            int8: [['diffusion_models', `${mu}/diffusion_models/minimax_music3_dit_int8_convrot.safetensors`],
+                ['text_encoders', `${mu}/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors`],
+                ['vae', `${mu}/vae/minimax_music3_dav.safetensors`]],
         },
     },
 ];

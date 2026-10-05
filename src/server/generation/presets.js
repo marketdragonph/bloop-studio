@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const WORKFLOWS_DIR = fileURLToPath(new URL('../../../workflows/', import.meta.url));
-const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b' };
+const DEFAULT_FAMILY = { image: 'zimage', video: 'wan5b', audio: 'acestep' };
 
 /** A binding is [title, field] or a list of them; always return the list form. */
 export const targetsOf = (binding) => (Array.isArray(binding[0]) ? binding : [binding]);

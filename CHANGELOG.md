@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: music on your own GPU. Audio cards make songs with ACE-Step 1.5 Turbo (fast) or MiniMax Music 3 (best), from 15 seconds to 3 minutes. Wire the style into Words and the song's words into the new Lyrics socket; leave Lyrics empty for an instrumental. Both models are in Install offline engine and Download missing models.
+
 ## 2026.1005.847
 
 - New: longer clips on your own GPU. LTX-2.3, MiniMax-H3 and lip sync now go up to 10 seconds at 480p (about 2–4 minutes to render on a 12 GB card). The higher resolutions stay at 5 seconds for now.

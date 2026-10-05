@@ -1,6 +1,6 @@
 // One-off: records each workflow variant's graphics-memory need (`minVramGb`), the same tiers the
 // installer suggests from (engine-install/plan.js): full-precision sets 20 GB, int8 / fp8 sets 11 GB
-// (12 GB cards report ~11.99), Z-Image int8 and Wan 5B 8 GB.
+// (12 GB cards report ~11.99), Z-Image int8, Wan 5B and ACE-Step 8 GB; MiniMax Music 3 int8 11 GB.
 //   node scripts/set-min-vram.mjs
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -12,6 +12,8 @@ const NEEDS = [
     [/^h3-.*\.json$/, 20],
     [/^ltx-.*\.json$/, 11],
     [/^wan5b-.*\.json$/, 8],
+    [/^acestep-.*\.json$/, 8],
+    [/^music3-.*\.json$/, 11],
 ];
 
 for (const name of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
