@@ -1,0 +1,31 @@
+{
+  "id": "product-turn",
+  "title": "Product turn",
+  "line": "Product turn · 3 beats · 0:12",
+  "approach": "A clean product film: reveal, a slow turn to show the detail, a hero frame to end on. Three beats, four seconds each. Change the product in each beat's words.",
+  "aspect": "1:1",
+  "runtime_seconds": 12,
+  "clip_seconds": 4,
+  "beats": [
+    {
+      "tag": "s1-reveal",
+      "role": "hook",
+      "brief": "The product appears out of soft shadow on a plain pedestal.",
+      "shot": "A ceramic coffee cup on a plain stone pedestal, soft light slowly revealing it from shadow, clean studio background, product photography, minimal, sharp detail."
+    },
+    {
+      "tag": "s2-detail",
+      "role": "turn",
+      "brief": "Close and slow: the camera circles to show texture and shape.",
+      "shot": "Macro close-up of the ceramic coffee cup's glazed surface and handle, the camera slowly orbiting, soft studio light, shallow depth of field, product photography."
+    },
+    {
+      "tag": "s3-hero",
+      "role": "close",
+      "brief": "The hero frame: the whole product, centred, held still to the end.",
+      "shot": "The ceramic coffee cup centred on the stone pedestal, steam rising gently, warm key light, clean background, hero product shot, still camera."
+    }
+  ],
+  "music": null,
+  "voice": null
+}

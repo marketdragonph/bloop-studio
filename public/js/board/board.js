@@ -12,6 +12,10 @@ import { viewerMethods } from './viewer.js';
 import { layoutMethods } from './layout.js';
 import { NODE_TYPES, socketsOf } from '/shared/node-types.js';
 import { icon } from '/shared/icons.js';
+import { EMPTY_TEXT, copy } from '/shared/katana-controls.js';
+import { ghostPeaks, wavePath } from '/shared/cut-lanes.js';
+
+const GHOST_WAVE = wavePath(ghostPeaks());
 
 export default function SpaceBoard() {
     return {
@@ -45,6 +49,11 @@ export default function SpaceBoard() {
         directorLog: [],
         viewer: null,
         history: null,
+        // First run (P2b): the empty bay's ghost strip, Ask the Director only with a key, the render readout key.
+        emptyText: EMPTY_TEXT,
+        ghostWave: GHOST_WAVE,
+        directorReady: false,
+        cutMissing: 0,
 
         init() {
             const data = JSON.parse(this.$refs.boardData.textContent);
@@ -53,6 +62,7 @@ export default function SpaceBoard() {
             this.nodes = data.nodes;
             this.connections = data.connections;
             Object.assign(this, data.space.canvas_state);
+            this.directorReady = this.$el.dataset.directorReady === '1';
 
             this.history = createHistory({
                 onChange: () => {
@@ -92,6 +102,18 @@ export default function SpaceBoard() {
 
         async redo() {
             try { await this.history.redo(); } catch (error) { this.toast(error.message, 'alert'); }
+        },
+
+        /** "Render 7 missing beats", the same key as the Cut's rail (it opens the dock's sheet). */
+        renderMissingLabel() {
+            return copy('renderKey', { n: this.cutMissing });
+        },
+
+        /** Files dropped on the EMPTY board are Bring my clips (the Cut dock does the work, cut-bring.js). */
+        bringDrop(event) {
+            const files = event.dataTransfer?.files;
+            if (this.nodes.length || !files?.length) return;
+            window.dispatchEvent(new CustomEvent('cut:bring', { detail: { files: [...files] } }));
         },
 
         toast(message, tone = 'info') {

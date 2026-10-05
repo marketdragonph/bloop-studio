@@ -5,8 +5,9 @@
 // (the board must not lag): the dock keeps its own small item list, changed only by those events and edits.
 // P2 edits (cut-actions.js, cut-strip.js), undo (cut-history.js) and autosave (cut-persistence.js) are method
 // modules spread in here, so one scope holds one copy of the items; the preview is CutPlayer (cut-player.js).
-// It never starts a render: Go to card takes the person to the card, where they press Generate. Export and Pack
-// (cut-export.js) start only on the person's press.
+// It never starts a render by itself: Go to card takes the person to the card, where they press Generate; Render
+// missing beats (cut-render.js) queues only on the person's press in its sheet. Export and Pack (cut-export.js) start
+// only on the person's press. P2b: the live cut (cut-auto.js) and Bring my clips (cut-bring.js).
 import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
 import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerTicks, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
 import { entryKey, laneEntries, layoutLane, toScreen } from '/shared/cut-timeline.js';
@@ -16,6 +17,9 @@ import { cutPersistenceMethods } from './cut-persistence.js';
 import { cutActionMethods } from './cut-actions.js';
 import { cutStripMethods } from './cut-strip.js';
 import { cutExportMethods } from './cut-export.js';
+import { cutAutoMethods } from './cut-auto.js';
+import { cutRenderMethods } from './cut-render.js';
+import { cutBringMethods } from './cut-bring.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -48,6 +52,8 @@ export default function CutDock() {
         cutSound: null,
         cutSettings: { resolution: 1080, fps: 30 },
         cutDraft: true, // no items yet: the lane shows the board's ready beats, read only, until Fill
+        cutAuto: true, // the live cut: the server fills the cut as clips land, until the person's first edit (P2b)
+        cutGuessed: false, // no plan on this board: the live cut never runs here
         cutAsExported: false,
         cutItems: [], // what the lanes draw (cut-timeline.js), rebuilt only on load, edit, resize
         cutIndex: {}, // node id → lane index: a node event for a card not in the cut costs one lookup
@@ -157,6 +163,7 @@ export default function CutDock() {
             this.cutBeatsMs = Array.isArray(data.beats_ms) ? data.beats_ms : [];
             this._cutSlots = Array.isArray(data.slots) ? data.slots : [];
             this.cutFindings = Array.isArray(data.findings) ? data.findings : [];
+            this.cutGuessed = Boolean(data.guessed);
             const beds = Array.isArray(data.beds) ? data.beds : [];
             this.cutBeds = {
                 music: beds.find((b) => b.kind === 'music') ?? null,
@@ -195,6 +202,7 @@ export default function CutDock() {
             this.cutVoice = voice ? bedSegments(items, Number(this.cutSound?.voice?.start_ms) || 0, this.cutBedMs(voice), this.cutPps) : [];
             if (!items.some((i) => i.key === this.cutSelectedKey)) this.cutSelectedKey = items.find((i) => i.ready)?.key ?? null;
             if (!this.cutDrag) this._cutPlayer?.refresh(); // a trim drag refreshes once, on release
+            this.cutTellMissing(); // the board's render readout (cut-render.js)
         },
 
         /** One lane entry as the views draw it (positions in px from the shared time map). */
@@ -427,7 +435,9 @@ export default function CutDock() {
             const { ready, count } = this.cutCounts();
             if (!count) return 'No clips yet';
             if (!ready) return `0 of ${count} beats rendered`;
-            const parts = [copy('beats', { ready, n: count }), fmtClock(this.cutLay().export_ms)];
+            // "All 7 beats are in · 0:47" once every planned beat has its clip (05 §2.1).
+            const head = ready === count && count > 1 && !this.cutGuessed ? copy('allIn', { n: count }) : copy('beats', { ready, n: count });
+            const parts = [head, fmtClock(this.cutLay().export_ms)];
             if (ready < count) parts.push(copy('withGaps', { total: fmtClock(this._cutBoardMs) }));
             return parts.join(' · ');
         },
@@ -445,5 +455,8 @@ export default function CutDock() {
         ...cutActionMethods,
         ...cutStripMethods,
         ...cutExportMethods,
+        ...cutAutoMethods,
+        ...cutRenderMethods,
+        ...cutBringMethods,
     };
 }

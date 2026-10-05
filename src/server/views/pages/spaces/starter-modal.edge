@@ -1,0 +1,28 @@
+{{-- Start from a starter (05-irresistible.md §2.4): three small plans with briefs only, no media. One press lays
+     the chosen one out: on this empty board (space), else on a new space named after it. --}}
+@component('components/modal', { title: controlLabel('board.starter') })
+  <form method="POST" action="{{ space ? `/spaces/${space.id}/starter` : '/spaces/starters' }}"
+        hx-post="{{ space ? `/spaces/${space.id}/starter` : '/spaces/starters' }}" hx-target="#modal" hx-swap="innerHTML" class="stack-sm">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <p class="plate-note">A ready plan with every card wired and its words written. Change any words, then render. No key and no internet needed.</p>
+    @if(error)
+      <p class="field__error" role="alert">{{ error }}</p>
+    @end
+    <ul class="starter-list" role="list">
+      @each(starter in starters)
+        <li class="starter">
+          <span class="starter__text">
+            <span class="starter__title">{{ starter.title }}</span>
+            <span class="ae-readout starter__line">{{ starter.line }}</span>
+            <span class="starter__about">{{ starter.approach }}</span>
+          </span>
+          <button type="submit" class="ae-key ae-key--sm" name="starter" value="{{ starter.id }}" data-control="board.starterPick"
+                  aria-label="{{ controlLabel('board.starterPick') }}: {{ starter.title }}">{{ controlLabel('board.starterPick') }}</button>
+        </li>
+      @end
+    </ul>
+    <div class="row row--end">
+      <button type="button" class="ae-key" @click="close()">Cancel</button>
+    </div>
+  </form>
+@end

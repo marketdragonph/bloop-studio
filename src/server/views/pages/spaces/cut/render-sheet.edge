@@ -1,0 +1,56 @@
+{{-- Render missing beats (05-irresistible.md §2.2, owner decision 7), inside the export sheet's frame. The numbers
+     come first: how many cards, on this PC (a time only when past renders measured one) or on bloop (the credits and
+     the balance), each card with its model, and what is skipped and why. One orange key, Render N cards, and Not now.
+     Nothing is queued until the person presses; a shortfall is said plainly and the key stays off. --}}
+<template x-if="cutSheet === 'render'">
+  <div class="cut-sheet__body">
+    <header class="cut-sheet__head">
+      <h3 class="ae-stencil cut-sheet__title" id="cut-sheet-render" tabindex="-1" data-sheet-focus="render">{{ controlLabel('cut.renderMissing') }}</h3>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutRenderNotNow()" data-control="cut.sheetClose"
+              aria-label="{{ controlLabel('cut.sheetClose') }}" title="{{ controlLabel('cut.sheetClose') }}">{{{ icon('close') }}}</button>
+    </header>
+    <div class="cut-sheet__stack">
+      <p class="cut-sheet__note" role="status" x-show="cutRenderState === 'loading'">Reading the plan…</p>
+
+      <template x-if="cutRender && cutRenderState !== 'loading'">
+        <div class="cut-sheet__stack">
+          <template x-for="line in cutRenderLines()" :key="line">
+            <p class="cut-sheet__done" x-text="line"></p>
+          </template>
+          <ul class="cut-render__list" x-show="cutRender.items.length" aria-label="Cards to render">
+            <template x-for="card in cutRender.items" :key="card.node_id">
+              <li class="cut-render__card">
+                <span class="cut-render__name" x-text="card.label"></span>
+                <span class="ae-readout cut-render__model" :class="{ 'is-cloud': card.cloud }"
+                      x-text="card.model + (card.cloud && card.credits != null ? ' · ' + card.credits + ' credits' : '')"></span>
+              </li>
+            </template>
+          </ul>
+          <template x-if="cutRender.skipped.length">
+            <div class="cut-render__skipped">
+              <p class="ae-stencil cut-render__label" x-text="cutCopy('renderSkipped')"></p>
+              <template x-for="skip in cutRender.skipped" :key="skip.reason">
+                <p class="cut-sheet__note cut-sheet__note--warn" x-text="skip.reason"></p>
+              </template>
+            </div>
+          </template>
+          <p class="cut-sheet__alert" role="alert" x-show="cutRenderBlock()" x-text="cutRenderBlock()"></p>
+          <div class="cut-sheet__keys" x-show="cutRenderNoEngine()">
+            <a class="ae-key ae-key--sm" href="/settings" data-control="cut.openSettings">{{{ icon('settings') }}}<span>{{ controlLabel('cut.openSettings') }}</span></a>
+            <a class="ae-key ae-key--sm" href="/settings#bloop-account" data-control="cut.signIn">{{{ icon('key') }}}<span>{{ controlLabel('cut.signIn') }}</span></a>
+          </div>
+        </div>
+      </template>
+
+      <p class="cut-sheet__alert" role="alert" x-show="['refused', 'failed'].includes(cutRenderState)" x-text="cutRenderError"></p>
+
+      <div class="cut-sheet__foot">
+        <button type="button" class="ae-key ae-key--sm" @click="cutRenderNotNow()" data-control="cut.renderNotNow">{{ controlLabel('cut.renderNotNow') }}</button>
+        <button type="button" class="ae-key ae-key--sm ae-key--accent" x-show="cutRender?.cards" @click="cutRenderGo()"
+                :disabled="cutRenderState === 'queuing' || Boolean(cutRenderBlock())" data-control="cut.renderConfirm">
+          {{{ icon('play') }}}<span x-text="cutRenderConfirmText()">{{ controlLabel('cut.renderConfirm') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

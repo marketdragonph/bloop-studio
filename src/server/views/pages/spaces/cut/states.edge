@@ -27,7 +27,9 @@
     </div>
     <div class="cut-state__say">
       <p class="cut-state__text" x-text="cutEmptyText.dock"></p>
-      <button type="button" class="ae-key ae-key--sm" @click="cutAskDirector()" data-control="cut.askDirector">{{{ icon('chat') }}}<span>{{ controlLabel('cut.askDirector') }}</span></button>
+      <button type="button" class="ae-key ae-key--sm" x-show="directorReady" @click="cutAskDirector()" data-control="cut.askDirector">{{{ icon('chat') }}}<span>{{ controlLabel('cut.askDirector') }}</span></button>
+      <button type="button" class="ae-key ae-key--sm" @click="cutBringPick()" :disabled="Boolean(cutBringing)"
+              data-control="board.bringClips">{{{ icon('upload') }}}<span>{{ controlLabel('board.bringClips') }}</span></button>
     </div>
   </div>
 </template>

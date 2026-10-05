@@ -1,0 +1,39 @@
+{
+  "id": "night-drive",
+  "title": "Night drive",
+  "line": "Night drive · 4 beats · 0:20 · music",
+  "approach": "A lone driver crosses a sleeping city after midnight. Four beats, five seconds each: the car wakes, the city slides past, a red light holds, the road opens out. Music carries it; no words.",
+  "aspect": "16:9",
+  "runtime_seconds": 20,
+  "clip_seconds": 5,
+  "beats": [
+    {
+      "tag": "s1-ignition",
+      "role": "hook",
+      "brief": "The dashboard lights up in a dark garage. The hook: a face lit from below.",
+      "shot": "Close-up inside a parked car at night, a dashboard glowing amber, the driver's face lit from below, breath fogging the cold air, shallow depth of field, cinematic, 35 mm film grain."
+    },
+    {
+      "tag": "s2-city",
+      "role": "setup",
+      "brief": "Wide street, neon reflections on wet asphalt, the car small in frame.",
+      "shot": "Wide shot of an empty city street after rain, neon signs reflecting on wet asphalt, a single car driving through the middle of the frame, slow camera dolly, deep blue and magenta light, cinematic."
+    },
+    {
+      "tag": "s3-red-light",
+      "role": "turn",
+      "brief": "The car stops at a red light. Stillness; the light holds on the driver.",
+      "shot": "Side view of the driver waiting at a red traffic light, red light washing over the windshield, rain drops on the glass, still and quiet, shallow focus, cinematic night."
+    },
+    {
+      "tag": "s4-open-road",
+      "role": "close",
+      "brief": "The city ends; a highway runs into the dawn. Hold to the end.",
+      "shot": "Rear view of a car driving onto an empty highway leaving the city lights behind, the first pale light of dawn on the horizon, long straight road, calm, wide cinematic shot."
+    }
+  ],
+  "music": {
+    "style": "Slow synthwave instrumental, warm analog pads, a steady soft drum machine, a lonely lead melody, 90 bpm, night-time driving mood."
+  },
+  "voice": null
+}

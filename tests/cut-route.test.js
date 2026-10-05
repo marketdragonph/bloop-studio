@@ -15,6 +15,7 @@ import { csrf } from '../src/server/middleware/csrf.js';
 import { cutRoutes } from '../src/server/routes/cut.js';
 import { spacesRoutes } from '../src/server/routes/spaces.js';
 import { generationRoutes } from '../src/server/routes/generation.js';
+import { uploadRoutes } from '../src/server/routes/uploads.js';
 
 const TOKEN = 'a'.repeat(64);
 let dir;
@@ -32,7 +33,14 @@ before(async () => {
     const plans = new DirectorPlans(db);
     const cuts = new CutsRepository(db);
     const events = new BoardEvents();
-    const media = { saveUpload: async ({ spaceId, nodeId, mime }) => `spaces/${spaceId}/card-${nodeId}/upload.${mime.split('/')[1]}` };
+    // The upload is streamed: the fake reads the body chunk by chunk, as the media store does.
+    const media = {
+        saveUploadStream: async ({ spaceId, nodeId, mime, body }) => {
+            let bytes = 0;
+            for await (const chunk of body) bytes += chunk.length;
+            return { mediaPath: `spaces/${spaceId}/card-${nodeId}/upload.${mime.split('/')[1]}`, bytes };
+        },
+    };
     deps = { spaces, jobs, plans, cuts, events, media, boardCut: new BoardCut({ db }) };
 
     space = spaces.create({ name: 'film' });
@@ -50,6 +58,7 @@ before(async () => {
     app.use('*', csrf(TOKEN));
     app.route('/spaces', spacesRoutes({ ...deps, views: null }));
     app.route('/', generationRoutes(deps));
+    app.route('/', uploadRoutes(deps));
     app.route('/', cutRoutes(deps));
 });
 
@@ -116,11 +125,11 @@ test('a clip or sound uploaded onto an Upload card sends a cut event; a picture 
     const sent = [];
     const listen = (u) => sent.push(u);
     deps.events.on('cut', listen);
-    const send = (name, type) => {
-        const body = new FormData();
-        body.append('file', new File([new Uint8Array([1, 2, 3])], name, { type }));
-        return app.request(`/spaces/${space.id}/nodes/${upload.id}/upload`, { method: 'POST', body, headers: { 'x-csrf-token': TOKEN } });
-    };
+    // The file is the body itself (streamed), its name in X-File-Name.
+    const send = (name, type) => app.request(`/spaces/${space.id}/nodes/${upload.id}/upload`, {
+        method: 'POST', body: new Uint8Array([1, 2, 3]),
+        headers: { 'x-csrf-token': TOKEN, 'content-type': type, 'x-file-name': encodeURIComponent(name) },
+    });
     try {
         assert.equal((await send('still.png', 'image/png')).status, 200);
         assert.equal(sent.length, 0);

@@ -52,7 +52,7 @@ export class CutDraft {
      * @returns {{ drafted: boolean, mode: string, reason: string|null, added: number, missing: string[], capped: boolean, offer: string|null, cut: object }}
      * @throws {CutConflictError|CutInvalidError}
      */
-    draft(spaceId, { mode, by = 'person', revision = null, turn = null }) {
+    draft(spaceId, { mode, by = 'person', revision = null, turn = null, bed = false }) {
         if (!DRAFT_MODES.includes(mode)) throw new CutInvalidError('A draft fills the cut, adds new clips, or replaces it.');
         const cut = this.cuts.current(spaceId);
         if (revision != null && Number(revision) !== cut.revision) throw new CutConflictError(cut);
@@ -70,17 +70,19 @@ export class CutDraft {
         const kept = mode === 'add_new' ? cut.items : [];
         const inCut = new Set(kept.map((item) => item.node_id));
         const fresh = ready.filter((slot) => !inCut.has(slot.node_id));
-        if (!fresh.length) return result({ reason: 'nothing_new' });
+        // `bed` (the live cut): a music bed that landed after the clips goes in too, when the cut has none.
+        const newBed = bed && mode === 'add_new' && !cut.sound?.music && read.beds.some((b) => b.kind === 'music');
+        if (!fresh.length && !newBed) return result({ reason: 'nothing_new' });
 
         const { items, added, capped } = mode === 'add_new' ? this.#addNew(kept, fresh, read.slots) : this.#fresh(fresh);
         const saved = this.edits.save(spaceId, {
             items,
-            sound: mode === 'add_new' ? undefined : this.#sound(cut, read.beds),
+            sound: mode === 'add_new' && !newBed ? undefined : this.#sound(cut, read.beds),
             settings: this.#settings(cut, read.slots),
             revision: cut.revision,
             by,
             draft: true,
-            previous: 'set',
+            previous: by === 'auto' ? 'keep' : 'set', // the live cut is not a draft the person can undo
             turn,
             missing,
         });

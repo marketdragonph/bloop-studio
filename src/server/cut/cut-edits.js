@@ -4,7 +4,8 @@
 //
 // Stamps (the edit lock, 03-director.md §4): a clip the person adds or changes gets `person_rev` = the revision this
 // save makes, and loses the Director's note. A clip a draft puts in is `placed_by: 'director'` with no person_rev.
-// Untouched clips keep their stamps, whatever the order.
+// Untouched clips keep their stamps, whatever the order. The live cut (P2b, live-cut.js) saves by 'auto': its clips
+// are `placed_by: 'auto'`, and the dock adopts them silently (never a "changed in another window" banner).
 import { CutConflictError } from '../repositories/cuts.js';
 import { CutValidator } from './validate-cut.js';
 
@@ -24,7 +25,7 @@ export class CutEdits {
     /**
      * @param {number} spaceId
      * @param {{ items: object[], sound?: object|null, settings?: object, revision: number,
-     *   by?: 'person'|'director', draft?: boolean, previous?: 'keep'|'set'|'clear', turn?: number|null,
+     *   by?: 'person'|'director'|'auto', draft?: boolean, previous?: 'keep'|'set'|'clear', turn?: number|null,
      *   missing?: string[], offer?: string|null, restore?: object[]|null }} save
      *   `draft`: new items are a draft's (placed by the Director). `previous`: what happens to the Undo draft
      *   (default: a person's save clears it, other saves keep it). `restore`: earlier items whose stamps come back.
@@ -69,7 +70,7 @@ export class CutEdits {
 
     #stamp(item, old, { by, draft, nextRevision }) {
         const { note, ...rest } = item;
-        if (!old && draft) return { ...rest, placed_by: 'director', person_rev: null, ...(note ? { note } : {}) };
+        if (!old && draft) return { ...rest, placed_by: by === 'auto' ? 'auto' : 'director', person_rev: null, ...(note ? { note } : {}) };
         if (!old) {
             return by === 'person'
                 ? { ...rest, placed_by: 'person', person_rev: nextRevision }

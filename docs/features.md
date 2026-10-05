@@ -51,6 +51,24 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   deleted space or a closed app leave no temp files. Pack writes `spaces/{id}/packs/*.zip` with manifest v1, no keys,
   ZIP64 when needed (`src/server/cut/pack/`). Routes in `routes/cut-exports.js` and `routes/video-tools.js`.
   Media is served with byte ranges, so long clips seek without loading the whole file.
+  **First run (P2b, 05-irresistible.md §2)**: the **live cut** (`src/server/cut/live-cut.js`): on a planned board,
+  while `space_cuts.auto` = 1, every clip that lands (worker `node` done, then its ffprobe length) goes into its
+  beat slot through `CutDraft` as `placed_by: 'auto'` ("Placed in beat order"), and a music bed that lands goes
+  under it; the person's first save turns it off for good ("You edited the cut. New clips now wait for you."), and
+  later clips light **Add new clips**. The dock adopts auto placements silently and rebases an unsaved edit over
+  them (`src/shared/cut-rebase.js`), never a "changed in another window" banner. **Render missing beats** on the
+  rail and the board's render readout opens a sheet (`GET/POST/DELETE /spaces/:id/render-plan`, pipeline in
+  `src/server/generation/render-plan/`): the owed cards in wire order (pictures, clips, the bed), each with its
+  model, a time only from past renders, on bloop the credits and the balance first, refused plainly when short;
+  a beat whose picture failed is skipped with a reason; **Cancel all**. Queued through the per-card path
+  (`generation/enqueue.js`); no Director tool can reach it. **Start from a starter** (`src/shared/starters/*.json`,
+  `src/server/spaces/apply-starter.js`, `routes/starters.js`, an HTMX modal): Night drive, Product turn, Postcard
+  from the sea, laid out as a normal finished plan. **Bring my clips** (`public/js/components/cut-bring.js`): Upload
+  cards in one row in drop order, uploads streamed as the request body to the media folder (`routes/uploads.js`,
+  `MediaStore.saveUploadStream`), each clip or sound a measured take, the one song labelled music bed, then Fill.
+  The empty board shows the ghost strip with **Ask the Director** (only with a key), **Start from a starter** and
+  **Bring my clips**. Where an untouched card renders is one rule, `src/shared/card-source.js` (engine first;
+  bloop first with no engine; "Nothing can render yet…" with neither).
 
 ## Rendering
 

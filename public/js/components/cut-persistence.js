@@ -113,6 +113,7 @@ export const cutPersistenceMethods = {
                 this.cutSaveState = 'unsaved';
                 this.cutScheduleSave(SAVE_DELAY);
             }
+            this.cutAfterSave(data.cut); // cut-auto.js: the base for a rebase, and "the live cut is off" once
             if (this._cutEventWaiting) {
                 this._cutEventWaiting = false;
                 this.cutRefetchSoon();
@@ -121,6 +122,8 @@ export const cutPersistenceMethods = {
         }
         if (status === 409 && data?.cut) {
             this.cutSaveState = 'unsaved';
+            // Only clips the live cut placed differ: keep the edit, add them, save again. No banner (cut-auto.js).
+            if (this.cutTryRebase(data.cut)) return;
             this.cutHoldServer(data.cut, 'conflict');
             return;
         }
@@ -175,6 +178,7 @@ export const cutPersistenceMethods = {
         const copy = { items: server.items ?? [], sound: server.sound ?? null };
         if (!this._cutBooted) {
             this._cutBooted = true;
+            this.cutAuto = server.auto !== false;
             this.cutAdopt(copy, revision);
             const draft = readCutDraft(this.spaceId);
             if (draft && !same({ items: draft.items, sound: draft.sound ?? copy.sound }, copy)) {
@@ -186,16 +190,23 @@ export const cutPersistenceMethods = {
             return;
         }
         if (revision <= this.cutRevision) return;
+        if (server.auto === false) this.cutAuto = false;
         if (this.cutIsClean()) {
-            this.cutAdopt(copy, revision, by === 'director' ? 'The Director changed the cut' : 'Changed in another window');
+            const label = { director: 'The Director changed the cut', auto: this.cutCopy('autoPlaced') }[by] ?? 'Changed in another window';
+            this.cutAdopt(copy, revision, label);
             return;
         }
+        // Our own save is in flight: its answer (200, or a 409 with this same copy) decides; then reload.
+        if (this.cutSaveState === 'saving') { this._cutEventWaiting = true; return; }
+        // The live cut placed clips while the person's edit was unsaved: keep the edit, add them (cut-auto.js).
+        if (!this.cutSaveHeld() && this.cutTryRebase(server)) return;
         this.cutHoldServer(server, by === 'director' ? 'director' : 'conflict');
     },
 
     /** Takes the server's revision now, keeps its copy for "Use the newer version", and shows the banner. */
     cutHoldServer(server, kind) {
         this._cutServer = { items: server.items ?? [], sound: server.sound ?? null };
+        this.cutSetBase(server);
         this.cutRevision = server.revision ?? this.cutRevision;
         this.cutBanner = kind;
         this.cutAnnounce = this.cutCopy(kind);
@@ -206,6 +217,7 @@ export const cutPersistenceMethods = {
         const before = this.cutSnapshot();
         const wasEmpty = !before.items.length;
         this.cutRevision = revision;
+        this.cutSetBase(copy);
         if (same(before, copy)) return;
         if (label) this.cutCommit(label, copy, { before, save: false });
         else this.cutRestore(copy, { save: false });

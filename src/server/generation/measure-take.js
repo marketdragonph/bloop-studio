@@ -30,6 +30,11 @@ export class TakeMeasurer {
         return run;
     }
 
+    /** Resolves once every probe queued so far has finished (the live cut places a clip after its length is known). */
+    settled() {
+        return this.chain.then(() => undefined, () => undefined);
+    }
+
     async #measure({ spaceId, nodeId, mediaPath }) {
         const take = this.cuts.takeFor(nodeId, mediaPath);
         const full = take && this.media.resolve(mediaPath);

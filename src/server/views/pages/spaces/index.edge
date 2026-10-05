@@ -24,7 +24,8 @@
   @else
     <div class="empty-bay">
       <p class="ae-stencil">Empty bay</p>
-      <p class="plate-note">No spaces yet. Create one to start wiring cards.</p>
+      <p class="plate-note">No spaces yet. Create one to start wiring cards, or start from a ready plan.</p>
+      <button class="ae-key" hx-get="/spaces/starters" hx-target="#modal" hx-swap="innerHTML" data-control="board.starter">{{{ icon('wand') }}}<span>{{ controlLabel('board.starter') }}</span></button>
     </div>
   @end
 </div>

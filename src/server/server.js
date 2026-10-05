@@ -49,6 +49,13 @@ import { Packer } from './cut/pack/index.js';
 import { recoverToolsJobs } from './cut/tools-jobs.js';
 import { cutExportRoutes } from './routes/cut-exports.js';
 import { videoToolsRoutes } from './routes/video-tools.js';
+import { CutEdits } from './cut/cut-edits.js';
+import { CutDraft } from './cut/cut-draft.js';
+import { LiveCut } from './cut/live-cut.js';
+import { cardSources } from './generation/offered.js';
+import { uploadRoutes } from './routes/uploads.js';
+import { renderPlanRoutes } from './routes/render-plan.js';
+import { starterRoutes } from './routes/starters.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -99,7 +106,13 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
     directorRuns.recover();
     runner.resume();
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile };
+    // First run (P2b): one write path for the cut, the live cut that fills it while the person has not edited, and the
+    // one rule for where an untouched card renders (card-source.js) shared by Generate, Render missing beats, starters.
+    const cutEdits = new CutEdits({ db, cuts, events });
+    const cutDraft = new CutDraft({ boardCut, cuts, edits: cutEdits });
+    new LiveCut({ events, cuts, drafts: cutDraft, plans, spaces, measurer }).start();
+    const sources = cardSources({ engine, account, launcher });
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, sources, ops };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -112,8 +125,11 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/engine', engineRoutes(deps));
     app.route('/app/update', appUpdateRoutes(deps));
     app.route('/account', accountRoutes(deps));
+    app.route('/', starterRoutes(deps)); // before /spaces/:id
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
+    app.route('/', uploadRoutes(deps));
+    app.route('/', renderPlanRoutes(deps));
     app.route('/', directorRoutes(deps));
     app.route('/', cutRoutes(deps));
     app.route('/', cutExportRoutes(deps));

@@ -9,9 +9,20 @@
     <span x-show="!cutPlaying()">{{{ icon('play') }}}</span><span x-show="cutPlaying()">{{{ icon('pause') }}}</span>
   </button>
   <span class="ae-readout cut-rail__readout" :class="{ 'is-alert': cutStatus === 'error' }" x-text="cutReadout()"></span>
-  <span class="status-light status-light--busy cut-rail__busy" x-show="cutItems.some((i) => i.live)" x-cloak>
+  <span class="status-light status-light--busy cut-rail__busy" x-show="cutRendering()" x-cloak>
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
   </span>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutRendering()" x-cloak @click="cutCancelAll()"
+          data-control="cut.renderCancelAll">{{{ icon('close') }}}<span>{{ controlLabel('cut.renderCancelAll') }}</span></button>
+  {{-- P2b: Bring my clips copying, Render missing beats (opens its sheet), Add new clips once the live cut is off. --}}
+  <span class="status-light status-light--busy cut-rail__job" x-show="cutBringing" x-cloak role="status">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutBringText()"></span>
+  </span>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'ready' && cutMissingCount()" x-cloak
+          @click="cutSheet === 'render' ? cutRenderNotNow() : cutRenderOpen()" data-control="cut.renderMissing" aria-controls="cut-sheet"
+          :aria-expanded="cutSheet === 'render' ? 'true' : 'false'" aria-haspopup="dialog">{{{ icon('play') }}}<span x-text="cutRenderKey()">{{ controlLabel('cut.renderMissing') }}</span></button>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutCanAddNew()" x-cloak @click="cutFill('add_new')" :disabled="cutFilling"
+          data-control="cut.addNew">{{{ icon('plus') }}}<span x-text="cutAddNewText()">{{ controlLabel('cut.addNew') }}</span></button>
   <span class="ae-readout cut-save" x-show="!cutDraft || cutSaveState !== 'saved'" x-cloak
         :class="{ 'cut-save--busy': cutSaveState === 'saving' || cutSaveState === 'unsaved', 'cut-save--alert': cutSaveState === 'failed' || cutSaveHeld() }"
         x-text="cutSaveText()" :title="cutSaveError"></span>

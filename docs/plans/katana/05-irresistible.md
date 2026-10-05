@@ -1,4 +1,4 @@
-# Katana 05 — Irresistible: what makes people pick it and stay — PLANNED
+# Katana 05 — Irresistible: what makes people pick it and stay — PARTIAL (§2 first run built in P2b; §4.1 and §5 P3 parts built)
 
 Part of [../katana.md](../katana.md); settled conflicts there win. The owner asked to "make it production grade,
 irresistible, making us many users", and for the Director to help with how to use it when asked. Four lenses gave
@@ -121,6 +121,41 @@ missing beats shows credits before the press. The export sheet says "Export runs
 engine and no sign-in: "Nothing can render yet. Install the engine in Settings, or sign in to bloop to render in
 the cloud." with **Open Settings** and **Sign in to bloop**. **Where.** `defaultSource({engineReady, signedIn,
 offered})` in new `src/shared/card-source.js` (`model-sources.js` is the engine's model catalogue).
+
+### 2.7 As built (P2b, 2026-10-05, katana-mini)
+
+- [x] 2.1 Live cut: `src/server/cut/live-cut.js` listens to `node` done, waits for the measurer, then `CutDraft` (fill, else
+  add_new with the bed) as `by: 'auto'`; `008_cut_auto.sql` lets `updated_by` be `'auto'`; the live cut never sets
+  `previous_items`. Dock: `cut-auto.js` + `src/shared/cut-rebase.js` (silent rebase on a 409 or a cut event),
+  "All 7 beats are in", the auto-off sentence, **Add new clips · n**. Test: `tests/cut-auto.test.js`.
+- [x] 2.2 Render missing beats: `GET/POST/DELETE /spaces/:id/render-plan`; stages `collectOwed → orderByWires →
+  estimate → checkCredits → enqueueOwed`; the voice bed is owed only on a bloop model the person picked. Dock sheet
+  `cut/render-sheet.edge` + `cut-render.js`, the board's readout key (`cut:missing` / `cut:render-open`). Test:
+  `tests/render-plan.test.js` (owed set, wire order, failed upstream skipped, time, credits short/unknown, no engine,
+  Cancel all, CSRF, no Director file reaches it).
+- [x] 2.3 Board empty bay (ghost strip, the three keys; Ask the Director only with a key, also in the empty dock).
+- [x] 2.4 Starters: Night drive, Product turn (1:1, no music), Postcard from the sea; `POST /spaces/starters` (new space)
+  and `POST /spaces/:id/starter` (empty board only). Test: `tests/starters.test.js`.
+- [x] 2.5 Bring my clips: the upload body is the file (`X-File-Name`), streamed to a `.part` file and renamed; a clip or
+  sound becomes a `preset 'upload'` take measured before the route answers. Test: `tests/bring-clips.test.js`.
+- [x] 2.6 `defaultSource()` in `src/shared/card-source.js`, used by the Model list, Generate, Render missing beats and
+  starters (a music bed only on a music model). Test: `tests/first-run-view.test.js`.
+
+**Gate (real server, throwaway folders, the fetched LGPL ffprobe; script `scratchpad/p2bgate/real.mjs`).** Three real
+clips and a song brought in over HTTP: measured 5167, 5160, 6000 and 75000 ms; Fill put them in drop order with the
+song as the bed. A 304 MB upload in its own server process grew its memory by 73 MB at the peak (96 MB: 42 MB,
+480 MB: 74 MB), so the growth levels off and does not follow the file size. Night drive laid out over the form
+route; the sheet listed 4 beats, 9 cards. Live cut: beat 2 landed first (9960 ms, auto, "Placed in beat order"),
+beat 1 went in front of it, the person trimmed beat 1 (auto off), beat 3 then waited for Add new clips. In the
+browser pane: the empty bay, the starter modal, the laid-out board and the sheet opened from the board's key.
+
+**Deferred.** Uploads Bring my clips makes are not in the board's undo history, and a failed upload leaves its
+empty Upload card. With two or more songs none becomes the bed. Add new clips also counts a clip the person took
+out of the cut. Render missing beats skips a beat whose picture failed BEFORE the press; one that fails during the
+run makes its clip fail with "has no render yet". Cancel all stops every render of the board, also ones started
+by Generate. The local time is the mean of past renders per model, whatever their length. Starter cards do not
+take the person's sticky knob defaults. Dropping files was not driven in a real browser (the HTTP path and the
+dock flow with fakes were).
 
 ## 3. Smart editing and how it shows
 

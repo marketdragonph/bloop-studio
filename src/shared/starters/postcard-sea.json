@@ -1,0 +1,47 @@
+{
+  "id": "postcard-sea",
+  "title": "Postcard from the sea",
+  "line": "Postcard from the sea · 5 beats · 0:25 · voice + music",
+  "approach": "A short letter home from a seaside town, read over five postcard views from morning to dusk. Five beats, five seconds each, a soft song under one spoken line.",
+  "aspect": "16:9",
+  "runtime_seconds": 25,
+  "clip_seconds": 5,
+  "beats": [
+    {
+      "tag": "s1-harbour",
+      "role": "hook",
+      "brief": "Morning harbour: small boats rocking, gulls over the water.",
+      "shot": "A small fishing harbour in the early morning, colourful boats gently rocking, gulls flying over calm water, soft golden light, slow pan, postcard look."
+    },
+    {
+      "tag": "s2-lane",
+      "role": "setup",
+      "brief": "A narrow lane of white houses running down to the sea.",
+      "shot": "A narrow cobbled lane between white-washed houses with blue doors, the sea visible at the end of the lane, washing on a line moving in the breeze, bright morning."
+    },
+    {
+      "tag": "s3-cafe",
+      "role": "setup",
+      "brief": "A café table by the water: a postcard being written.",
+      "shot": "Close-up of a hand writing a postcard at a café table by the sea, a cup of tea beside it, the harbour soft in the background, warm afternoon light."
+    },
+    {
+      "tag": "s4-cliffs",
+      "role": "turn",
+      "brief": "The cliff path at golden hour, waves breaking below.",
+      "shot": "A cliff-top path at golden hour, waves breaking on the rocks far below, long grass moving in the wind, wide cinematic shot."
+    },
+    {
+      "tag": "s5-dusk",
+      "role": "close",
+      "brief": "Dusk over the bay; the lights come on. Hold to the end.",
+      "shot": "Dusk over a quiet bay, the town's lights coming on along the water, the sky fading from orange to deep blue, still camera, calm."
+    }
+  ],
+  "music": {
+    "style": "Gentle acoustic guitar and soft piano instrumental, light and nostalgic, slow tempo, seaside afternoon mood."
+  },
+  "voice": {
+    "line": "The sea is louder than I remembered. I have been walking every morning, and I think I finally slept. Wish you were here."
+  }
+}

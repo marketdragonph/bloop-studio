@@ -11,6 +11,11 @@ that heading into the version number and uses the section as the release notes.
 - New: Pack assets in the Cut dock puts every file the board made, with its notes and a manifest, into one zip in your media folder. You choose whether the prompts and seeds go in.
 - New: Set as poster picks the cover frame of your export from the selected clip, and the cut remembers it.
 - New: Settings › Video tools shows the ffmpeg the app uses, with Check again and Choose ffmpeg.exe… if it goes missing.
+- New: on a planned board the cut builds itself. Each clip drops into its place in beat order as it finishes, and the music goes under it, until you edit the cut yourself. After that, new clips wait for Add new clips and never move what you did.
+- New: Render missing beats, in the Cut dock and next to the render count, queues every card the plan still needs with one press. Its sheet first shows how many cards, on which models, and on bloop the credits it needs and your balance; it will not start if you are short. Cancel all stops them.
+- New: Start from a starter, on an empty board or the empty Spaces list, lays out a ready short film (Night drive, Product turn or Postcard from the sea) with every card wired and its words written. No key and no internet needed.
+- New: Bring my clips, or dropping files on an empty board or an empty Cut dock, puts your own videos into the cut in the order you dropped them, with one song under them as the music. Big files are copied without filling up memory.
+- Changed: an empty board shows what you can make and the ways to start. Ask the Director shows only when a Director key is set. With no engine but a bloop sign-in, new and starter cards start on bloop's models.
 
 ## 2026.1005.1232
 

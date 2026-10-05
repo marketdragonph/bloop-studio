@@ -6,8 +6,19 @@ import { NODE_TYPES } from '../../shared/node-types.js';
 const id = (c, name = 'id') => Number.parseInt(c.req.param(name), 10);
 const CUT_TYPES = new Set(['video', 'audio', 'upload']);
 
-export function spacesRoutes({ views, spaces, events, cuts }) {
+const KEY_NAMES = { anthropic: 'anthropicApiKey', openai: 'openaiApiKey' };
+
+export function spacesRoutes({ views, spaces, events, cuts, settings = null }) {
     const routes = new Hono();
+
+    /** Ask the Director shows only with a Director key (05 §2.3); the key itself never leaves settings. */
+    const directorReady = () => {
+        try {
+            return Boolean(settings?.get(KEY_NAMES[settings.get('llmProvider')] ?? 'anthropicApiKey'));
+        } catch {
+            return false;
+        }
+    };
 
     // A clip or sound card leaving (or coming back to) the board changes what the Cut can hold.
     const cutChanged = (spaceId, node, by) => {
@@ -58,7 +69,7 @@ export function spacesRoutes({ views, spaces, events, cuts }) {
         // Embedded in <script type="application/json">: escape "<" so card text can never close the tag.
         const boardJson = JSON.stringify(board).replace(/</g, '\\u003c');
         const creatableTypes = Object.entries(NODE_TYPES).filter(([, t]) => t.creatable).map(([key, t]) => ({ key, ...t }));
-        return c.html(await views.render('pages/spaces/editor', { board, boardJson, creatableTypes }));
+        return c.html(await views.render('pages/spaces/editor', { board, boardJson, creatableTypes, directorReady: directorReady() }));
     });
 
     routes.delete('/:id', (c) => {
