@@ -13,6 +13,8 @@ setup step or brings a bloop tool to where their renders already are.
 | 1 | `/bloop-studio` download page (always the latest installer) + footer, nav and in-app links | bloop | PARTIAL: live 2026-10-05; app clip, comparison, gallery, email-me-the-link still open | below |
 | 2 | Cloud-only mode: no ComfyUI needed when signed in | Bloop Studio | COMPLETE (2026-10-05) | [engine-setup.md](engine-setup.md) |
 | 3 | **Engine setup wizard**: installs ComfyUI and the right models for the GPU, runs it for you | Bloop Studio | PARTIAL: shipped 2026-10-05; AMD path and a clean-PC run left | [engine-setup.md](engine-setup.md) |
+| 3b | **Director port**: bloop's Spaces Director (plan first, staged rail, beat writers, critic, panel), adapted to local models | Bloop Studio | PLANNED (next) | [director-port.md](director-port.md) |
+| 3c | **Model browser**: search and install LoRAs from Hugging Face for the models we run, a live model catalog, variants of our models | Bloop Studio | PLANNED (after 3b) | [model-browser.md](model-browser.md) |
 | 4 | Katana (video editor) in the app: board takes onto a timeline, export with bundled ffmpeg | Bloop Studio | PLANNED | survey first |
 | 5 | Kaiga (canvas editor) in the app: edit a still, send it back to a card | Bloop Studio | PLANNED | survey first |
 | 6 | Forge (filmmaker): storyboard → scenes → renders → finished film, on the app's Director | Bloop Studio | PLANNED | survey first |
