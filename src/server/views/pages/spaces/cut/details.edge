@@ -1,0 +1,30 @@
+{{-- The selected clip's details under the preview: what it is, its in and out, and every edit as a key, so
+     touch and keyboard reach the same actions as the mouse (Move left / Move right instead of a drag). --}}
+<div class="cut-details" x-show="cutSelected()" x-cloak>
+  <dl class="cut-preview__meta">
+    <div class="cut-preview__row"><dt>Selected</dt><dd x-text="cutSelected()?.title"></dd></div>
+    <div class="cut-preview__row"><dt>Length</dt><dd x-text="cutSelected() ? cutLength(cutSelected()) + (cutSelected().measured === false ? ' · not measured' : '') : ''"></dd></div>
+    <div class="cut-preview__row" x-show="cutSelected()?.ready"><dt>In / out</dt>
+      <dd x-text="cutSelected()?.ready ? cutTenths(cutSelected().in_ms) + ' – ' + cutTenths(cutSelected().out_ms) : ''"></dd></div>
+  </dl>
+  <p class="cut-details__note" x-show="cutSelected()?.note"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="cutSelected()?.note"></span></p>
+  <p class="cut-details__alert" x-show="cutSelected()?.gone" x-text="cutStateText({ state: 'deleted' })"></p>
+  <p class="cut-details__alert" x-show="cutUnplayable.includes(cutSelected()?.key)">
+    <span x-text="cutCopy('unplayable')"></span>
+    <button type="button" class="ae-key ae-key--sm" x-show="cutSelected() && cutCanGo(cutSelected())" @click="cutGoToCard(cutSelected())"
+            data-control="cut.goToCard">{{ controlLabel('cut.goToCard') }}</button>
+  </p>
+  <div class="cut-details__keys" role="group" aria-label="Selected clip" x-show="cutEditable()">
+    <button type="button" class="ae-key ae-key--sm" @click="cutMove(-1)" :disabled="!cutCanMove(-1)"
+            data-control="cut.moveLeft" aria-keyshortcuts="Alt+ArrowLeft">{{ controlLabel('cut.moveLeft') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutMove(1)" :disabled="!cutCanMove(1)"
+            data-control="cut.moveRight" aria-keyshortcuts="Alt+ArrowRight">{{ controlLabel('cut.moveRight') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutEdgeAtPlayhead('in')" data-control="cut.inPoint" aria-keyshortcuts="[">{{ controlLabel('cut.inPoint') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutEdgeAtPlayhead('out')" data-control="cut.outPoint" aria-keyshortcuts="]">{{ controlLabel('cut.outPoint') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutToggleSound()" :aria-pressed="cutEditable()?.sound ? 'true' : 'false'"
+            data-control="cut.mute" aria-keyshortcuts="M">{{{ icon('volume') }}}<span>{{ controlLabel('cut.mute') }}</span></button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutUseNewTake(cutEditable())" x-show="cutEditable()?.newTake"
+            data-control="cut.useNewTake">{{ controlLabel('cut.useNewTake') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutRemove()" data-control="cut.remove" aria-keyshortcuts="Delete">{{{ icon('delete') }}}<span>{{ controlLabel('cut.remove') }}</span></button>
+  </div>
+</div>

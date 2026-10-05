@@ -1,6 +1,7 @@
-{{-- Ruler, Video / Voice / Music lanes and the playhead (02-dock.md §4). Board time: every slot at its length,
-     gaps included; beds play in export time, so their lanes pause (hatched) under each gap.
-     Positions are CSS variables set from cut-lanes.js; the lanes scroll sideways together past Fit. --}}
+{{-- Ruler, Video / Voice / Music lanes and the playhead (02-dock.md §4). With gaps (default) every slot shows at
+     its length; As exported hides them. Beds play in export time, so their lanes pause (hatched) under each gap.
+     Positions are CSS variables from the shared time map; the lanes scroll sideways together past Fit. Drag on
+     the ruler to move the playhead; the player moves it by one CSS variable (--cut-x). --}}
 <div class="cut-tracks">
   <div class="cut-tracks__labels">
     <span class="cut-tracks__corner" aria-hidden="true"></span>
@@ -8,16 +9,20 @@
       <span class="ae-stencil" data-control="cut.lane.video">{{ controlLabel('cut.lane.video') }}</span><span class="ae-readout">Beats</span>
     </div>
     <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice">
-      <span class="ae-stencil" data-control="cut.lane.voice">{{ controlLabel('cut.lane.voice') }}</span><span class="ae-readout" x-text="cutBeds.voice?.label"></span>
+      <span class="ae-stencil" data-control="cut.lane.voice">{{ controlLabel('cut.lane.voice') }}</span>
+      @!component('pages/spaces/cut/level', { kind: 'voice', name: 'Voice' })
     </div>
     <div class="cut-track-label cut-track-label--music">
-      <span class="ae-stencil" data-control="cut.lane.music">{{ controlLabel('cut.lane.music') }}</span><span class="ae-readout" x-text="cutLevel" x-show="cutLevel"></span>
+      <span class="ae-stencil" data-control="cut.lane.music">{{ controlLabel('cut.lane.music') }}</span>
+      <template x-if="cutBeds.music">
+        @!component('pages/spaces/cut/level', { kind: 'music', name: 'Music' })
+      </template>
     </div>
   </div>
 
-  <div class="cut-tracks__scroll" x-ref="cutScroll">
+  <div class="cut-tracks__scroll" data-cut-part="scroll">
     <div class="cut-tracks__span" :style="{ '--cut-span': cutSpan + 'px' }">
-      <div class="cut-ruler" aria-hidden="true">
+      <div class="cut-ruler" aria-hidden="true" @pointerdown="cutScrubStart($event)">
         <template x-for="tick in cutTicks" :key="tick.key">
           <span class="cut-ruler__tick" :class="{ 'is-major': tick.major }" :style="{ '--x': tick.x + 'px' }">
             <span class="cut-ruler__label" x-show="tick.major" x-text="tick.label"></span>
@@ -61,8 +66,7 @@
         <p class="cut-lane__note" x-show="!cutBeds.music" x-text="cutEmptyText.music"></p>
       </div>
 
-      {{-- Static at 0 in P1; P2's player moves it by one CSS variable (--cut-x). --}}
-      <div class="cut-playhead" aria-hidden="true"><span class="cut-playhead__cap">0:00</span></div>
+      <div class="cut-playhead" data-cut-part="playhead" aria-hidden="true"><span class="cut-playhead__cap" data-cut-part="cap">0:00</span></div>
     </div>
   </div>
 </div>

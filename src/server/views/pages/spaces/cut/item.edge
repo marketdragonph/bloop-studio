@@ -1,19 +1,51 @@
-{{-- One slot on the Video lane: a clip (first frame, tag, length stamp) or a beat with no clip yet (hatched,
-     "04 · Flashback / not rendered", Go to card), rendering (blue light), failed or deleted. Sized by seconds. --}}
-<li class="cut-item" :class="'cut-item--' + cutKind(item)" :style="{ '--x': item.x + 'px', '--w': item.w + 'px' }">
+{{-- One slot on the Video lane, sized by its time on screen (cut-timeline.js). A clip: first frame, tag, length,
+     the Director's note (sensor dot + words), badges (new take, card deleted, could not play, sound off), the join
+     chip before it and, when selected, the two orange trim handles hanging outside it. A beat with no clip:
+     hatched, "04 · Flashback / not rendered", Go to card (rendering: blue light; failed; deleted). --}}
+<li class="cut-item" :class="['cut-item--' + cutKind(item), { 'is-lifted': cutDrag?.kind === 'move' && cutDrag.key === item.key }]"
+    :style="Object.assign({ '--x': item.x + 'px', '--w': item.w + 'px' }, cutDragStyle(item))" :data-cut-key="item.key">
   <template x-if="item.ready">
-    <button type="button" class="cut-clip" :class="{ 'is-selected': item.key === cutSelectedKey }"
-            @click="cutSelect(item)" :aria-label="cutItemLabel(item)" :aria-pressed="item.key === cutSelectedKey ? 'true' : 'false'"
-            data-control="cut.clip">
-      <img class="cut-clip__frame" x-show="item.poster_url" :src="item.poster_url || ''" alt="" loading="lazy">
-      <span class="cut-clip__cap">
-        <span class="cut-clip__tag" x-text="item.title"></span>
-        <span class="cut-clip__len" x-text="cutLength(item)"></span>
+    <div class="cut-clipbox" :class="{ 'is-first': item.x < 1 }">
+      <button type="button" class="cut-clip"
+              :class="{ 'is-selected': item.key === cutSelectedKey, 'is-rung': cutRung.includes(item.key), 'is-gone': item.gone, 'is-unplayable': cutUnplayable.includes(item.key) }"
+              @pointerdown="cutPointerDown($event, item)" @click="cutClick(item)"
+              :aria-label="cutItemLabel(item)" :aria-pressed="item.key === cutSelectedKey ? 'true' : 'false'"
+              aria-roledescription="clip" data-control="cut.clip">
+        <img class="cut-clip__frame" x-show="item.poster_url" :src="item.poster_url || ''" alt="" loading="lazy" draggable="false">
+        <span class="cut-clip__cap">
+          <span class="cut-clip__tag" x-text="item.title"></span>
+          <span class="cut-clip__len" x-text="cutLength(item)"></span>
+        </span>
+        <span class="cut-clip__badges">
+          <span class="cut-badge cut-badge--sensor" x-show="item.newTake">New take</span>
+          <span class="cut-badge cut-badge--alert" x-show="item.gone" x-text="cutStateText({ state: 'deleted' })"></span>
+          <span class="cut-badge cut-badge--alert" x-show="cutUnplayable.includes(item.key)" x-text="cutCopy('unplayable')"></span>
+          <span class="cut-badge" x-show="!item.sound">{{{ icon('mute') }}}<span>Sound off</span></span>
+        </span>
+        <span class="cut-note" x-show="item.note"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="item.note"></span></span>
+        <span class="cut-clip__live status-light status-light--busy" x-show="item.live">
+          <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
+        </span>
+      </button>
+
+      <button type="button" class="cut-join" x-show="item.clip && !cutDraft"
+              :class="{ 'is-dissolve': item.join === 'dissolve' }" :data-cut-join="item.key"
+              @click.stop="cutToggleJoin(item)" @pointerdown.stop :aria-label="cutJoinLabel(item)" aria-keyshortcuts="D"
+              data-control="cut.join" x-text="item.join === 'dissolve' ? (item.joinMs / 1000).toFixed(1) : '|'"></button>
+
+      <span class="cut-handle cut-handle--in" role="slider" tabindex="0" x-show="item.key === cutSelectedKey && !cutDraft"
+            aria-label="{{ controlLabel('cut.trimIn') }}" aria-valuemin="0" :aria-valuemax="item.out_ms" :aria-valuenow="item.in_ms"
+            :aria-valuetext="cutHandleText(item, 'in')" data-control="cut.trimIn"
+            @pointerdown="cutTrimStart($event, item, 'in')" @keydown="cutHandleKey($event, item, 'in')" @focus="_cutEdge = 'in'">
+        <span class="cut-handle__time" x-show="cutDrag?.kind === 'in' && cutDrag.key === item.key" x-text="cutHandleText(item, 'in')"></span>
       </span>
-      <span class="cut-clip__live status-light status-light--busy" x-show="item.live">
-        <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">New take</span>
+      <span class="cut-handle cut-handle--out" role="slider" tabindex="0" x-show="item.key === cutSelectedKey && !cutDraft"
+            aria-label="{{ controlLabel('cut.trimOut') }}" :aria-valuemin="item.in_ms" :aria-valuemax="item.seconds_ms" :aria-valuenow="item.out_ms"
+            :aria-valuetext="cutHandleText(item, 'out')" data-control="cut.trimOut"
+            @pointerdown="cutTrimStart($event, item, 'out')" @keydown="cutHandleKey($event, item, 'out')" @focus="_cutEdge = 'out'">
+        <span class="cut-handle__time" x-show="cutDrag?.kind === 'out' && cutDrag.key === item.key" x-text="cutHandleText(item, 'out')"></span>
       </span>
-    </button>
+    </div>
   </template>
   <template x-if="!item.ready">
     <div class="cut-gap" role="group" :aria-label="cutItemLabel(item)">

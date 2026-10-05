@@ -1,12 +1,35 @@
-{{-- The Cut's rail: always there, 32 px folded (44 px on touch). The stencil, the readout and the fold key.
-     Editing, Export and Pack keys join it in later phases (each from the controls registry). --}}
+{{-- The Cut's rail: always there, 32 px folded (44 px on touch). Stencil, Play, the readout, the save chip,
+     the 8 s "Removed … Undo" line, Undo / Redo / Fit while open, and the fold key. Every key is a registry
+     control (katana-controls.js). Export and Pack join it in P3. --}}
 <div class="cut-rail">
   <h2 class="ae-stencil cut-rail__title">{{{ icon('cut') }}}<span>{{ controlLabel('cut.dock') }}</span></h2>
+  <button type="button" class="ae-key ae-key--sm ae-key--square" x-show="cutStatus === 'ready' && cutLay().entries.length" x-cloak
+          @click="cutPlay()" data-control="cut.play" :aria-label="cutPlaying() ? 'Pause ({{ controlLabel('cut.play') }}, Space)' : '{{ controlLabel('cut.play') }} (Space)'"
+          :title="cutPlaying() ? 'Pause' : '{{ controlLabel('cut.play') }}'">
+    <span x-show="!cutPlaying()">{{{ icon('play') }}}</span><span x-show="cutPlaying()">{{{ icon('pause') }}}</span>
+  </button>
   <span class="ae-readout cut-rail__readout" :class="{ 'is-alert': cutStatus === 'error' }" x-text="cutReadout()"></span>
   <span class="status-light status-light--busy cut-rail__busy" x-show="cutItems.some((i) => i.live)" x-cloak>
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
   </span>
+  <span class="ae-readout cut-save" x-show="!cutDraft || cutSaveState !== 'saved'" x-cloak
+        :class="{ 'cut-save--busy': cutSaveState === 'saving' || cutSaveState === 'unsaved', 'cut-save--alert': cutSaveState === 'failed' || cutSaveHeld() }"
+        x-text="cutSaveText()" :title="cutSaveError"></span>
+  <span class="ae-readout cut-save__why" x-show="cutSaveState === 'failed' && cutSaveError" x-cloak x-text="cutSaveError" :title="cutSaveError"></span>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutSaveState === 'failed'" x-cloak
+          @click="cutRetrySave()" data-control="cut.saveRetry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.saveRetry') }}</span></button>
+  <span class="cut-rail__removed" x-show="cutRemoved" x-cloak role="status">
+    <span class="ae-readout" x-text="cutCopy('removed', { title: cutRemoved?.title })"></span>
+    <button type="button" class="ae-key ae-key--sm" @click="cutUndoRemove()" data-control="cut.undo">{{{ icon('undo') }}}<span>{{ controlLabel('cut.undo') }}</span></button>
+  </span>
   <span class="cut-rail__spacer"></span>
+  <div class="cut-rail__group" role="group" aria-label="Cut history and view" x-show="cutOpen && cutStatus === 'ready' && !cutDraft" x-cloak>
+    <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutUndo()" :disabled="!cutCanUndo" data-control="cut.undo"
+            aria-label="{{ controlLabel('cut.undo') }} (Ctrl+Z)" title="{{ controlLabel('cut.undo') }} (Ctrl+Z)">{{{ icon('undo') }}}</button>
+    <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutRedo()" :disabled="!cutCanRedo" data-control="cut.redo"
+            aria-label="{{ controlLabel('cut.redo') }} (Ctrl+Shift+Z)" title="{{ controlLabel('cut.redo') }} (Ctrl+Shift+Z)">{{{ icon('redo') }}}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutFit()" data-control="cut.fit">{{{ icon('expand') }}}<span>{{ controlLabel('cut.fit') }}</span></button>
+  </div>
   <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'error'" x-cloak
           @click="cutRetry()" data-control="cut.retry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.retry') }}</span></button>
   <button type="button" class="ae-key ae-key--sm ae-key--square cut-rail__fold" @click="cutToggle()"

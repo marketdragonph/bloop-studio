@@ -31,3 +31,14 @@
     </div>
   </div>
 </template>
+
+{{-- No cut stored yet: the lane shows the board's rendered beats read only, and Fill the cut makes them the cut
+     (POST /spaces/:id/cut/draft, the same service the Director's stitch_cut calls). --}}
+<template x-if="cutStatus === 'ready' && cutDraft && cutCanFill()">
+  <div class="cut-state cut-state--draft">
+    <div class="cut-state__say">
+      <p class="cut-state__text" x-text="cutCounts().ready === cutCounts().count ? cutCopy('allReady', { n: cutCounts().count }) : cutCopy('someReady', { ready: cutCounts().ready, n: cutCounts().count })"></p>
+      <button type="button" class="ae-key ae-key--sm ae-key--accent" @click="cutFill()" :disabled="cutFilling" data-control="cut.fill">{{{ icon('wand') }}}<span>{{ controlLabel('cut.fill') }}</span></button>
+    </div>
+  </div>
+</template>

@@ -1,17 +1,33 @@
-{{-- The left of the open dock. P1 shows the selected clip's first frame and what it is; the A/B player
-     (CutPlayer) takes this place in P2. No <video> here, so an open read-only dock plays nothing. --}}
-<div class="cut-preview">
-  <div class="cut-preview__screen">
-    <template x-if="cutSelected()?.poster_url">
-      <img class="cut-preview__frame" :src="cutSelected().poster_url" alt="">
-    </template>
-    <p class="cut-preview__empty" x-show="!cutSelected()?.poster_url" x-text="cutSelected() ? cutSelected().title : 'Pick a clip to see its frame here.'"></p>
+{{-- The left of the open dock: CutPlayer (public/js/components/cut-player.js), nested in CutDock's scope.
+     Two stacked videos (A plays, B waits at the next clip's in point), the gap slate, the selected clip's chip and
+     the shared deck (media-deck.edge, the MediaPlayer transport). One <audio> each for music and voice
+     (cut-bed-sync.js). Under it: the counter, As exported, and the selected clip's details. --}}
+<div class="cut-preview" x-data="CutPlayer" data-control="cut.preview">
+  <div class="cut-screen ae-player" x-ref="cutScreen" :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing }">
+    <video class="cut-screen__video" x-ref="cutVidA" playsinline preload="auto" disablepictureinpicture
+           :class="{ 'is-front': front === 'a', 'is-incoming': incoming === 'a' }"
+           @error="cpFailed('a')" @ended="cpEnded('a')"></video>
+    <video class="cut-screen__video" x-ref="cutVidB" playsinline preload="auto" disablepictureinpicture
+           :class="{ 'is-front': front === 'b', 'is-incoming': incoming === 'b' }"
+           @error="cpFailed('b')" @ended="cpEnded('b')"></video>
+    <div class="cut-slate" x-show="slate" x-cloak>
+      <span class="cut-slate__title" x-text="slate?.title"></span>
+      <span class="cut-slate__text" x-text="slate?.text"></span>
+    </div>
+    <p class="cut-preview__empty" x-show="!cutLay().entries.some((e) => e.kind === 'clip')" x-text="cutCopy('noClips')"></p>
     <div class="cut-preview__tags" x-show="cutSelected()">
       <span class="cut-chip" x-text="cutSelected()?.title"></span>
     </div>
+    @include('pages/spaces/media-deck')
   </div>
-  <dl class="cut-preview__meta" x-show="cutSelected()">
-    <div class="cut-preview__row"><dt>Selected</dt><dd x-text="cutSelected()?.title"></dd></div>
-    <div class="cut-preview__row"><dt>Length</dt><dd x-text="cutSelected() ? cutLength(cutSelected()) + (cutSelected().measured === false ? ' · not measured' : '') : ''"></dd></div>
-  </dl>
+  <audio class="cut-bed" x-ref="cutMusicEl" preload="auto"></audio>
+  <audio class="cut-bed" x-ref="cutVoiceEl" preload="auto"></audio>
+
+  <div class="cut-preview__bar">
+    <span class="ae-readout cut-preview__counter" x-text="cpCounter()"></span>
+    <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': cutAsExported }" @click="cutToggleExported()"
+            :aria-pressed="cutAsExported ? 'true' : 'false'" data-control="cut.asExported">{{ controlLabel('cut.asExported') }}</button>
+  </div>
+
+  @include('pages/spaces/cut/details')
 </div>

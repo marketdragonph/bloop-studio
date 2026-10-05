@@ -147,6 +147,7 @@ export class BoardCut {
             planned_seconds: positive(node.settings?.duration),
             measured,
             media_url: state === 'ready' || state === 'rendering' ? mediaUrl(src?.media_path) : null,
+            media_path: state === 'ready' ? src.media_path : null, // the snapshot a draft pins
             poster_url: poster?.media_path ? mediaUrl(poster.media_path) : null,
             aspect: node.settings?.aspect ?? base.plan_aspect,
             takes: board.counts.get(node.id) ?? 0,
@@ -166,7 +167,7 @@ export class BoardCut {
             const measured = node.src.duration_ms != null;
             beds.push({
                 node_id: node.n.id, take_id: node.src.take_id, label: node.n.label.trim(), kind,
-                media_url: mediaUrl(node.src.media_path), seconds: measured ? node.src.duration_ms / 1000 : null, measured,
+                media_url: mediaUrl(node.src.media_path), media_path: node.src.media_path, seconds: measured ? node.src.duration_ms / 1000 : null, measured,
             });
         }
         return beds;
@@ -207,5 +208,5 @@ export class BoardCut {
 
 const EMPTY_SLOT = Object.freeze({
     node_id: null, take_id: null, seconds: null, planned_seconds: null, measured: false,
-    media_url: null, poster_url: null, aspect: null, takes: 0, error: null,
+    media_url: null, media_path: null, poster_url: null, aspect: null, takes: 0, error: null,
 });

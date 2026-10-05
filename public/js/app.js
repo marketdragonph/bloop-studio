@@ -9,6 +9,7 @@ import LaunchArt from './components/launch-art.js';
 import MediaPlayer from './components/media-player.js';
 import AudioPlayer from './components/audio-player.js';
 import CutDock from './components/cut-dock.js';
+import CutPlayer from './components/cut-player.js';
 
 Alpine.data('Modal', Modal);
 Alpine.data('MechaSelect', MechaSelect);
@@ -18,6 +19,7 @@ Alpine.data('LaunchArt', LaunchArt);
 Alpine.data('MediaPlayer', MediaPlayer);
 Alpine.data('AudioPlayer', AudioPlayer);
 Alpine.data('CutDock', CutDock);
+Alpine.data('CutPlayer', CutPlayer);
 Alpine.data('SpaceBoard', SpaceBoard);
 
 window.Alpine = Alpine;

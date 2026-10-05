@@ -1,0 +1,17 @@
+{{-- A bed's level key on its lane label (05 §3.5): the key reads "Music −12 dB"; it opens a small popover with a
+     −24..+6 dB slider in 1 dB steps (a native range: role slider, arrow keys, aria-valuetext "Music −14 dB").
+     Moving it changes the preview at once; letting go saves it as one undo step. Props: kind, name. --}}
+<div class="cut-level" @click.outside="cutLevelOpen === '{{ kind }}' && (cutLevelOpen = null)">
+  <button type="button" class="cut-level__key ae-readout" @click="cutLevelToggle('{{ kind }}')" data-control="cut.level"
+          aria-controls="cut-level-{{ kind }}" :aria-expanded="cutLevelOpen === '{{ kind }}' ? 'true' : 'false'"
+          :aria-label="'{{ controlLabel('cut.level') }}: ' + cutLevelText('{{ kind }}')" x-text="cutLevelText('{{ kind }}').replace('{{ name }} ', '')"></button>
+  <div class="cut-level__pop" id="cut-level-{{ kind }}" x-show="cutLevelOpen === '{{ kind }}'" x-cloak>
+    <label class="ae-readout" for="cut-level-input-{{ kind }}">{{ name }} {{ controlLabel('cut.level') }}</label>
+    <input class="cut-level__range" id="cut-level-input-{{ kind }}" type="range" step="1"
+           :min="cutLevelRange('{{ kind }}').min" :max="cutLevelRange('{{ kind }}').max" :value="cutLevelDb('{{ kind }}')"
+           :aria-valuetext="cutLevelText('{{ kind }}')"
+           @input="cutSetLevel('{{ kind }}', $event.target.value)"
+           @change="cutSetLevel('{{ kind }}', $event.target.value, { commit: true })">
+    <span class="ae-readout cut-level__value" x-text="cutLevelText('{{ kind }}')" aria-hidden="true"></span>
+  </div>
+</div>

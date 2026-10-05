@@ -1,0 +1,27 @@
+{{-- One banner at a time under the rail (02-dock.md §5): the cut changed in another window or by the Director
+     while this dock had unsaved edits (409), unsaved changes found on this device, or a fresh draft on offer.
+     The save waits while a conflict banner shows; nothing is overwritten until the person chooses. --}}
+<div class="cut-banner ae-signal" x-show="cutBanner" x-cloak role="alert"
+     :class="{ 'ae-signal--warn': cutBanner === 'conflict' || cutBanner === 'restore' }">
+  <span class="cut-banner__text" x-text="cutCopy(cutBanner === 'replace' ? 'replaceOffer' : cutBanner || 'conflict')"></span>
+  <span class="cut-banner__keys">
+    <template x-if="cutBanner === 'conflict' || cutBanner === 'director'">
+      <span class="cut-banner__keys">
+        <button type="button" class="ae-key ae-key--sm ae-key--accent" @click="cutUseNewer()" data-control="cut.useNewer">{{ controlLabel('cut.useNewer') }}</button>
+        <button type="button" class="ae-key ae-key--sm" @click="cutKeepMine()" data-control="cut.keepMine">{{ controlLabel('cut.keepMine') }}</button>
+      </span>
+    </template>
+    <template x-if="cutBanner === 'restore'">
+      <span class="cut-banner__keys">
+        <button type="button" class="ae-key ae-key--sm ae-key--accent" @click="cutRestoreDraft()" data-control="cut.restore">{{ controlLabel('cut.restore') }}</button>
+        <button type="button" class="ae-key ae-key--sm" @click="cutDiscardDraft()" data-control="cut.discard">{{ controlLabel('cut.discard') }}</button>
+      </span>
+    </template>
+    <template x-if="cutBanner === 'replace'">
+      <span class="cut-banner__keys">
+        <button type="button" class="ae-key ae-key--sm ae-key--accent" @click="cutFill('replace')" :disabled="cutFilling" data-control="cut.replace">{{ controlLabel('cut.replace') }}</button>
+        <button type="button" class="ae-key ae-key--sm" @click="cutDismissBanner()" data-control="cut.keepMine">{{ controlLabel('cut.keepMine') }}</button>
+      </span>
+    </template>
+  </span>
+</div>

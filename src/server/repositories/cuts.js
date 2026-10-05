@@ -62,17 +62,18 @@ export class CutsRepository {
 
     /**
      * Saves items/sound/settings when `revision` is still the stored one, bumping it by one.
-     * `keepPrevious` stores the items being replaced as the one-step Undo draft.
+     * `keepPrevious` stores the items being replaced as the one-step Undo draft; `clearPrevious` drops it.
      * @throws {CutConflictError} with the server copy when the revision is stale
      */
-    save(spaceId, { items, sound, settings, revision, by = 'person', keepPrevious = false, auto }) {
+    save(spaceId, { items, sound, settings, revision, by = 'person', keepPrevious = false, clearPrevious = false, auto }) {
         const before = this.ensure(spaceId);
         const next = {
             items: JSON.stringify(items ?? before.items),
             sound: sound === undefined ? (before.sound == null ? null : JSON.stringify(before.sound)) : (sound == null ? null : JSON.stringify(sound)),
             settings: JSON.stringify(settings ?? before.settings),
         };
-        const previous = keepPrevious ? JSON.stringify(before.items) : (before.previous_items == null ? null : JSON.stringify(before.previous_items));
+        const kept = before.previous_items == null ? null : JSON.stringify(before.previous_items);
+        const previous = keepPrevious ? JSON.stringify(before.items) : (clearPrevious ? null : kept);
         const keepAuto = auto === undefined ? (before.auto ? 1 : 0) : (auto ? 1 : 0);
         const { changes } = this.db.prepare(`
             UPDATE space_cuts SET items = ?, sound = ?, settings = ?, previous_items = ?, auto = ?, updated_by = ?,

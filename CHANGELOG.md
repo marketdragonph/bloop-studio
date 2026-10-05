@@ -6,6 +6,7 @@ that heading into the version number and uses the section as the release notes.
 ## Unreleased
 
 - New: a Cut dock at the bottom of every Space shows your film's beats in order, with each clip's length and a hatched slot for every beat that has no video yet. Go to card takes you to that beat's card. The dock folds to one line and remembers whether you left it open.
+- New: you can edit the cut in the Cut dock. Fill the cut puts every rendered beat in. Drag clips to reorder them, drag the orange handles to trim, switch a join between a cut and a dissolve, turn a clip's sound off, take a clip out (with an 8-second Undo), and set the music and voice levels. Press Play to watch the cut with its music, with a slate where a beat is still missing. The cut saves by itself and keeps unsaved changes on this computer. If another window changed the cut, you choose which version to keep.
 
 ## 2026.1005.1232
 

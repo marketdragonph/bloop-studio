@@ -1,28 +1,35 @@
-// The Cut dock (Mini Katana, 02-dock.md), P1: read-only. It sits inside the SpaceBoard scope (editor.edge),
-// so Go to card can use the board's own bringIntoView and selection. It loads GET /spaces/:id/cut, folds to
-// a rail, remembers open/folded per viewer and space, and follows the board's ONE event stream: generation.js
+// The Cut dock (Mini Katana, 02-dock.md). It sits inside the SpaceBoard scope (editor.edge), so Go to card
+// can use the board's own bringIntoView and selection. It loads GET /spaces/:id/cut, folds to a rail,
+// remembers open/folded per viewer and space, and follows the board's ONE event stream: generation.js
 // re-dispatches `cut` and `node` as `board:cut` / `board:node` window events. No watcher reads `nodes`
-// (the board must not lag): the dock keeps its own small item list, changed only by those events.
+// (the board must not lag): the dock keeps its own small item list, changed only by those events and edits.
+// P2 edits (cut-actions.js, cut-strip.js), undo (cut-history.js) and autosave (cut-persistence.js) are method
+// modules spread in here, so one scope holds one copy of the items; the preview is CutPlayer (cut-player.js).
 // It never starts a render: Go to card takes the person to the card, where they press Generate.
-import { EMPTY_TEXT, SLOT_TEXT } from '/shared/katana-controls.js';
-import {
-    BED_DECODE_CAP_MS, bedSegments, fitScale, fmtLength, gapBlocks, ghostPeaks, laneLayout, readout,
-    rulerTicks, toBoardMs, totals, waveBars, wavePath, waveWindow,
-} from '/shared/cut-lanes.js';
+import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
+import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerTicks, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
+import { entryKey, laneEntries, layoutLane, toScreen } from '/shared/cut-timeline.js';
 import { mono, reduceTrack } from './audio-player.js';
+import { cutHistoryMethods } from './cut-history.js';
+import { cutPersistenceMethods } from './cut-persistence.js';
+import { cutActionMethods } from './cut-actions.js';
+import { cutStripMethods } from './cut-strip.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
+const RING_MS = 2000; // items another window or the Director changed glow sensor blue this long
+const MAX_PPS = 160; // a 0.1 s clip never stretches the lane past this many px per second
 const BUSY = new Set(['queued', 'generating']);
 const WAVES = new Map(); // media url → peaks (decoded once per bed, per page)
 const GHOST_WAVE = wavePath(ghostPeaks());
 const LOADING = 'Loading the cut';
 const LOAD_ERROR = 'Could not load the cut. The board still works.';
+const pad = (n) => String(n).padStart(2, '0');
 
 const openKey = (spaceId) => `bloop-studio:cut-open:${spaceId}`;
 
 function readOpen(spaceId) {
-    try { return localStorage.getItem(openKey(spaceId)) === '1'; } catch { return false; }
+    try { return localStorage.getItem(openKey(spaceId)); } catch { return null; }
 }
 
 function saveOpen(spaceId, open) {
@@ -35,12 +42,14 @@ export default function CutDock() {
         cutStatus: 'loading', // loading | ready | error
         cutError: '',
         cutRevision: 0,
-        cutServerTotal: null,
-        cutItems: [],
-        cutIndex: {}, // node id → item index: a node event for a card not in the cut costs one lookup
+        cutModel: [], // the cut's items, the ONE copy (saved by cut-persistence.js)
+        cutSound: null,
+        cutSettings: { resolution: 1080, fps: 30 },
+        cutDraft: true, // no items yet: the lane shows the board's ready beats, read only, until Fill
+        cutAsExported: false,
+        cutItems: [], // what the lanes draw (cut-timeline.js), rebuilt only on load, edit, resize
+        cutIndex: {}, // node id → lane index: a node event for a card not in the cut costs one lookup
         cutBeds: { music: null, voice: null },
-        cutLevel: '',
-        cutVoiceStart: 0,
         cutBeatsMs: [],
         cutPps: 0,
         cutSpan: 0,
@@ -56,13 +65,33 @@ export default function CutDock() {
         cutEmptyText: EMPTY_TEXT,
         cutLoadError: LOAD_ERROR,
         cutGhostWave: GHOST_WAVE,
+        cutCanUndo: false,
+        cutCanRedo: false,
+        cutSaveState: 'saved', // saved | unsaved | saving | failed
+        cutSaveError: '',
+        cutBanner: null, // conflict | director | restore | replace
+        cutRemoved: null, // { title } for the 8 s Undo line in the rail
+        cutUnplayable: [], // lane keys the preview could not play
+        cutRung: [], // lane keys glowing after a change from elsewhere
+        cutDrag: null, // { kind: 'move' | 'in' | 'out', key, ... } while a pointer drags
+        cutLevelOpen: null, // 'music' | 'voice' while its level popover is open
+        cutFilling: false,
+        _cutEdge: 'out', // which edge Shift+arrow and the handles' keys move
+        _cutLay: null, // the timed lane (layoutLane) the player plays
+        _cutBoardMs: 0,
+        _cutPlayer: null, // CutPlayer's handle, set while the dock is open
+        _cutPlayOnOpen: false,
         _cutTimer: null,
         _cutLoading: false,
         _cutResize: null,
         _cutSlots: [],
+        _cutHistory: null,
+        _cutBooted: false,
 
         init() {
-            this.cutOpen = readOpen(this.spaceId);
+            this.cutOpen = readOpen(this.spaceId) === '1';
+            this.cutInitHistory();
+            this.cutInitPersistence();
             this.cutLoad();
             if (this.cutOpen) this.$nextTick(() => this.cutWatchSize());
         },
@@ -70,6 +99,20 @@ export default function CutDock() {
         destroy() {
             this._cutResize?.disconnect();
             clearTimeout(this._cutTimer);
+            clearTimeout(this._cutRemovedTimer);
+            this.cutDestroyPersistence();
+        },
+
+        /**
+         * A part of the open lanes (scroll, playhead, cap). Not $refs: the lanes sit under an x-init wrapper, which
+         * Alpine counts as a root, so its refs never reach this scope. One dock per page.
+         */
+        cutPart(name) {
+            return document.querySelector(`.cut-dock [data-cut-part="${name}"]`);
+        },
+
+        cutCopy(key, vars) {
+            return copy(key, vars);
         },
 
         // ── Loading ─────────────────────────────────────────────────────────
@@ -108,8 +151,6 @@ export default function CutDock() {
 
         cutApply(data) {
             const cut = data.cut ?? {};
-            this.cutRevision = cut.revision ?? 0;
-            this.cutServerTotal = data.clock?.total_ms ?? data.total_ms ?? null;
             this.cutBeatsMs = Array.isArray(data.beats_ms) ? data.beats_ms : [];
             this._cutSlots = Array.isArray(data.slots) ? data.slots : [];
             const beds = Array.isArray(data.beds) ? data.beds : [];
@@ -117,38 +158,86 @@ export default function CutDock() {
                 music: beds.find((b) => b.kind === 'music') ?? null,
                 voice: beds.find((b) => b.kind === 'voice') ?? null,
             };
-            this.cutVoiceStart = Number(cut.sound?.voice?.start_ms) || 0;
-            const gain = cut.sound?.music?.gain_db;
-            this.cutLevel = Number.isFinite(gain) ? `${gain > 0 ? '+' : gain < 0 ? '−' : ''}${Math.abs(gain)} dB` : '';
+            if (cut.settings) this.cutSettings = cut.settings;
+            this.cutReceive(cut, { by: cut.updated_by }); // adopts, keeps the person's edits, or asks (cut-persistence.js)
             this.cutLayout();
             // With the lanes on screen, decode now; else the lanes' x-init does it once they render.
-            if (this.cutOpen && this.$refs.cutScroll) this.cutLoadWave();
+            if (this.cutOpen && this.cutPart('scroll')) this.cutLoadWave();
         },
 
-        /** Lays the items out at the current lane width (Fit). Runs on load, unfold and resize only. */
+        /** Lays the lane out at the current width (Fit). Runs on load, edit, unfold, resize and the As exported toggle. */
         cutLayout() {
-            const width = this.$refs.cutScroll?.clientWidth || 0;
-            this.cutPps = fitScale(width, this._cutSlots);
-            const items = laneLayout(this._cutSlots, this.cutPps).map((i) => ({ ...i, live: i.state === 'rendering' }));
-            const t = totals(items);
-            const pps = this.cutPps;
+            const width = this.cutPart('scroll')?.clientWidth || 0;
+            const { entries, draft } = laneEntries(this.cutModel, this._cutSlots);
+            const layout = layoutLane(entries, { gaps: !this.cutAsExported });
+            this.cutDraft = draft;
+            this._cutLay = layout;
+            this._cutBoardMs = this.cutAsExported ? layoutLane(entries).total_ms : layout.total_ms;
+            const shown = layout.entries.filter((e) => !e.hidden);
+            const pps = Math.min(MAX_PPS, fitScale(width, shown.map((e) => ({ seconds: e.ms / 1000 }))));
+            this.cutPps = Math.max(pps, width > 0 && layout.total_ms > 0 ? width / (layout.total_ms / 1000) : 0);
+            const items = shown.map((e) => this.cutViewItem(e, this.cutPps));
             this.cutItems = items;
-            this.cutIndex = Object.fromEntries(items.filter((i) => i.node_id != null).map((i) => [i.node_id, i.index]));
-            this.cutSpan = Math.max(width, Math.ceil(t.board_ms / 1000 * pps));
-            this.cutTicks = rulerTicks(t.board_ms, pps);
-            this.cutBeats = this.cutBeatsMs.map((ms, i) => ({ key: i, x: toBoardMs(items, ms) / 1000 * pps }));
+            const index = {};
+            items.forEach((i, k) => { if (i.node_id != null) index[i.node_id] = k; });
+            this.cutIndex = index;
+            this.cutSpan = Math.max(width, Math.ceil(layout.total_ms / 1000 * this.cutPps));
+            this.cutTicks = rulerTicks(layout.total_ms, this.cutPps);
+            this.cutBeats = this.cutBeatsMs.map((ms, i) => ({ key: i, x: toScreen(layout, ms) / 1000 * this.cutPps }));
             this.cutPauses = gapBlocks(items);
             const music = this.cutBeds.music;
-            this.cutMusic = music ? bedSegments(items, 0, this.cutBedMs(music), pps) : [];
+            this.cutMusic = music ? bedSegments(items, 0, this.cutBedMs(music), this.cutPps) : [];
             const voice = this.cutBeds.voice;
-            this.cutVoice = voice ? bedSegments(items, this.cutVoiceStart, this.cutBedMs(voice), pps) : [];
+            this.cutVoice = voice ? bedSegments(items, Number(this.cutSound?.voice?.start_ms) || 0, this.cutBedMs(voice), this.cutPps) : [];
             if (!items.some((i) => i.key === this.cutSelectedKey)) this.cutSelectedKey = items.find((i) => i.ready)?.key ?? null;
+            if (!this.cutDrag) this._cutPlayer?.refresh(); // a trim drag refreshes once, on release
+        },
+
+        /** One lane entry as the views draw it (positions in px from the shared time map). */
+        cutViewItem(e, pps) {
+            const slot = e.slot ?? {};
+            const item = e.item;
+            const ready = e.kind === 'clip';
+            const beat = e.beat || e.index + 1;
+            const newer = ready && !this.cutDraft && slot.take_id && item.take_id && slot.take_id > item.take_id && slot.media_url;
+            return {
+                key: entryKey(e),
+                lane: e.index,
+                clip: ready ? e.clip : -1, // index in cutModel
+                beat,
+                title: slot.label ?? `${pad(beat)} · ${item?.beat_tag ?? 'Beat'}`,
+                ready,
+                state: ready ? (e.gone ? 'deleted' : 'ready') : slot.state,
+                reason: ready ? null : slot.reason,
+                live: slot.state === 'rendering',
+                node_id: item?.node_id ?? slot.node_id ?? null,
+                poster_url: slot.poster_url ?? null,
+                measured: slot.measured,
+                ms: e.ms,
+                board_ms: e.start_ms,
+                export_ms: ready ? e.export_ms : null,
+                x: Math.round(e.start_ms / 1000 * pps * 100) / 100,
+                w: Math.round(e.ms / 1000 * pps * 100) / 100,
+                join: ready ? e.join.type : null,
+                joinMs: ready ? e.join.ms : 0,
+                in_ms: ready ? item.in_ms : 0,
+                out_ms: ready ? item.out_ms : 0,
+                seconds_ms: ready ? item.seconds_ms : 0,
+                sound: ready ? item.sound !== false : true,
+                note: ready ? item.note ?? '' : '',
+                gone: e.gone,
+                newTake: newer ? { take_id: slot.take_id, media_url: slot.media_url, seconds_ms: Math.round((slot.seconds ?? 0) * 1000) || null } : null,
+            };
+        },
+
+        cutLay() {
+            return this._cutLay ?? { entries: [], total_ms: 0, export_ms: 0 };
         },
 
         /** A bed's length; unmeasured, it is drawn under the whole cut (it plays once, never loops). */
         cutBedMs(bed) {
             const ms = Math.round((Number(bed.seconds) || 0) * 1000);
-            return Math.max(1, ms || totals(this.cutItems).export_ms);
+            return Math.max(1, ms || this.cutLay().export_ms);
         },
 
         // ── Fold ────────────────────────────────────────────────────────────
@@ -157,14 +246,22 @@ export default function CutDock() {
             this.cutOpen = !this.cutOpen;
             saveOpen(this.spaceId, this.cutOpen);
             // Opening renders the lanes, whose x-init lays them out at their width and decodes the bed.
+            // Folding removes the body (x-if): the player's videos and audio go with it.
             if (!this.cutOpen) {
                 this._cutResize?.disconnect();
                 this._cutResize = null;
             }
         },
 
+        /** The first draft that lands opens the dock once, unless the person already chose open or folded. */
+        cutFirstDraftLanded() {
+            if (readOpen(this.spaceId) !== null || this.cutOpen) return;
+            this.cutOpen = true;
+            saveOpen(this.spaceId, true);
+        },
+
         cutWatchSize() {
-            const el = this.$refs.cutScroll;
+            const el = this.cutPart('scroll');
             if (!el || this._cutResize || typeof ResizeObserver === 'undefined') return;
             let last = el.clientWidth;
             this._cutResize = new ResizeObserver(() => {
@@ -218,7 +315,10 @@ export default function CutDock() {
         onCutEvent(detail) {
             const space = detail?.spaceId ?? detail?.space_id;
             if (space != null && space !== this.spaceId) return;
-            // Even at the same revision a slot may have changed (a take landed, a card was deleted): reload.
+            if (detail?.offer === 'replace' && !this.cutBanner) this.cutBanner = 'replace';
+            if (Array.isArray(detail?.changed) && detail.changed.length) this._cutRingIds = detail.changed;
+            // Our own save sends a `cut` event too; while it is in flight, wait and reload after it.
+            if (this.cutSaveState === 'saving') { this._cutEventWaiting = true; return; }
             // Not announced: takes land and get measured all through a build, and the live region stays quiet for that.
             this.cutRefetchSoon();
         },
@@ -233,21 +333,34 @@ export default function CutDock() {
             if (update.status === 'done') this.cutRefetchSoon();
         },
 
+        /** Items another window or the Director changed glow for 2 s (none under reduced motion: static ring). */
+        cutRing(keys) {
+            this.cutRung = keys;
+            clearTimeout(this._cutRingTimer);
+            this._cutRingTimer = setTimeout(() => { this.cutRung = []; }, RING_MS);
+        },
+
         // ── Items ───────────────────────────────────────────────────────────
 
         cutSelected() {
             return this.cutItems.find((i) => i.key === this.cutSelectedKey) ?? null;
         },
 
-        cutSelect(item) {
-            this.cutSelectedKey = item.key;
-        },
-
-        /** "Beat 3, The letter, 7.5 seconds, selected" / "Beat 4, Flashback, not rendered" (02-dock.md §10). */
+        /** "Beat 3, The letter, 7.5 seconds, dissolve in, selected" / "Beat 4, Flashback, not rendered" (02-dock.md §10). */
         cutItemLabel(item) {
-            const name = String(item.title || item.beat_tag || '').replace(/^\d+ · /, '');
-            const state = item.ready ? `${(item.ms / 1000).toFixed(1)} seconds` : this.cutStateText(item);
-            return `Beat ${item.index + 1}, ${name}, ${state}${item.key === this.cutSelectedKey ? ', selected' : ''}`;
+            const name = String(item.title || '').replace(/^\d+ · /, '');
+            const parts = [`Beat ${item.beat}`, name];
+            if (item.ready) {
+                parts.push(`${(item.ms / 1000).toFixed(1)} seconds`);
+                if (item.join === 'dissolve' && item.clip > 0) parts.push('dissolve in');
+                if (!item.sound) parts.push('sound off');
+                if (item.gone) parts.push(SLOT_TEXT.card_deleted);
+                if (this.cutUnplayable.includes(item.key)) parts.push(copy('unplayable'));
+            } else {
+                parts.push(this.cutStateText(item));
+            }
+            if (item.key === this.cutSelectedKey) parts.push('selected');
+            return parts.join(', ');
         },
 
         /** "not rendered", "rendering", "render failed", "card deleted", "file missing" (BoardCut's reason). */
@@ -299,22 +412,33 @@ export default function CutDock() {
 
         // ── Rail ────────────────────────────────────────────────────────────
 
+        cutCounts() {
+            const all = this.cutLay().entries;
+            return { ready: all.filter((e) => e.kind === 'clip').length, count: all.length };
+        },
+
         cutReadout() {
             if (this.cutStatus === 'loading') return LOADING;
             if (this.cutStatus === 'error') return 'Not loaded';
-            if (!this.cutItems.length) return 'No clips yet';
-            const t = totals(this.cutItems);
-            if (!t.ready) return `0 of ${t.count} beats rendered`;
-            // The server's clock wins; 0 means nothing measured yet, so the asked lengths stand in.
-            return readout(this.cutItems, this.cutServerTotal || null);
+            const { ready, count } = this.cutCounts();
+            if (!count) return 'No clips yet';
+            if (!ready) return `0 of ${count} beats rendered`;
+            const parts = [copy('beats', { ready, n: count }), fmtClock(this.cutLay().export_ms)];
+            if (ready < count) parts.push(copy('withGaps', { total: fmtClock(this._cutBoardMs) }));
+            return parts.join(' · ');
         },
 
         cutEmpty() {
-            return this.cutStatus === 'ready' && !this.cutItems.length;
+            return this.cutStatus === 'ready' && !this.cutItems.length && !this.cutLay().entries.length;
         },
 
         cutAllGaps() {
             return this.cutStatus === 'ready' && this.cutItems.length > 0 && !this.cutItems.some((i) => i.ready);
         },
+
+        ...cutHistoryMethods,
+        ...cutPersistenceMethods,
+        ...cutActionMethods,
+        ...cutStripMethods,
     };
 }
