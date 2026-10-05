@@ -5,6 +5,8 @@
 // The zip is checked against its pinned SHA-256; the build is refused when its configure line enables GPL or
 // nonfree parts. vendor/ffmpeg gets ffmpeg.exe, ffprobe.exe, their DLLs (a shared build: the LGPL libraries stay
 // separate, replaceable files), LICENSE.txt and manifest.json (read by third-party-notices.mjs).
+// The LGPL-3.0 is a set of extra permissions on top of the GPL-3.0, so the GPL-3.0 text ships beside it as
+// COPYING.GPLv3, fetched from gnu.org and checked against its own pinned SHA-256 (a build already in place gets it too).
 // Usage: npm run fetch:ffmpeg   (npm run dist runs it; it does nothing when the pinned build is already in place)
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -26,6 +28,14 @@ export const PINNED = Object.freeze({
     version: 'n7.1.5-12-g1fdbca85aa',
     source: 'https://github.com/FFmpeg/FFmpeg/tree/1fdbca85aa',
     buildScripts: 'https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-07-31-14-10',
+});
+
+/** The GPL-3.0 text the LGPL-3.0 builds on, as gnu.org publishes it. */
+export const GPL_TEXT = Object.freeze({
+    file: 'COPYING.GPLv3',
+    url: 'https://www.gnu.org/licenses/gpl-3.0.txt',
+    size: 35149,
+    sha256: '3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986',
 });
 
 /** Configure flags that would make the build GPL or unredistributable. --enable-version3 alone means LGPL-3.0. */
@@ -96,11 +106,46 @@ function install(extracted) {
     return files;
 }
 
+/** gnu.org answers 403 to Node's default user agent. */
+const withAgent = (fetchImpl) => (url, options = {}) => fetchImpl(url, { ...options, headers: { 'User-Agent': 'bloop-studio-build (scripts/fetch-ffmpeg.mjs)', ...(options.headers ?? {}) } });
+
+/**
+ * Puts COPYING.GPLv3 in `dir` unless the right text is already there. True when it wrote it.
+ * @throws when the download does not match the pinned hash (nothing is written)
+ */
+export async function ensureGplText({ dir = FFMPEG_DIR, cache = CACHE_DIR, fetchImpl = fetch, log = () => {}, pin = GPL_TEXT } = {}) {
+    const target = join(dir, pin.file);
+    if (existsSync(target) && (await sha256Of(target)) === pin.sha256) return false;
+    const cached = join(cache, 'gpl-3.0.txt');
+    // A copy already in the cache with the pinned hash is used as is (an offline rebuild); anything else is fetched.
+    if (!existsSync(cached) || (await sha256Of(cached)) !== pin.sha256) {
+        rmSync(cached, { force: true });
+        await download(pin, cached, { fetchImpl: withAgent(fetchImpl), connections: 1 });
+    }
+    const hash = await sha256Of(cached);
+    if (hash !== pin.sha256) {
+        rmSync(cached, { force: true });
+        throw new Error(`fetch-ffmpeg: ${pin.url} has SHA-256 ${hash}, pinned ${pin.sha256}. Deleted; nothing installed.`);
+    }
+    mkdirSync(dir, { recursive: true });
+    copyFileSync(cached, target);
+    log(`ffmpeg: ${pin.file} from ${pin.url}`);
+    return true;
+}
+
+/** A build fetched before COPYING.GPLv3 shipped: add the text and list it in the manifest. */
+async function addGplText(manifest, log) {
+    if (!(await ensureGplText({ log })) && manifest.files?.includes(GPL_TEXT.file)) return manifest;
+    const next = { ...manifest, files: [...new Set([...(manifest.files ?? []), GPL_TEXT.file])].sort() };
+    writeFileSync(MANIFEST_PATH, `${JSON.stringify(next, null, 2)}\n`);
+    return next;
+}
+
 export async function fetchFfmpeg({ log = console.log } = {}) {
     if (process.platform !== 'win32') throw new Error('fetch-ffmpeg: the pinned build is for Windows x64.');
     if (inPlace()) {
         log(`ffmpeg: ${PINNED.version} already in ${FFMPEG_DIR}`);
-        return readManifest();
+        return addGplText(readManifest(), log);
     }
     const zip = join(CACHE_DIR, PINNED.name);
     log(`ffmpeg: downloading ${PINNED.url}`);
@@ -131,6 +176,7 @@ export async function fetchFfmpeg({ log = console.log } = {}) {
         rmSync(FFMPEG_DIR, { recursive: true, force: true });
         throw new Error('fetch-ffmpeg: refused, ffmpeg -L does not print an LGPL licence.');
     }
+    await ensureGplText({ log });
     const encoders = run(exe, ['-hide_banner', '-encoders']);
     const manifest = {
         name: 'FFmpeg',
@@ -142,7 +188,7 @@ export async function fetchFfmpeg({ log = console.log } = {}) {
         sha256: PINNED.sha256,
         configure: configureFlags(buildconf).join(' '),
         encoders: ['h264_mf', 'aac_mf', 'aac'].filter((name) => new RegExp(`\\s${name}\\s`).test(encoders)),
-        files: [...files, 'LICENSE.txt'].sort(),
+        files: [...files, 'LICENSE.txt', GPL_TEXT.file].sort(),
     };
     writeFileSync(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
     rmSync(join(CACHE_DIR, 'extract'), { recursive: true, force: true });

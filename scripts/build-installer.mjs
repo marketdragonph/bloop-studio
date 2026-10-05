@@ -2,7 +2,7 @@
 // The version is YEAR.MONTHDAY.HOURMINUTE (e.g. 2026.1002.1435): later builds always compare higher,
 // which is all the auto-updater needs. package.json's own "version" is left alone.
 // Usage: npm run dist   (installer, blockmap and latest.yml in dist/; the Release workflow uploads them)
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { build, Platform } from 'electron-builder';
 import { nativeComponents, NOTICES_PATH, productionPackages, renderNotices } from './third-party-notices.mjs';
 
@@ -18,6 +18,11 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
     const natives = nativeComponents();
     if (!natives.some((n) => n.name === 'FFmpeg')) {
         console.error('vendor/ffmpeg is missing: run npm run fetch:ffmpeg first (npm run dist does).');
+        process.exit(1);
+    }
+    // The LGPL-3.0 builds on the GPL-3.0: both texts ship beside ffmpeg (fetch-ffmpeg.mjs writes COPYING.GPLv3).
+    if (!['LICENSE.txt', 'COPYING.GPLv3'].every((f) => existsSync(new URL(`../vendor/ffmpeg/${f}`, import.meta.url)))) {
+        console.error('vendor/ffmpeg has no LICENSE.txt or COPYING.GPLv3: run npm run fetch:ffmpeg again.');
         process.exit(1);
     }
     writeFileSync(NOTICES_PATH, renderNotices(productionPackages(), natives));

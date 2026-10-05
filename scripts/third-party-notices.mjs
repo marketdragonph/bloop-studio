@@ -32,19 +32,26 @@ export function productionPackages(root = ROOT) {
     return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Native programs in the installer, each from vendor/<name>/manifest.json + LICENSE.txt; [] when not fetched. */
+/**
+ * Native programs in the installer, each from vendor/<name>/manifest.json + LICENSE.txt (the LGPL-3.0) and
+ * COPYING.GPLv3 (the GPL-3.0 it builds on, both shipped beside the program); [] when not fetched.
+ */
 export function nativeComponents(root = ROOT) {
     const dir = join(root, 'vendor', 'ffmpeg');
     if (!existsSync(join(dir, 'manifest.json'))) return [];
     const m = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
-    const licence = existsSync(join(dir, 'LICENSE.txt')) ? readFileSync(join(dir, 'LICENSE.txt'), 'utf8').trim() : null;
+    const read = (file) => (existsSync(join(dir, file)) ? readFileSync(join(dir, file), 'utf8').trim() : null);
+    const licence = read('LICENSE.txt');
+    const gpl = read('COPYING.GPLv3');
     const text = [
         `${m.name} ${m.version} - ${m.license}, source: ${m.source}, run as a separate program (resources/ffmpeg).`,
         `Build: ${m.url} (sha256 ${m.sha256}); build scripts: ${m.buildScripts}.`,
         'ffmpeg.exe, ffprobe.exe and the DLLs are unmodified and may be replaced (Settings > Video tools).',
+        'License files beside the program: LICENSE.txt (GNU LGPL 3.0)' + (gpl ? ' and COPYING.GPLv3 (GNU GPL 3.0, which the LGPL 3.0 adds permissions to).' : '.'),
         `Configuration: ${m.configure}`,
         '',
         licence ?? `Licensed under ${m.license}.`,
+        ...(gpl ? ['', gpl] : []),
     ].join('\n');
     return [{ name: m.name, version: m.version, license: m.license, text }];
 }

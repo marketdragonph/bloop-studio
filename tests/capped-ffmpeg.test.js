@@ -119,7 +119,7 @@ test('probe reads ffprobe JSON from beside ffmpeg', async () => {
     assert.deepEqual(info.args, ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', 'clip.mp4']);
 });
 
-test('locate: settings, then BLOOP_FFMPEG, then bundled, then PATH', () => {
+test('locate: settings, then BLOOP_FFMPEG, then bundled, then the dev vendor copy, then PATH', () => {
     const exe = process.platform === 'win32' ? '.exe' : '';
     const fromSettings = locateFfmpeg({ settingsPath: join('/opt', 'ff', 'ffmpeg'), env: { BLOOP_FFMPEG: '/x/ffmpeg' } });
     assert.equal(fromSettings.source, 'settings');
@@ -131,7 +131,13 @@ test('locate: settings, then BLOOP_FFMPEG, then bundled, then PATH', () => {
     assert.equal(bundled.source, 'bundled');
     assert.equal(bundled.ffmpeg, join('/r', 'ffmpeg', `ffmpeg${exe}`));
 
-    const path = locateFfmpeg({ env: {}, resourcesPath: '/r', exists: () => false });
+    // The dev app (npm start, scripts/dev-web.mjs): Electron's own resources have no ffmpeg, so the copy
+    // npm run fetch:ffmpeg left in <repo>/vendor/ffmpeg is found with no BLOOP_FFMPEG.
+    const dev = locateFfmpeg({ env: {}, resourcesPath: '/electron/resources', appRoot: '/repo', exists: (p) => p === join('/repo', 'vendor', 'ffmpeg', `ffmpeg${exe}`) });
+    assert.deepEqual([dev.source, dev.ffprobe], ['vendor', join('/repo', 'vendor', 'ffmpeg', `ffprobe${exe}`)]);
+    assert.equal(locateFfmpeg({ env: {}, appRoot: '/repo', resourcesPath: '/r', exists: () => true }).source, 'bundled', 'the installed copy wins');
+
+    const path = locateFfmpeg({ env: {}, resourcesPath: '/r', appRoot: '/repo', exists: () => false });
     assert.deepEqual([path.source, path.ffmpeg], ['path', `ffmpeg${exe}`]);
 });
 
