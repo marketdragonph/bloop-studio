@@ -81,7 +81,14 @@ test('the build runner writes every lane in the background; a lane that fails ke
     assert.match(h.plans.beats(plan.id)[1].error, /went away/);
     assert.ok(plan.built_at);
     assert.match(writes[0], /Who and what is in it[\s\S]*@mira-sen: Mira, 31\./);
-    const labels = h.spaces.board(h.space.id).nodes.map((n) => n.label);
+    // What the PC renders on reaches the writers: the clip's model and the still drawn from the sheets.
+    const nodes = h.spaces.board(h.space.id).nodes;
+    const clip = nodes.find((n) => n.type === 'video' && n.label === 'one');
+    const still = nodes.find((n) => n.type === 'image' && n.label === 'one');
+    assert.equal(clip.settings.family, 'ltx');
+    assert.equal(still.settings.family, 'qwenedit');
+    assert.ok(h.spaces.board(h.space.id).connections.some((c) => c.to_node_id === still.id && c.to_socket === 'reference'));
+    const labels = nodes.map((n) => n.label);
     assert.ok(['one · still', 'one · motion', 'one · script', 'one · sound', 'three · still'].every((l) => labels.includes(l)));
     const last = h.events.filter((e) => e.event === 'build').at(-1).data;
     assert.deepEqual([last.building, last.total, last.written, last.failed], [false, 3, 2, 1]);

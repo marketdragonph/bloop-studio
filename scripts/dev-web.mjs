@@ -10,17 +10,22 @@ const store = {
     openaiModel: 'gpt-5',
     bloopAccount: null,
     bloopToken: null, // in memory only, gone when this dev server stops
+    // API keys too: kept in this process's memory for the session (never written anywhere), so the Director can
+    // be tried live in the dev app. Gone when this dev server stops.
+    anthropicApiKey: null,
+    openaiApiKey: null,
     launchSeen: Boolean(process.env.SKIP_LAUNCH), // SKIP_LAUNCH=1 opens straight on Spaces
 };
 const settings = {
     all: () => {
-        const { bloopToken, ...rest } = store;
-        return { ...rest, configured: { anthropicApiKey: false, openaiApiKey: false, bloopToken: Boolean(bloopToken) } };
+        const { bloopToken, anthropicApiKey, openaiApiKey, ...rest } = store;
+        return { ...rest, configured: { anthropicApiKey: Boolean(anthropicApiKey), openaiApiKey: Boolean(openaiApiKey), bloopToken: Boolean(bloopToken) } };
     },
     get: (key) => store[key],
     update: (values) => {
         if (process.env.DEBUG_SETTINGS) console.log('settings.update', Object.keys(values).map((k) => `${k}=${values[k] == null ? values[k] : typeof values[k]}`).join(' '));
-        Object.assign(store, Object.fromEntries(Object.entries(values).filter(([k]) => !k.endsWith('ApiKey'))));
+        // An empty key field means "keep the one already set", as in the app.
+        Object.assign(store, Object.fromEntries(Object.entries(values).filter(([k, v]) => !k.endsWith('ApiKey') || (typeof v === 'string' && v.trim()))));
     },
     clearSecret(key) {
         if (process.env.DEBUG_SETTINGS) console.log('settings.clearSecret', key, new Error().stack.split('\n').slice(2, 5).join(' | '));

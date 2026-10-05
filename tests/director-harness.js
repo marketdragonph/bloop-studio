@@ -16,7 +16,7 @@ export function harness({ runner = { isRunning: () => false, start() {} } } = {}
     const events = [];
     const turn = () => ({
         spaceId: space.id, spaces, plans, stages, ops, runner, ledger: new TurnLedger(),
-        emit: (event, data) => events.push({ event, data }), lengths: [3, 4, 5, 6, 8, 10], withSound: true, clipFamily: 'ltx',
+        emit: (event, data) => events.push({ event, data }), lengths: [3, 4, 5, 6, 8, 10], withSound: true, clipFamily: 'ltx', editFamily: 'qwenedit',
     });
     return { db, spaces, space, plans, ops, stages, events, turn };
 }

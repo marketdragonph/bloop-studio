@@ -6,7 +6,8 @@
     {{ profile.hardware.gpu }} · {{ profile.hardware.vramTotalGb.toFixed(0) }} GB · {{ profile.hardware.backend }} · ComfyUI {{ profile.hardware.version }}
   </p>
   <ul class="engine-list">
-    @each(item in profile.report)
+    {{-- One row per model and job: the Qwen-Image-Edit graphs for one, two and three pictures read as one line. --}}
+    @each(item in profile.report.filter((r, i, all) => all.findIndex((x) => x.label === r.label) === i))
       <li class="engine-list__item">
         <span class="engine-list__name">{{ item.label }}</span>
         @if(item.variant)

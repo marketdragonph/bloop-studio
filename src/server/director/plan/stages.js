@@ -118,6 +118,11 @@ export class BuildStages {
             hook: payload.hook ?? null,
             resolution: payload.resolution ?? null,
             language: payload.language ?? null,
+            // What this PC renders the lanes on, recorded at build time for the beat writers (engine-info.js).
+            clip_family: payload.clip_family ?? null,
+            edit_family: payload.edit_family ?? null,
+            lengths: Array.isArray(payload.lengths) && payload.lengths.length ? payload.lengths : null,
+            with_sound: payload.with_sound ?? true,
         };
     }
 }
