@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1122
+
 - Changed: cards take the real shape of their clip or picture. A vertical clip makes a tall card instead of sitting in a wide box with black bars, on rendered cards and uploads alike.
 
 ## 2026.1005.1119
