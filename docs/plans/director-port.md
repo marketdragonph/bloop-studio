@@ -96,9 +96,13 @@ Ported from bloop unchanged:
 Local rendering:
 - On-camera lines: the script card and the speakers' voice profile cards are wired into the clip; LTX-2.3 and
   MiniMax-H3 voice them (they make their own sound). Wan is silent: its lanes get no script card.
-- VO: OPEN. No local text to speech. Test first on this PC (a two-hander and a narrated beat, LTX and H3). If the
-  video models cannot carry an off-screen narrator, VO renders on bloop's cloud voices when signed in: one Audio card
-  per narrated beat fed by the `[VO]` lines.
+- VO: tested 2026-10-05 on the 12 GB card (8 s, 480p, text to video; Whisper transcripts). LTX-2.3 and MiniMax-H3
+  both speak a two-hander's lines in order and both voice an off-screen narrator word for word with nobody on screen
+  (LTX 95 s / 156 s, H3 ~105 s per clip). Faults: H3 squeezed the second line into the last second (size the clip to
+  the words — bloop's 2.5 words a second); H3 drew the woman as a boy (identity, not voice).
+- So VO and dialogue render inside the clip; no TTS is needed to make a film speak. Open: every clip invents its own
+  voice, so the narrator and each character can sound different from beat to beat. A local TTS with a fixed voice per
+  speaker + LTX lip sync (ltx-ia2v) would hold voices across beats — a later phase, after a license check.
 
 ## Phases
 
