@@ -86,8 +86,9 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - **Runs as a background job** (2026-10-05, `director/runs.js`, table `director_runs`): a request returns at
   once; the turn keeps going when the panel closes or the page reloads, and its words and board changes
   arrive on the board's event stream (`event: director`). One run per board; Stop ends it, the cards it
-  added stay. Up to 30 model rounds (the last one can only answer); out of steps, stopped with work done,
-  or cut off by a closed app, the reply offers **Continue**.
+  added stay. 30 model rounds per turn (the last one can only answer); out of steps, the run carries on by
+  itself in the same reply, up to 4 turns. A run cut off by a closed app resumes when the app starts.
+  No buttons to press: replies say what was built, never which buttons to use; renders stay the person's.
 - **Checks its own work** (ported from bloop's BoardAudit, `director/audit.js`): after every round that
   changes the board the model gets a board check (render cards with nothing in Words, a cast or location
   named in a shot but not wired into it, unused text, a last frame or voice without a first frame, failed

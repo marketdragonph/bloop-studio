@@ -27,23 +27,21 @@ export class DirectorService {
     }
 
     /**
-     * One turn (DirectorRuns runs it in the background). emit(event, data): 'text' (delta), 'actions'
-     * (board changes), 'notice', 'done' (final log entry), 'error'. Resolves 'done' | 'failed' | 'stopped'.
+     * One turn of the tool loop (DirectorRuns runs it in the background and chains another when it
+     * runs out of steps). emit(event, data): 'text' (delta), 'actions' (board changes), 'notice'.
+     * Resolves { status: 'done' | 'failed' | 'stopped', exhausted, text, actions, notice, error }.
      */
-    async turn(spaceId, request, emit, signal) {
+    async turn(spaceId, request, emit, signal, { logRequest = true } = {}) {
         const { providerId, switched, missing } = this.resolveProvider();
         const provider = PROVIDERS[providerId];
-        if (missing) {
-            emit('error', { message: MISSING_KEY });
-            return 'failed';
-        }
+        if (missing) return { status: 'failed', error: MISSING_KEY, actions: [] };
         if (switched) emit('notice', { message: `Using ${provider.label}: it is the only key in Settings.` });
 
         const apiKey = this.settings.get(provider.keyName);
         const model = this.settings.get(provider.modelName);
         const board = this.spaces.board(spaceId);
         const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes) });
-        this.director.addLog(spaceId, 'user', request);
+        if (logRequest) this.director.addLog(spaceId, 'user', request);
 
         try {
             const result = await provider.run({
@@ -65,22 +63,17 @@ export class DirectorService {
 
             this.director.saveThread(spaceId, providerId, model, result.history);
             const text = result.text || (actions.actions.length ? 'Done.' : '');
-            const id = this.director.addLog(spaceId, 'assistant', text, actions.actions, { continuable: result.exhausted });
-            const notice = result.notice ?? (result.exhausted ? OUT_OF_STEPS : null);
-            if (notice) this.director.addLog(spaceId, 'notice', notice);
-            emit('done', { id, text, actions: actions.actions, notice, continuable: Boolean(result.exhausted) });
-            return 'done';
+            this.director.addLog(spaceId, 'assistant', text, actions.actions);
+            if (result.notice) this.director.addLog(spaceId, 'notice', result.notice);
+            return { status: 'done', exhausted: Boolean(result.exhausted), text, actions: actions.actions, notice: result.notice };
         } catch (error) {
             const message = signal?.aborted ? 'Stopped.' : provider.describe(error) ?? `The Director failed: ${error.message}`;
             if (!signal?.aborted) console.error('director turn failed:', error);
-            // Cards already added stay on the board; Continue picks up from what is there.
-            const continuable = actions.actions.length > 0;
-            this.director.addLog(spaceId, 'notice', message, actions.actions, { continuable });
-            emit('error', { message, actions: actions.actions, continuable });
-            return signal?.aborted ? 'stopped' : 'failed';
+            // Cards already added stay on the board.
+            this.director.addLog(spaceId, 'notice', message, actions.actions);
+            return { status: signal?.aborted ? 'stopped' : 'failed', error: message, actions: actions.actions };
         }
     }
 }
 
 export const MISSING_KEY = 'Add a Claude or OpenAI API key in Settings to use the Director.';
-const OUT_OF_STEPS = 'The Director used all its steps for this request. Press Continue to keep building.';

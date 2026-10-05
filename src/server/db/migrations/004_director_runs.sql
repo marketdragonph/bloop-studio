@@ -1,5 +1,5 @@
 -- The Director runs as a background job: one row per request, so a turn outlives the chat panel
--- and an app restart mid-turn is noticed (and offered as Continue) instead of silently lost.
+-- and an app restart mid-turn is noticed (and resumed) instead of silently lost.
 CREATE TABLE director_runs (
     id          INTEGER PRIMARY KEY,
     space_id    INTEGER NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
@@ -11,5 +11,5 @@ CREATE TABLE director_runs (
 
 CREATE INDEX director_runs_space ON director_runs(space_id, id);
 
--- A log entry the person can pick up from with Continue (the step budget ran out, or the app closed).
+-- Unused since 2026-10-05 (the Director continues by itself); kept, as installed apps already have it.
 ALTER TABLE director_log ADD COLUMN continuable INTEGER NOT NULL DEFAULT 0;

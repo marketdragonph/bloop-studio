@@ -79,18 +79,30 @@ test('inspect_cards reads a card in full; update_card sets a duration on render 
     assert.match(boardSnapshot(spaces.board(space.id)), /\[not rendered yet\] \{aspect 9:16\}/);
 });
 
-/** A service whose turn waits until the test lets it finish. */
-function fakeService() {
-    let finish;
-    return {
-        turn: (spaceId, request, emit, signal) => new Promise((resolve) => {
-            emit('text', { delta: 'Building…' });
-            emit('actions', { actions: [{ kind: 'card', nodeId: 1 }] });
-            signal.addEventListener('abort', () => resolve('stopped'));
-            finish = () => { emit('done', { text: 'Done.' }); resolve('done'); };
-        }),
-        finish: () => finish(),
+/** A service whose turns wait until the test lets them finish; each can say it ran out of steps. */
+function fakeService({ exhaustedTurns = 0, key = true } = {}) {
+    const service = {
+        requests: [],
+        pending: [],
+        resolveProvider: () => (key ? { providerId: 'anthropic' } : { missing: true }),
+        turn(spaceId, request, emit, signal) {
+            service.requests.push(request);
+            return new Promise((resolve) => {
+                emit('text', { delta: 'Building…' });
+                emit('actions', { actions: [{ kind: 'card', nodeId: service.requests.length }] });
+                signal.addEventListener('abort', () => resolve({ status: 'stopped', error: 'Stopped.', actions: [] }));
+                const exhausted = service.requests.length <= exhaustedTurns;
+                service.pending.push(() => resolve({ status: 'done', exhausted, text: 'Done.', actions: [] }));
+            });
+        },
+        async finishAll(runs, spaceId) {
+            while (runs.live.has(spaceId)) {
+                service.pending.splice(0).forEach((finish) => finish());
+                await new Promise((r) => setTimeout(r, 5));
+            }
+        },
     };
+    return service;
 }
 
 test('a Director run works in the background, one per board, and streams on the board events', async () => {
@@ -106,17 +118,39 @@ test('a Director run works in the background, one per board, and streams on the 
     assert.throws(() => runs.start(space.id, 'again'), DirectorBusyError);
     assert.deepEqual(runs.active(space.id), { runId, request: 'Make a short film', text: 'Building…', actions: [{ kind: 'card', nodeId: 1 }], info: null });
 
-    service.finish();
-    await runs.live.get(space.id)?.done;
+    await service.finishAll(runs, space.id);
     assert.equal(runs.active(space.id), null);
     assert.deepEqual(seen, ['text', 'actions', 'done']);
     assert.equal(db.prepare('SELECT status FROM director_runs WHERE id = ?').get(runId).status, 'done');
 });
 
-test('Stop ends a run; a run cut off by a closed app is offered as Continue', async () => {
+test('out of steps, the run carries on by itself in the same reply, with a ceiling', async () => {
+    const { db, space } = fresh();
+    const events = new BoardEvents();
+    const done = [];
+    events.on('director', (u) => u.event === 'done' && done.push(u.data));
+    const service = fakeService({ exhaustedTurns: 2 });
+    const runs = new DirectorRuns({ director: new DirectorRepository(db), service, events });
+    runs.start(space.id, 'A nine-shot film');
+    await service.finishAll(runs, space.id);
+    assert.equal(service.requests.length, 3); // two turns out of steps, the third finished
+    assert.match(service.requests[1], /^Continue where you stopped/);
+    assert.equal(done.length, 1); // one reply, no button to press
+    assert.equal(done[0].notice, null);
+
+    const endless = fakeService({ exhaustedTurns: 99 });
+    const capped = new DirectorRuns({ director: new DirectorRepository(db), service: endless, events });
+    capped.start(space.id, 'Never ending');
+    await endless.finishAll(capped, space.id);
+    assert.equal(endless.requests.length, 4);
+    assert.match(done[1].notice, /very long build/);
+});
+
+test('Stop ends a run; a run cut off by a closed app resumes by itself when the app starts', async () => {
     const { db, space } = fresh();
     const director = new DirectorRepository(db);
-    const runs = new DirectorRuns({ director, service: fakeService(), events: new BoardEvents() });
+    const service = fakeService();
+    const runs = new DirectorRuns({ director, service, events: new BoardEvents() });
     const runId = runs.start(space.id, 'Build');
     const done = runs.live.get(space.id).done;
     assert.ok(runs.stop(space.id));
@@ -124,8 +158,11 @@ test('Stop ends a run; a run cut off by a closed app is offered as Continue', as
     assert.equal(db.prepare('SELECT status FROM director_runs WHERE id = ?').get(runId).status, 'stopped');
 
     director.startRun(space.id, 'Cut off'); // the app closed during this one
-    new DirectorRuns({ director, service: fakeService(), events: new BoardEvents() }).recover();
-    const last = director.log(space.id).at(-1);
-    assert.equal(last.role, 'notice');
-    assert.equal(last.continuable, true);
+    const restarted = fakeService();
+    const after = new DirectorRuns({ director, service: restarted, events: new BoardEvents() });
+    after.recover();
+    assert.match(director.log(space.id).at(-1).text, /picking up where it stopped/);
+    assert.match(restarted.requests[0], /^Continue where you stopped/);
+    assert.equal(after.active(space.id).request, null); // no fake message from the person in the chat
+    await restarted.finishAll(after, space.id);
 });

@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the Director finishes big builds by itself. No Continue button: when it needs more steps it carries on in the same reply, and a build cut off by closing the app picks up again when you reopen it. Its replies say what it built instead of telling you which buttons to press; what to render stays your choice.
+
 ## 2026.1005.939
 
 - New: the Director keeps working in the background. Close the panel or switch boards and it carries on; big requests no longer stop halfway, and when it runs out of steps, is stopped or the app closes, press Continue to pick up where it left off.

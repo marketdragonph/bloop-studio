@@ -23,13 +23,13 @@ export class DirectorRepository {
 
     log(spaceId) {
         return this.db.prepare('SELECT * FROM director_log WHERE space_id = ? ORDER BY id').all(spaceId)
-            .map((row) => ({ ...row, actions: JSON.parse(row.actions), continuable: Boolean(row.continuable) }));
+            .map((row) => ({ ...row, actions: JSON.parse(row.actions) }));
     }
 
-    addLog(spaceId, role, text, actions = [], { continuable = false } = {}) {
+    addLog(spaceId, role, text, actions = []) {
         const { lastInsertRowid } = this.db
-            .prepare('INSERT INTO director_log (space_id, role, text, actions, continuable) VALUES (?, ?, ?, ?, ?)')
-            .run(spaceId, role, text, JSON.stringify(actions), continuable ? 1 : 0);
+            .prepare('INSERT INTO director_log (space_id, role, text, actions) VALUES (?, ?, ?, ?)')
+            .run(spaceId, role, text, JSON.stringify(actions));
         return Number(lastInsertRowid);
     }
 

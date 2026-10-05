@@ -1,6 +1,6 @@
 // The Director panel: chat log, a background run per request (it keeps going when the panel closes
-// or the page reloads; its words and board changes arrive on the board's event stream), Stop,
-// Continue, live board refresh as actions land, and one undo step per turn.
+// or the page reloads, and carries on by itself when it runs out of steps; its words and board
+// changes arrive on the board's event stream), Stop, live board refresh as actions land, and one undo step per turn.
 import { api } from './api.js';
 
 export const directorMethods = {
@@ -17,7 +17,7 @@ export const directorMethods = {
             this.directorLog = log;
             this.directorLoaded = true;
             if (running) {
-                this.directorLog.push({ id: `u${running.runId}`, role: 'user', text: running.request, actions: [] });
+                if (running.request) this.directorLog.push({ id: `u${running.runId}`, role: 'user', text: running.request, actions: [] });
                 this.followRun(running.runId, { text: running.text, actions: [...running.actions], info: running.info });
             }
             this.scrollDirector();
@@ -35,26 +35,21 @@ export const directorMethods = {
         this.tidyAfterRender();
     },
 
-    async sendDirector(message = this.directorInput.trim(), { resume = false } = {}) {
+    async sendDirector() {
+        const message = this.directorInput.trim();
         if (!message || this.directorBusy) return;
-        if (!resume) this.directorInput = '';
+        this.directorInput = '';
         this.directorBusy = true;
-        this.directorLog.push({ id: `u${Date.now()}`, role: 'user', text: resume ? 'Continue' : message, actions: [] });
+        this.directorLog.push({ id: `u${Date.now()}`, role: 'user', text: message, actions: [] });
         this.scrollDirector();
         try {
-            const { runId } = resume
-                ? await api('POST', `${this.base}/director/continue`)
-                : await api('POST', `${this.base}/director`, { message });
+            const { runId } = await api('POST', `${this.base}/director`, { message });
             this.followRun(runId);
         } catch (error) {
             this.directorBusy = false;
             this.directorLog.push({ id: `n${Date.now()}`, role: 'notice', text: error.message, actions: [] });
             this.scrollDirector();
         }
-    },
-
-    continueDirector() {
-        this.sendDirector('Continue', { resume: true });
     },
 
     /** Shows a run's reply bubble; its events arrive through onDirectorStream. */
@@ -81,7 +76,6 @@ export const directorMethods = {
         if (event === 'done' || event === 'error') {
             reply.streaming = false;
             reply.notice = event === 'error' ? data.message : data.notice;
-            reply.continuable = Boolean(data.continuable);
             this.directorBusy = false;
             this.directorRunId = null;
             this.refreshBoard().catch(() => {});
@@ -96,11 +90,6 @@ export const directorMethods = {
         } catch (error) {
             this.toast(error.message, 'warn');
         }
-    },
-
-    /** Continue is offered on the newest entry only, once nothing is running. */
-    canContinue(entry) {
-        return !this.directorBusy && entry.continuable && entry === this.directorLog.at(-1);
     },
 
     /** One undo step for the whole turn: removes the cards and wires it added, restores edited text. */
