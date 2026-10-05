@@ -25,7 +25,7 @@
       @include('pages/spaces/cut/preview')
       <div class="cut-dock__main">
         @include('pages/spaces/cut/states')
-        <template x-if="cutStatus === 'ready' && cutItems.length">
+        <template x-if="cutStatus === 'ready' && cutItems.length && cutLanesOn">
           <div class="cut-tracks-wrap" x-init="$nextTick(() => { cutWatchSize(); cutLayout(); cutLoadWave(); })">
             @include('pages/spaces/cut/tracks')
           </div>

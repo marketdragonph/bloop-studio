@@ -105,6 +105,17 @@ export function rulerTicks(boardMs, pxPerSec, { labelPx = 48, maxTicks = 400 } =
     return ticks;
 }
 
+/**
+ * The ruler as the dock draws it (P5): the labelled majors as elements, the minors as one repeating CSS gradient
+ * every `minorPx` (a 150 s cut has ~150 ticks; drawing them as elements cost a long task on open).
+ * @returns {{ majors: { key: number, x: number, label: string }[], minorPx: number }}
+ */
+export function rulerScale(boardMs, pxPerSec, options = {}) {
+    const ticks = rulerTicks(boardMs, pxPerSec, options);
+    const minorPx = ticks.length > 1 ? ticks[1].x - ticks[0].x : 0;
+    return { majors: ticks.filter((t) => t.major).map(({ key, x, label }) => ({ key, x, label })), minorPx };
+}
+
 /** Board ms for an export-time ms (beat ticks, bed spans). Past the last clip: the board end. */
 export function toBoardMs(items, exportMs) {
     for (const item of items) {

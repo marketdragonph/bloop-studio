@@ -149,7 +149,7 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 2;
+    z-index: 3; /* above the next clip's join chip, which would otherwise cover the bar where it is grabbed */
     width: 1.5rem;
     cursor: ew-resize;
     touch-action: none;

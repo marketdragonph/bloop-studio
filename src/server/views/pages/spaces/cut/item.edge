@@ -9,8 +9,14 @@
     :style="Object.assign({ '--x': item.x + 'px', '--w': item.w + 'px' }, cutDragStyle(item))" :data-cut-key="item.key">
   <template x-if="item.ready">
     <div class="cut-clipbox" :class="{ 'is-first': item.x < 1 }">
-      <span class="cut-trimghost cut-trimghost--in" x-show="cutTurnMark(item).ghostIn > 0" :style="{ '--g': cutTurnMark(item).ghostIn + 'px' }" aria-hidden="true"></span>
-      <span class="cut-trimghost cut-trimghost--out" x-show="cutTurnMark(item).ghostOut > 0" :style="{ '--g': cutTurnMark(item).ghostOut + 'px' }" aria-hidden="true"></span>
+      {{-- P5 (02-dock.md §11): rare parts sit in ONE x-if each (a display: contents group), so a clip with none of
+           them costs one binding, not five. --}}
+      <template x-if="cutTurnShown() && (cutTurnMark(item).ghostIn > 0 || cutTurnMark(item).ghostOut > 0)">
+        <span class="cut-group">
+          <span class="cut-trimghost cut-trimghost--in" x-show="cutTurnMark(item).ghostIn > 0" :style="{ '--g': cutTurnMark(item).ghostIn + 'px' }" aria-hidden="true"></span>
+          <span class="cut-trimghost cut-trimghost--out" x-show="cutTurnMark(item).ghostOut > 0" :style="{ '--g': cutTurnMark(item).ghostOut + 'px' }" aria-hidden="true"></span>
+        </span>
+      </template>
       <button type="button" class="cut-clip"
               :class="{ 'is-selected': item.key === cutSelectedKey, 'is-rung': cutRung.includes(item.key), 'is-gone': item.gone, 'is-unplayable': cutUnplayable.includes(item.key), 'is-turn': cutTurnMark(item).marked }"
               @pointerdown="cutPointerDown($event, item)" @click="cutClick(item)"
@@ -22,16 +28,20 @@
           <span class="cut-clip__len" x-text="cutLength(item)"></span>
         </span>
         <span class="cut-clip__badges">
-          <span class="cut-badge cut-badge--sensor" x-show="item.newTake">New take</span>
-          <span class="cut-badge cut-badge--alert" x-show="item.gone" x-text="cutStateText({ state: 'deleted' })"></span>
-          <span class="cut-badge cut-badge--alert" x-show="cutUnplayable.includes(item.key)" x-text="cutCopy('unplayable')"></span>
-          <span class="cut-badge" x-show="!item.sound">{{{ icon('mute') }}}<span>Sound off</span></span>
-          <span class="cut-badge" x-show="cutTurnMark(item).locked">{{{ icon('lock') }}}<span x-text="cutCopy('turnLocked')"></span></span>
+          <template x-if="item.newTake || item.gone || !item.sound || cutUnplayable.includes(item.key) || cutTurnMark(item).locked">
+            <span class="cut-group">
+              <span class="cut-badge cut-badge--sensor" x-show="item.newTake">New take</span>
+              <span class="cut-badge cut-badge--alert" x-show="item.gone" x-text="cutStateText({ state: 'deleted' })"></span>
+              <span class="cut-badge cut-badge--alert" x-show="cutUnplayable.includes(item.key)" x-text="cutCopy('unplayable')"></span>
+              <span class="cut-badge" x-show="!item.sound">{{{ icon('mute') }}}<span>Sound off</span></span>
+              <span class="cut-badge" x-show="cutTurnMark(item).locked">{{{ icon('lock') }}}<span x-text="cutCopy('turnLocked')"></span></span>
+            </span>
+          </template>
         </span>
-        <span class="cut-note" x-show="item.note" :title="cutTurnWhy(item)"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="item.note"></span></span>
-        <span class="cut-clip__live status-light status-light--busy" x-show="item.live">
-          <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
-        </span>
+        <template x-if="item.note"><span class="cut-note" :title="cutTurnWhy(item)"><span class="cut-note__dot" aria-hidden="true"></span><span x-text="item.note"></span></span></template>
+        <template x-if="item.live">
+          <span class="cut-clip__live status-light status-light--busy"><span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span></span>
+        </template>
       </button>
 
       <button type="button" class="cut-join" x-show="item.clip && !cutDraft"
@@ -39,18 +49,23 @@
               @click.stop="cutToggleJoin(item)" @pointerdown.stop :aria-label="cutJoinLabel(item)" aria-keyshortcuts="D"
               data-control="cut.join" x-text="item.join === 'dissolve' ? (item.joinMs / 1000).toFixed(1) : '|'"></button>
 
-      <span class="cut-handle cut-handle--in" role="slider" tabindex="0" x-show="item.key === cutSelectedKey && !cutDraft"
+      {{-- P5: the handles exist only on the selected clip (x-if), so 49 clips carry no handle nodes or bindings. --}}
+      <template x-if="item.key === cutSelectedKey && !cutDraft">
+      <span class="cut-group">
+      <span class="cut-handle cut-handle--in" role="slider" tabindex="0"
             aria-label="{{ controlLabel('cut.trimIn') }}" aria-valuemin="0" :aria-valuemax="item.out_ms" :aria-valuenow="item.in_ms"
             :aria-valuetext="cutHandleText(item, 'in')" data-control="cut.trimIn"
             @pointerdown="cutTrimStart($event, item, 'in')" @keydown="cutHandleKey($event, item, 'in')" @focus="_cutEdge = 'in'">
         <span class="cut-handle__time" x-show="cutDrag?.kind === 'in' && cutDrag.key === item.key" x-text="cutHandleText(item, 'in')"></span>
       </span>
-      <span class="cut-handle cut-handle--out" role="slider" tabindex="0" x-show="item.key === cutSelectedKey && !cutDraft"
+      <span class="cut-handle cut-handle--out" role="slider" tabindex="0"
             aria-label="{{ controlLabel('cut.trimOut') }}" :aria-valuemin="item.in_ms" :aria-valuemax="item.seconds_ms" :aria-valuenow="item.out_ms"
             :aria-valuetext="cutHandleText(item, 'out')" data-control="cut.trimOut"
             @pointerdown="cutTrimStart($event, item, 'out')" @keydown="cutHandleKey($event, item, 'out')" @focus="_cutEdge = 'out'">
         <span class="cut-handle__time" x-show="cutDrag?.kind === 'out' && cutDrag.key === item.key" x-text="cutHandleText(item, 'out')"></span>
       </span>
+      </span>
+      </template>
     </div>
   </template>
   <template x-if="!item.ready">

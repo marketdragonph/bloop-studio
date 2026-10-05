@@ -396,7 +396,7 @@ test('P4 views: the turn strip, Snap to beats, beat ticks, duck bands, Duck unde
     assert.match(dock, /cut-trimghost--out" x-show="cutTurnMark\(item\).ghostOut > 0"/);
     assert.match(dock, /x-show="cutTurnMark\(item\).locked">[\s\S]*?cutCopy\('turnLocked'\)/);
     assert.match(dock, /'is-turn': cutTurnMark\(item\).marked/);
-    assert.match(dock, /class="cut-note" x-show="item.note" :title="cutTurnWhy\(item\)"/);
+    assert.match(dock, /<template x-if="item.note"><span class="cut-note" :title="cutTurnWhy\(item\)"/);
     assert.match(dock, /class="cut-details__why" x-show="cutTurnWhy\(cutSelected\(\)\)"/);
     // The Director never gets a render or export key here, and the views never say Generate.
     assert.doesNotMatch(strip, /cutExport|cutRender|Generate/);

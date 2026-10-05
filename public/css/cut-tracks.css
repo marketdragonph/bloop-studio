@@ -32,6 +32,17 @@
 
 /* ── Ruler ── */
 .cut-ruler { position: relative; height: var(--cut-ruler-h); overflow: hidden; border-bottom: 1px solid var(--ae-seam); }
+/* The minor ticks: one gradient every --cut-tick-step px (P5: no element per second of the cut). */
+.cut-ruler::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 0.375rem;
+    background-image: repeating-linear-gradient(to right, var(--cut-tick) 0 1px, transparent 1px var(--cut-tick-step, 100%));
+    pointer-events: none;
+}
 
 .cut-ruler__tick {
     position: absolute;
@@ -72,6 +83,9 @@
 .cut-lane__note { position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; margin: 0; color: var(--text-muted); font-size: var(--fs-xs); }
 
 /* One slot: placed by --x / --w, a hairline apart from the next. */
+/* A display: contents group around parts rendered together under one x-if (item.edge). */
+.cut-group { display: contents; }
+
 .cut-item { position: absolute; top: 0; bottom: 0; left: var(--x); width: calc(var(--w) - 0.1875rem); min-width: 0; }
 
 /* A clip: cut corner, seam edge, first frame, tag and length stamp on a media chip. */

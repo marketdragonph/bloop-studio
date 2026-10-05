@@ -9,7 +9,7 @@
 // missing beats (cut-render.js) queues only on the person's press in its sheet. Export and Pack (cut-export.js) start
 // only on the person's press. P2b: the live cut (cut-auto.js) and Bring my clips (cut-bring.js).
 import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
-import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerTicks, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
+import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerScale, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
 import { entryKey, laneEntries, layoutLane } from '/shared/cut-timeline.js';
 import { mono, reduceTrack } from './audio-player.js';
 import { cutHistoryMethods } from './cut-history.js';
@@ -26,6 +26,7 @@ import { cutCheckMethods } from './cut-check.js';
 import { cutShapeMethods } from './cut-shape.js';
 import { cutOutputMethods } from './cut-outputs.js';
 import { cutNarrowMethods } from './cut-narrow.js';
+import { patchList } from './cut-patch.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -37,6 +38,10 @@ const GHOST_WAVE = wavePath(ghostPeaks());
 const LOADING = 'Loading the cut';
 const LOAD_ERROR = 'Could not load the cut. The board still works.';
 const pad = (n) => String(n).padStart(2, '0');
+
+let DOCK = null;
+/** The page's one dock element, cached while it is connected. */
+const dockEl = () => (DOCK?.isConnected ? DOCK : (DOCK = globalThis.document?.querySelector?.('.cut-dock') ?? null));
 
 const openKey = (spaceId) => `bloop-studio:cut-open:${spaceId}`;
 
@@ -51,6 +56,7 @@ function saveOpen(spaceId, open) {
 export default function CutDock() {
     return {
         cutOpen: false,
+        cutLanesOn: true, // false for one frame after the person unfolds the dock (cutToggle)
         cutStatus: 'loading', // loading | ready | error
         cutError: '',
         cutRevision: 0,
@@ -67,7 +73,8 @@ export default function CutDock() {
         cutBeatsMs: [],
         cutPps: 0,
         cutSpan: 0,
-        cutTicks: [],
+        cutTicks: [], // the ruler's labelled majors (the minors are a CSS gradient every cutTickStep px)
+        cutTickStep: 0,
         cutBeats: [],
         cutMusic: [],
         cutVoice: [],
@@ -123,8 +130,9 @@ export default function CutDock() {
          * A part of the open lanes (scroll, playhead, cap). Not $refs: the lanes sit under an x-init wrapper, which
          * Alpine counts as a root, so its refs never reach this scope. One dock per page.
          */
+        /** A named part of the dock, searched inside the dock only (a page-wide search walks a 300-card board). */
         cutPart(name) {
-            return document.querySelector(`.cut-dock [data-cut-part="${name}"]`);
+            return dockEl()?.querySelector(`[data-cut-part="${name}"]`) ?? null;
         },
 
         cutCopy(key, vars) {
@@ -197,12 +205,14 @@ export default function CutDock() {
             const pps = Math.min(MAX_PPS, fitScale(width, shown.map((e) => ({ seconds: e.ms / 1000 }))));
             this.cutPps = Math.max(pps, width > 0 && layout.total_ms > 0 ? width / (layout.total_ms / 1000) : 0);
             const items = shown.map((e) => this.cutViewItem(e, this.cutPps));
-            this.cutItems = items;
+            this.cutItems = patchList(this.cutItems, items); // in place while the keys hold (a trim drag)
             const index = {};
             items.forEach((i, k) => { if (i.node_id != null) index[i.node_id] = k; });
             this.cutIndex = index;
             this.cutSpan = Math.max(width, Math.ceil(layout.total_ms / 1000 * this.cutPps));
-            this.cutTicks = rulerTicks(layout.total_ms, this.cutPps);
+            const ruler = rulerScale(layout.total_ms, this.cutPps);
+            this.cutTicks = patchList(this.cutTicks, ruler.majors);
+            this.cutTickStep = ruler.minorPx;
             this.cutMeasureLayout(layout, this.cutPps); // beat ticks, duck bands, dialogue spans
             this.cutPauses = gapBlocks(items);
             const music = this.cutBeds.music;
@@ -272,6 +282,13 @@ export default function CutDock() {
             if (!this.cutOpen) {
                 this._cutResize?.disconnect();
                 this._cutResize = null;
+            } else {
+                // P5: the preview renders in this task and the lanes in the next, so unfolding a 50-clip cut on a
+                // busy board never makes one long task (measured: no task over 50 ms on a 300-card board).
+                this.cutLanesOn = false;
+                const show = () => { this.cutLanesOn = true; };
+                globalThis.requestAnimationFrame?.(() => setTimeout(show, 0));
+                setTimeout(show, 150); // a hidden window runs no frames
             }
             this.cutNarrowOpened(); // a narrow window: the Director's sheet folds (cut-narrow.js)
         },
