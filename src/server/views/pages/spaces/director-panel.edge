@@ -20,7 +20,9 @@
     <template x-for="entry in directorLog" :key="entry.id">
       <div class="director__msg" :class="'director__msg--' + entry.role">
         <p class="ae-readout" x-show="entry.info" x-text="entry.info"></p>
-        <p class="director__text" x-text="entry.text" x-show="entry.text"></p>
+        {{-- The Director's words as markdown (escaped first: board/markdown.js); the person's as typed. --}}
+        <div class="director__text director__md" x-show="entry.text && entry.role === 'assistant'" x-html="entry.role === 'assistant' ? markdown(entry.text) : ''"></div>
+        <p class="director__text" x-show="entry.text && entry.role !== 'assistant'" x-text="entry.text"></p>
         {{-- While it works: what it is doing right now, and what has landed so far. --}}
         <p class="director__working" x-show="entry.streaming" role="status">
           <svg class="beat-line director__beat" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true" focusable="false">

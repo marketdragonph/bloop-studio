@@ -34,6 +34,16 @@
 .director__msg--notice { justify-self: stretch; max-width: none; }
 .director__text { margin: 0; white-space: pre-wrap; font-size: var(--fs-sm); }
 .director__actions { color: var(--sensor-text); }
+.director__md { white-space: normal; }
+.director__md > * { margin: 0 0 var(--space-2); }
+.director__md > :last-child { margin-bottom: 0; }
+.director__md ul, .director__md ol { padding-left: var(--space-4); }
+.director__md li + li { margin-top: var(--space-1); }
+.director__md h3, .director__md h4, .director__md h5 { font-family: var(--font-stencil); font-size: var(--fs-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sensor-text); }
+.director__md code { padding: 0 0.25em; background: var(--bg-secondary); font-size: 0.92em; }
+.director__md pre { overflow-x: auto; padding: var(--space-2); background: var(--bg-secondary); }
+.director__md pre code { padding: 0; background: none; }
+.director__md strong { color: var(--text-primary); }
 .director__working { display: flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--sensor-text); }
 .director__beat { --beat-line-accent: var(--sensor); --beat-line-width: 3rem; --beat-line-height: 0.875rem; flex: none; }
 .director__state { margin-right: var(--space-2); }

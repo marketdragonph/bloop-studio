@@ -2,6 +2,7 @@
 // or the page reloads, and carries on by itself when it runs out of steps; its words and board
 // changes arrive on the board's event stream), Stop, live board refresh as actions land, and one undo step per turn.
 import { api } from './api.js';
+import { renderMarkdown } from './markdown.js';
 
 export const directorMethods = {
     async toggleDirector() {
@@ -160,6 +161,10 @@ export const directorMethods = {
             const log = this.$refs.directorLog;
             if (log) log.scrollTop = log.scrollHeight;
         });
+    },
+
+    markdown(text) {
+        return renderMarkdown(text);
     },
 
     /** "Adding cards · 12 cards · 8 wires": what the Director is doing, and what has landed so far. */
