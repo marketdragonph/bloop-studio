@@ -118,9 +118,23 @@
 .viewer__player { width: auto; height: auto; }
 
 /* ── The audio player ──────────────────────────────────────────────────── */
-.audio-player { display: flex; flex-direction: column; gap: 0.375rem; width: 100%; padding: var(--space-2); background: var(--bg-secondary); }
+/* A framed instrument, as in bloop: a seam border on the panel ground, theme tokens only (light and dark). */
+.audio-player {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--ae-seam-strong);
+    background: color-mix(in srgb, var(--bg-primary) 60%, var(--bg-secondary));
+}
 .audio-player__row { display: flex; align-items: center; gap: var(--space-2); }
-.audio-player__play { flex-shrink: 0; }
+.audio-player__play {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.5rem), calc(100% - 0.5rem) 100%, 0 100%);
+}
 
 /* The waveform is the seek bar: played bars light orange, bars the detector called quiet stay dim. */
 .audio-player__wave { position: relative; flex: 1; min-width: 0; height: 2.25rem; padding: var(--space-1) 0; cursor: pointer; outline: none; }
@@ -153,14 +167,13 @@
 }
 @keyframes audio-player-scan { from { left: -18%; } to { left: 100%; } }
 
-.audio-player__foot { display: flex; align-items: center; gap: var(--space-2); min-height: 1.5rem; }
+.audio-player__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; min-height: 1.5rem; }
 .audio-player__time { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .audio-player__signal {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
     flex-shrink: 0;
-    min-width: 3.25rem;
     font-family: var(--font-stencil);
     font-size: 0.5rem;
     font-weight: 700;
@@ -169,11 +182,28 @@
     color: var(--text-muted);
 }
 .audio-player__signal.is-live { color: var(--sensor-text); }
-.audio-player__level { --ae-level-accent: var(--sensor); flex: 1; min-width: 2rem; }
+.audio-player__level { --ae-level-accent: var(--sensor); flex: 1; min-width: 1.5rem; }
+.audio-player__time { white-space: nowrap; }
+.audio-player__keys { display: flex; gap: 2px; margin-left: auto; }
+.audio-player__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid var(--ae-seam);
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+.audio-player__key svg { width: 0.75rem; height: 0.75rem; }
+.audio-player__key:hover, .audio-player__key.is-on { color: var(--accent-text); border-color: var(--ae-seam-lit); }
+.audio-player__key:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .audio-player__level .ae-level__fill { transition: width 0.06s linear; }
 
 @media (prefers-reduced-motion: reduce) {
     .ae-player__centre, .ae-player__centre-key, .ae-player__deck, .ae-player__track, .ae-player__head, .ae-player__key,
-    .audio-player__bar, .audio-player__head, .audio-player__level .ae-level__fill { transition: none; }
+    .audio-player__bar, .audio-player__head, .audio-player__level .ae-level__fill, .audio-player__key { transition: none; }
     .audio-player__scan { animation: none; left: 41%; }
 }

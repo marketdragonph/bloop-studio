@@ -32,13 +32,18 @@
   </div>
   <div class="audio-player__foot">
     <span class="ae-readout audio-player__time" x-text="fmt(current) + ' / ' + fmt(duration)"></span>
-    <span class="audio-player__signal" :class="{ 'is-live': speaking }" :title="ready ? 'Speech in ' + Math.round(speechRatio * 100) + '% of the track' : ''">
+    <span class="audio-player__signal" :class="{ 'is-live': speaking }" :title="ready ? Math.round(speechRatio * 100) + '% of the track is voice' : ''">
       <span class="ae-sensor-dot" x-show="speaking" aria-hidden="true"></span><span x-text="signal()"></span>
     </span>
     <div class="ae-level audio-player__level" aria-hidden="true"><div class="ae-level__fill" :style="{ width: Math.round(level * 100) + '%' }"></div></div>
-    <span class="ae-readout" x-show="ready" x-text="Math.round(speechRatio * 100) + '% voice'"></span>
-    <button type="button" class="ae-key ae-key--sm ae-key--square" @click.stop="toggleMute()" :aria-label="muted ? 'Unmute' : 'Mute'">
-      <span x-show="!muted">{{{ icon('volume') }}}</span><span x-show="muted">{{{ icon('mute') }}}</span>
-    </button>
+    {{-- bloop's keys: mute, download, and (a local file has no link to copy) Show in folder. --}}
+    <div class="audio-player__keys">
+      <button type="button" class="audio-player__key" @click.stop="toggleMute()" :class="{ 'is-on': muted }" :aria-label="muted ? 'Unmute' : 'Mute'" :title="muted ? 'Unmute' : 'Mute'">
+        <span x-show="!muted">{{{ icon('volume') }}}</span><span x-show="muted">{{{ icon('mute') }}}</span>
+      </button>
+      <a class="audio-player__key" :href="mediaUrl(node) + '?download=' + encodeURIComponent(node.label || 'audio')" download
+         @click.stop aria-label="Download" title="Download">{{{ icon('download') }}}</a>
+      <button type="button" class="audio-player__key" @click.stop="showInFolder(node.media_path)" aria-label="Show in folder" title="Show in folder">{{{ icon('folder') }}}</button>
+    </div>
   </div>
 </div>

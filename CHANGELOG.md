@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the audio player matches bloop's: a framed player with mute, download and Show in folder keys under the waveform, in light and dark mode.
+
 ## 2026.1005.1112
 
 - New: clips and sound play in Bloop Studio's own players. Clips get a play key, a scrubber, the time, a volume level that every player remembers, and fullscreen. Songs and voices get a waveform you can click to seek, a voice light and a level meter.

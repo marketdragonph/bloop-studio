@@ -1,5 +1,6 @@
-{{-- View full screen / show in folder, over any card media. Shown on hover and keyboard focus. --}}
-<div class="media-actions" x-show="hasMedia(node)">
+{{-- View full screen / show in folder, over a card's picture or clip. Shown on hover and keyboard focus.
+     Sound has nothing to view: its player carries its own keys (media-audio.edge). --}}
+<div class="media-actions" x-show="hasMedia(node) && node.type !== 'audio' && !isAudio(node)">
   <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--overlay" @click.stop.prevent="openViewer(node)"
           aria-label="View full screen" title="View full screen (or double-click)">{{{ icon('expand') }}}</button>
   <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--overlay" @click.stop.prevent="showInFolder(node.media_path)"
