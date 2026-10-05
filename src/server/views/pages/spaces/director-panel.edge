@@ -12,9 +12,17 @@
   <div class="director__log scrolls" x-ref="directorLog" aria-live="polite">
     <template x-if="!directorLog.length">
       <div class="director__empty">
-        <p class="ae-stencil">Brief the Director</p>
-        <p class="plate-note">Describe a scene or a short sequence. The Director lays out text, image and video cards and wires them; you press Generate.</p>
-        <p class="plate-note"><em>"Three shots: a pilot walks into a dark hangar, looks up at her mech, the visor lights up."</em></p>
+        {{-- bloop's empty state: the brief, then example asks that fill the box (they never send on their own). --}}
+        <p class="ae-stencil">Mission brief</p>
+        <p class="director__lead">Tell the Director the film you want. It plans the shots for you.</p>
+        <p class="plate-note">It plans first and asks a question or two, then lays out the cast, the places and every shot, wired. Nothing renders until you say so. It also knows this app: ask it how anything here works.</p>
+        <div class="director__seeds">
+          <template x-for="(seed, i) in directorSeeds" :key="i">
+            <button type="button" class="director__seed" @click="fillDirector(seed)">
+              <span class="ae-readout" x-text="String(i + 1).padStart(2, '0')"></span><span x-text="seed"></span>
+            </button>
+          </template>
+        </div>
       </div>
     </template>
     <template x-for="entry in directorLog" :key="entry.id">
@@ -36,6 +44,23 @@
       </div>
     </template>
   </div>
+
+  {{-- The beats being written (bloop's build block): one row per lane, its state by weight, amber only on a failure. --}}
+  <section class="director__build" x-show="directorBuild && directorBuild.total" aria-label="Build">
+    <p class="ae-readout director__build-head" role="status">
+      <span class="ae-sensor-dot" x-show="directorBuild?.building" aria-hidden="true"></span>
+      <span x-text="buildReadout(directorBuild)"></span>
+    </p>
+    <ol class="director__lanes" x-show="directorBuild?.building || directorBuild?.failed">
+      <template x-for="lane in (directorBuild?.lanes || [])" :key="lane.tag">
+        <li class="director__lane" :class="'is-' + lane.state">
+          <span class="director__lane-tag" x-text="lane.tag"></span>
+          <span class="director__lane-note" x-show="lane.state === 'failed'" x-text="lane.error"></span>
+          <span class="director__lane-note" x-show="lane.state === 'queued' || lane.state === 'writing'" x-text="lane.brief"></span>
+        </li>
+      </template>
+    </ol>
+  </section>
 
   <form class="director__compose" @submit.prevent="sendDirector()">
     <textarea class="card__text card__text--grow" x-ref="directorInput" rows="2" x-model="directorInput"

@@ -1,12 +1,13 @@
-// Claude provider for the Director: official Anthropic SDK, streaming manual tool loop.
-// History is append-only (full response.content is kept, thinking blocks included), tool inputs
-// are validated by the caller's execute() before anything runs, refusals and truncated tool
-// input stop the turn, and server-side refusal fallback is on (fallbacks: "default").
+// Claude provider for the Director: official Anthropic SDK, streaming manual tool loop (bloop's SkillTurn shape).
+// History is the conversation as TEXT rows (tool calls are never replayed, so a provider switch never breaks a
+// thread); within a turn the full response content is kept. Tool inputs are validated by the caller's execute()
+// before anything runs; refusals and truncated tool input stop the turn; server-side refusal fallback is on.
 import Anthropic from '@anthropic-ai/sdk';
 
-// A whole film board takes dozens of tool calls: the turn runs as a background job, so the budget is
-// generous. The last round may not call tools, so the turn always ends with words.
-export const MAX_TOOL_ROUNDS = 30;
+// bloop's max_hops: look, build, repair after the critic, answer. A whole film is not built in these rounds — the
+// beats are written by the build runner — so five is enough. The last round may not call tools, so the turn
+// always ends with words.
+export const MAX_TOOL_ROUNDS = 5;
 
 export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, history, userContent, tools, execute, afterRound, onText, signal, maxRounds = MAX_TOOL_ROUNDS }) {
     const client = new Anthropic({ apiKey });
@@ -75,6 +76,18 @@ export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, 
     }
 
     return { history: messages, text: finalText.trim(), notice, exhausted };
+}
+
+/** One call, no tools: a beat writer's answer. */
+export async function completeClaude({ apiKey, model, system, user, signal }) {
+    const client = new Anthropic({ apiKey });
+    const message = await client.messages.create({
+        model,
+        max_tokens: 4000,
+        system,
+        messages: [{ role: 'user', content: user }],
+    }, { signal });
+    return message.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
 }
 
 /** Typed errors → words for the chat panel. */

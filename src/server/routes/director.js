@@ -4,11 +4,12 @@
 import { Hono } from 'hono';
 import { DirectorBusyError } from '../director/runs.js';
 import { MISSING_KEY } from '../director/service.js';
+import { ECHO_SAY, isEcho } from '../director/turn/closing.js';
 
 const int = (value) => Number.parseInt(value, 10);
 const MAX_REQUEST = 4000;
 
-export function directorRoutes({ spaces, director, directorService, directorRuns }) {
+export function directorRoutes({ spaces, director, directorService, directorRuns, plans, runner }) {
     const routes = new Hono();
 
     const start = (c, spaceId, request) => {
@@ -24,7 +25,7 @@ export function directorRoutes({ spaces, director, directorService, directorRuns
     routes.get('/spaces/:id/director', (c) => {
         const spaceId = int(c.req.param('id'));
         if (!spaces.find(spaceId)) return c.notFound();
-        return c.json({ log: director.log(spaceId), running: directorRuns.active(spaceId) });
+        return c.json({ log: director.log(spaceId), running: directorRuns.active(spaceId), build: runner.state(plans.latest(spaceId)) });
     });
 
     routes.post('/spaces/:id/director', async (c) => {
@@ -34,6 +35,9 @@ export function directorRoutes({ spaces, director, directorService, directorRuns
         const request = String(message ?? '').trim();
         if (!request) return c.json({ error: 'Type what you want the Director to build.' }, 422);
         if (request.length > MAX_REQUEST) return c.json({ error: `Keep requests under ${MAX_REQUEST} characters.` }, 422);
+        // A reply pasted back is not a request: refused before the model sees it (bloop's EchoedReply).
+        const lastReply = director.log(spaceId).filter((row) => row.role === 'assistant').at(-1)?.text;
+        if (isEcho(request, lastReply)) return c.json({ error: ECHO_SAY, echo: true }, 422);
         return start(c, spaceId, request);
     });
 

@@ -14,8 +14,9 @@ export const directorMethods = {
     /** The log, plus the run still going on this board (opened mid-turn, or after a reload). */
     async loadDirector() {
         try {
-            const { log, running } = await api('GET', `${this.base}/director`);
+            const { log, running, build } = await api('GET', `${this.base}/director`);
             this.directorLog = log;
+            this.directorBuild = build;
             this.directorLoaded = true;
             if (running) {
                 // The person's message is already in the saved log: only the reply in progress is added.
@@ -83,6 +84,17 @@ export const directorMethods = {
     /** One event of a Director run on this board, from the board's event stream (generation.js). */
     onDirectorStream({ runId, event, data }) {
         if (event === 'actions') this.refreshSoon();
+        // The beats are written after the turn, by the build runner: its progress belongs to no reply.
+        if (event === 'build') {
+            this.directorBuild = data;
+            if (!data.building) this.refreshBoard().catch(() => {});
+            return;
+        }
+        if (event === 'renamed' && this.$refs.boardTitle) {
+            this.$refs.boardTitle.textContent = data.title;
+            document.title = `${data.title} · Bloop Studio`;
+        }
+        if (runId === null) return;
         // Write through Alpine's reactive copy: mutating a plain object would never repaint the bubble.
         let reply = this.directorLog.find((entry) => entry.runId === runId);
         if (!reply) {
@@ -91,6 +103,7 @@ export const directorMethods = {
             reply = this.directorLog.at(-1);
         }
         if (event === 'text') reply.text += data.delta;
+        if (event === 'replace') reply.text = data.text; // the settled reply (bloop's closing logic)
         if (event === 'actions') reply.actions.push(...data.actions);
         if (event === 'notice') reply.info = data.message;
         if (event === 'activity') reply.activity = data.label;
@@ -163,6 +176,22 @@ export const directorMethods = {
         });
     },
 
+    /** Example asks (bloop's first-run rows): they fill the box, change it, then press Send. */
+    directorSeeds: [
+        'A 30-second ad for my coffee shop',
+        'A 3-minute short film: a cute orange cat named Uno and a lonely lighthouse keeper',
+        'An action scene: a knight climbs to a castle at sunrise',
+    ],
+
+    fillDirector(seed) {
+        this.directorInput = seed;
+        this.$nextTick(() => {
+            const box = this.$refs.directorInput;
+            box?.focus();
+            box?.setSelectionRange(seed.length, seed.length);
+        });
+    },
+
     markdown(text) {
         return renderMarkdown(text);
     },
@@ -171,6 +200,13 @@ export const directorMethods = {
     workingLabel(entry) {
         const done = this.actionSummary(entry.actions || []);
         return [`${entry.activity || 'Reading the board'}…`, done].filter(Boolean).join(' · ');
+    },
+
+    /** "Building — 2 of 6 lanes", or "6 lanes" once the build has landed (bloop's build block). */
+    buildReadout(build) {
+        if (!build) return '';
+        if (build.building) return `Building — ${build.written} of ${build.total} lane${build.total === 1 ? '' : 's'}`;
+        return `${build.total} lane${build.total === 1 ? '' : 's'}${build.failed ? ` · ${build.failed} failed` : ''}`;
     },
 
     actionSummary(actions) {

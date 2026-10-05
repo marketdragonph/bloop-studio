@@ -1,29 +1,26 @@
-// One Director turn: pick the provider from Settings, run the tool loop against the board,
-// persist the history and the log, and report text and board actions as they happen.
-import { runClaudeTurn, describeClaudeError } from './providers/anthropic.js';
-import { runOpenAITurn, describeOpenAIError } from './providers/openai.js';
-import { SPACE_DIRECTOR_SYSTEM, turnOrigin, userTurn } from './prompt.js';
-import { BoardActions, TOOL_DEFINITIONS } from './tools.js';
-
-// What the panel says the Director is doing while a tool runs (the reply may not have a word yet).
-const ACTIVITY = {
-    add_card: 'Adding cards',
-    connect: 'Wiring cards',
-    update_card: 'Editing cards',
-    inspect_cards: 'Reading cards',
-    audit_board: 'Checking the board',
-};
+// One Director turn (bloop's SpaceDirectorService::stream): the system prompt in bloop's order, the conversation
+// as text rows, up to five rounds with the tools, then the closing logic. The beats themselves are written by the
+// build runner in the background, so a turn stays short.
+import { runClaudeTurn, describeClaudeError, completeClaude } from './providers/anthropic.js';
+import { runOpenAITurn, describeOpenAIError, completeOpenAI } from './providers/openai.js';
+import { systemPrompt } from './prompts/compose.js';
+import { aspectOnBoard } from './plan/shape.js';
+import { ACTIVITY, definitions, runSkill } from './skills/index.js';
+import { TurnLedger } from './turn/ledger.js';
+import { closeTurn } from './turn/closing.js';
 
 const PROVIDERS = {
-    anthropic: { run: runClaudeTurn, describe: describeClaudeError, keyName: 'anthropicApiKey', modelName: 'anthropicModel', label: 'Claude' },
-    openai: { run: runOpenAITurn, describe: describeOpenAIError, keyName: 'openaiApiKey', modelName: 'openaiModel', label: 'OpenAI' },
+    anthropic: { run: runClaudeTurn, complete: completeClaude, describe: describeClaudeError, keyName: 'anthropicApiKey', modelName: 'anthropicModel', label: 'Claude' },
+    openai: { run: runOpenAITurn, complete: completeOpenAI, describe: describeOpenAIError, keyName: 'openaiApiKey', modelName: 'openaiModel', label: 'OpenAI' },
 };
+const HISTORY_ROWS = 24; // bloop: the last 12 exchanges, text only
+
+export const MISSING_KEY = 'Add a Claude or OpenAI API key in Settings to use the Director.';
 
 export class DirectorService {
-    constructor({ settings, spaces, director }) {
-        this.settings = settings;
-        this.spaces = spaces;
-        this.director = director;
+    /** engineInfo() → { lengths, withSound, clipFamily }: what this PC's clip model can do. */
+    constructor({ settings, spaces, director, plans, stages, ops, runner, engineInfo }) {
+        Object.assign(this, { settings, spaces, director, plans, stages, ops, runner, engineInfo });
     }
 
     /** The chosen provider, or the other one when only the other has a key (and say so). */
@@ -35,10 +32,25 @@ export class DirectorService {
         return { providerId: chosen, switched: false, missing: true };
     }
 
+    /** A single call with no tools, for the beat writers. */
+    async complete({ system, user, signal }) {
+        const { providerId, missing } = this.resolveProvider();
+        if (missing) throw new Error(MISSING_KEY);
+        const p = PROVIDERS[providerId];
+        return p.complete({ apiKey: this.settings.get(p.keyName), model: this.settings.get(p.modelName), system, user, signal });
+    }
+
+    /** The conversation so far, as text rows (tool calls are never replayed). */
+    history(spaceId) {
+        return this.director.log(spaceId)
+            .filter((row) => (row.role === 'user' || row.role === 'assistant') && row.text?.trim())
+            .slice(-HISTORY_ROWS)
+            .map((row) => ({ role: row.role, content: row.text }));
+    }
+
     /**
-     * One turn of the tool loop (DirectorRuns runs it in the background and chains another when it
-     * runs out of steps). emit(event, data): 'text' (delta), 'actions' (board changes), 'notice'.
-     * Resolves { status: 'done' | 'failed' | 'stopped', exhausted, text, actions, notice, error }.
+     * Runs one turn. emit(event, data): 'text' (delta), 'actions', 'activity', 'notice', 'renamed', 'replace'.
+     * Resolves { status: 'done' | 'failed' | 'stopped', text, actions, notice, error }.
      */
     async turn(spaceId, request, emit, signal, { logRequest = true } = {}) {
         const { providerId, switched, missing } = this.resolveProvider();
@@ -46,51 +58,61 @@ export class DirectorService {
         if (missing) return { status: 'failed', error: MISSING_KEY, actions: [] };
         if (switched) emit('notice', { message: `Using ${provider.label}: it is the only key in Settings.` });
 
-        const apiKey = this.settings.get(provider.keyName);
-        const model = this.settings.get(provider.modelName);
-        const board = this.spaces.board(spaceId);
-        const history = this.director.thread(spaceId, providerId, model);
-        // Nothing on the board and nothing said yet: plan and ask before building (tools.js gate).
-        const planned = board.nodes.length > 0 || history.length > 0;
-        const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes), planned });
+        const history = this.history(spaceId);
         if (logRequest) this.director.addLog(spaceId, 'user', request);
         emit('activity', { label: 'Reading the board' });
 
+        const engine = await this.engineInfo();
+        const ledger = new TurnLedger();
+        const t = {
+            spaceId, spaces: this.spaces, plans: this.plans, stages: this.stages, ops: this.ops, runner: this.runner, ledger, emit,
+            lengths: engine.lengths, withSound: engine.withSound, clipFamily: engine.clipFamily,
+        };
+        const board = this.spaces.board(spaceId);
+        const plan = this.plans.latest(spaceId);
+        const prompt = systemPrompt({
+            space: this.spaces.find(spaceId), board, plan,
+            owed: plan ? this.stages.owed(plan) : [],
+            intent: plan ? this.stages.intent(plan) : {},
+            aspect: plan?.aspect ?? aspectOnBoard(board.nodes),
+            beatCount: plan ? this.plans.beats(plan.id).length : 0,
+            lengths: engine.lengths, withSound: engine.withSound,
+        });
+
         try {
             const result = await provider.run({
-                apiKey,
-                model,
-                system: SPACE_DIRECTOR_SYSTEM,
+                apiKey: this.settings.get(provider.keyName),
+                model: this.settings.get(provider.modelName),
+                system: prompt,
                 history,
-                userContent: userTurn(request, board),
-                tools: TOOL_DEFINITIONS,
+                userContent: request,
+                tools: definitions(t),
                 execute: (name, input) => {
                     emit('activity', { label: ACTIVITY[name] ?? 'Working' });
-                    const outcome = actions.run(name, input);
-                    if (outcome.ok) emit('actions', { actions: actions.actions.slice(-1) });
-                    return outcome;
-                },
-                afterRound: () => {
-                    emit('activity', { label: 'Checking its work' });
-                    return actions.afterRound();
+                    return runSkill(name, input, t);
                 },
                 onText: (delta) => emit('text', { delta }),
                 signal,
             });
-
-            this.director.saveThread(spaceId, providerId, model, result.history);
-            const text = result.text || (actions.actions.length ? 'Done.' : '');
-            this.director.addLog(spaceId, 'assistant', text, actions.actions);
+            const closed = closeTurn({
+                streamed: result.text,
+                ledger,
+                recover: (ops) => {
+                    const applied = this.ops.apply(spaceId, ops, { aspect: plan?.aspect });
+                    ledger.record(applied);
+                    emit('actions', { actions: applied.actions });
+                    return applied;
+                },
+            });
+            if (closed.replaced) emit('replace', { text: closed.text });
+            this.director.addLog(spaceId, 'assistant', closed.text, ledger.actions);
             if (result.notice) this.director.addLog(spaceId, 'notice', result.notice);
-            return { status: 'done', exhausted: Boolean(result.exhausted), text, actions: actions.actions, notice: result.notice };
+            return { status: 'done', text: closed.text, actions: ledger.actions, notice: result.notice, failed: closed.failed };
         } catch (error) {
-            const message = signal?.aborted ? 'Stopped.' : provider.describe(error) ?? `The Director failed: ${error.message}`;
+            const message = signal?.aborted ? 'Stopped.' : provider.describe(error) ?? 'That turn did not finish. Try it again in a moment — nothing on the board changed.';
             if (!signal?.aborted) console.error('director turn failed:', error);
-            // Cards already added stay on the board.
-            this.director.addLog(spaceId, 'notice', message, actions.actions);
-            return { status: signal?.aborted ? 'stopped' : 'failed', error: message, actions: actions.actions };
+            this.director.addLog(spaceId, 'notice', message, ledger.actions);
+            return { status: signal?.aborted ? 'stopped' : 'failed', error: message, actions: ledger.actions };
         }
     }
 }
-
-export const MISSING_KEY = 'Add a Claude or OpenAI API key in Settings to use the Director.';

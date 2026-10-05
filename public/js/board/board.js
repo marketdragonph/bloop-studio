@@ -40,6 +40,7 @@ export default function SpaceBoard() {
         directorLoaded: false,
         directorBusy: false,
         directorRunId: null, // the Director run going on this board (it runs in the background)
+        directorBuild: null, // the beats being written: { total, written, failed, building, lanes }
         directorInput: '',
         directorLog: [],
         viewer: null,

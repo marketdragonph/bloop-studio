@@ -25,6 +25,11 @@ import { appUpdateRoutes, NO_UPDATES } from './routes/app-update.js';
 import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
 import { DirectorRuns } from './director/runs.js';
+import { DirectorPlans } from './repositories/director-plans.js';
+import { BoardOps } from './director/ops/board-ops.js';
+import { BuildStages } from './director/plan/stages.js';
+import { BuildRunner } from './director/build/runner.js';
+import { engineInfoFor } from './director/engine-info.js';
 import { BloopAccount } from './services/bloop-account.js';
 import { accountRoutes } from './routes/account.js';
 import { ComfyLauncher } from './services/comfy-launcher.js';
@@ -58,10 +63,17 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const installer = new EngineInstaller({ settings, launcher, engine }); // "Install offline engine"
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
-    const directorService = new DirectorService({ settings, spaces, director });
+    // The Director (a port of bloop's Spaces Director): plans, the board ops, the staged rail, and the beat writers.
+    const plans = new DirectorPlans(db);
+    const ops = new BoardOps({ spaces });
+    const stages = new BuildStages({ plans, ops, spaces });
+    let directorService = null;
+    const runner = new BuildRunner({ plans, stages, ops, events, write: (call) => directorService.complete(call) });
+    directorService = new DirectorService({ settings, spaces, director, plans, stages, ops, runner, engineInfo: engineInfoFor(engine) });
     const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
     directorRuns.recover();
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, reveal, updates, onThemeChange, account, launcher, installer };
+    runner.resume();
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

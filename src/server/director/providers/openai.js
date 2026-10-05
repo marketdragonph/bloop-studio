@@ -73,6 +73,13 @@ export async function runOpenAITurn({ apiKey, model, system, history, userConten
     return { history: input, text: finalText.trim(), notice, exhausted };
 }
 
+/** One call, no tools: a beat writer's answer. */
+export async function completeOpenAI({ apiKey, model, system, user, signal }) {
+    const client = new OpenAI({ apiKey });
+    const response = await client.responses.create({ model, instructions: system, input: [{ role: 'user', content: user }], store: false }, { signal });
+    return response.output_text ?? '';
+}
+
 export function describeOpenAIError(error) {
     if (error instanceof OpenAI.AuthenticationError) return 'OpenAI rejected the API key. Check it in Settings.';
     if (error instanceof OpenAI.NotFoundError) return 'OpenAI does not know that model name. Check it in Settings.';
