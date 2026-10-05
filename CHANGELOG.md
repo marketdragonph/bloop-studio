@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.847
+
 - New: longer clips on your own GPU. LTX-2.3, MiniMax-H3 and lip sync now go up to 10 seconds at 480p (about 2–4 minutes to render on a 12 GB card). The higher resolutions stay at 5 seconds for now.
 
 ## 2026.1005.816
