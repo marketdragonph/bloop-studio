@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Fixed: a card no longer sits on "generating" forever when ComfyUI is restarted mid-render. It now stops with a message after about 20 seconds, so you can generate it again.
+
 ## 2026.1005.1134
 
 - Fixed: Audio cards show their progress again while they render (the percentage, the bar and the step).

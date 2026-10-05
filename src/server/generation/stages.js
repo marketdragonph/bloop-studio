@@ -148,13 +148,21 @@ export async function render(ctx, next) {
 }
 
 /** Backstop for a dropped socket: ComfyUI's history is the source of truth. */
-async function pollUntilDone(comfy, promptId, ctx) {
+export async function pollUntilDone(comfy, promptId, ctx, every = 10_000) {
+    let missing = 0;
     for (;;) {
-        await new Promise((r) => setTimeout(r, 10_000));
+        await new Promise((r) => setTimeout(r, every));
         if (ctx.done) return;
         const entry = await comfy.history(promptId).catch(() => null);
         if (entry?.status?.completed) return;
         if (entry?.status?.status_str === 'error') throw new StageError('The workflow failed in ComfyUI.');
+        // In neither the history nor the queue: ComfyUI was restarted (or stopped) and this render is gone. Twice in
+        // a row, so a render moving from the queue to the history is never mistaken for a lost one; a ComfyUI that
+        // does not answer at all is not counted (it may be busy loading a model).
+        if (entry) continue;
+        const queued = await comfy.queueHas(promptId).catch(() => null);
+        missing = queued === false ? missing + 1 : 0;
+        if (missing >= 2) throw new StageError('ComfyUI lost this render — it was probably restarted while it waited. Generate it again.');
     }
 }
 
