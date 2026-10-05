@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1119
+
 - Changed: the audio player matches bloop's: a framed player with mute, download and Show in folder keys under the waveform, in light and dark mode.
 
 ## 2026.1005.1112
