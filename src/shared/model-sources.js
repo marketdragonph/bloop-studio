@@ -220,6 +220,60 @@ export const MODEL_FAMILIES = [
         }
     },
     {
+        "id": "qwenedit",
+        "label": "Qwen-Image-Edit 2511",
+        "what": "Stills drawn from your cast sheets and places (keeps faces the same)",
+        "kind": "image",
+        "variants": {
+            "int8": [
+                {
+                    "folder": "diffusion_models",
+                    "name": "qwen_image_edit_2511_int8_convrot.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors",
+                    "size": 20499083824,
+                    "sha256": "11b5af5ac601821d73930c84846c9a158e67177356daf927ce1c8d10f3963829",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI"
+                    }
+                },
+                {
+                    "folder": "loras",
+                    "name": "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+                    "url": "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+                    "size": 849608296,
+                    "sha256": "22226e8d05d354bb356627d428809f5afd7819399b077238a2b70a82883a904f",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning"
+                    }
+                },
+                {
+                    "folder": "text_encoders",
+                    "name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+                    "size": 9384670680,
+                    "sha256": "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI"
+                    }
+                },
+                {
+                    "folder": "vae",
+                    "name": "qwen_image_vae.safetensors",
+                    "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors",
+                    "size": 253806246,
+                    "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
+                    "license": {
+                        "name": "apache-2.0",
+                        "link": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI"
+                    }
+                }
+            ]
+        }
+    },
+    {
         "id": "acestep",
         "label": "ACE-Step 1.5 Turbo",
         "what": "Music and songs from words and lyrics, fast",

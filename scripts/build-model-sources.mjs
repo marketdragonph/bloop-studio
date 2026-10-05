@@ -12,6 +12,7 @@ const mm = `${HF}/Comfy-Org/MiniMax-H3/resolve/main`;
 const wan = `${HF}/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files`;
 const ace = `${HF}/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files`;
 const mu = `${HF}/Comfy-Org/MiniMax-Music-3/resolve/main`;
+const qi = `${HF}/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files`;
 
 // Family → variant (the workflow variant id it unlocks) → files [ComfyUI models folder, url].
 const FAMILIES = [
@@ -46,6 +47,14 @@ const FAMILIES = [
         variants: {
             fp16: [['diffusion_models', `${wan}/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors`],
                 ['text_encoders', `${wan}/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors`], ['vae', `${wan}/vae/wan2.2_vae.safetensors`]],
+        },
+    },
+    {
+        id: 'qwenedit', label: 'Qwen-Image-Edit 2511', what: 'Stills drawn from your cast sheets and places (keeps faces the same)', kind: 'image',
+        variants: {
+            int8: [['diffusion_models', `${HF}/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors`],
+                ['loras', `${HF}/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors`],
+                ['text_encoders', `${qi}/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors`], ['vae', `${qi}/vae/qwen_image_vae.safetensors`]],
         },
     },
     {

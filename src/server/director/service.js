@@ -66,7 +66,7 @@ export class DirectorService {
         const ledger = new TurnLedger();
         const t = {
             spaceId, spaces: this.spaces, plans: this.plans, stages: this.stages, ops: this.ops, runner: this.runner, ledger, emit,
-            lengths: engine.lengths, withSound: engine.withSound, clipFamily: engine.clipFamily,
+            lengths: engine.lengths, withSound: engine.withSound, clipFamily: engine.clipFamily, editFamily: engine.editFamily,
         };
         const board = this.spaces.board(spaceId);
         const plan = this.plans.latest(spaceId);

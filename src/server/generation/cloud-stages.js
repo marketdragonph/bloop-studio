@@ -57,6 +57,8 @@ export async function submitCloud(ctx, next) {
 
     const pictures = {};
     for (const source of ctx.upstream.filter((n) => SLOTS[n.to_socket])) {
+        // bloop's render route takes one picture per slot today: the first wired one is sent.
+        if (pictures[SLOTS[source.to_socket]]) continue;
         pictures[SLOTS[source.to_socket]] = {
             bytes: await media.read(source.media_path),
             mime: source.media_mime ?? mimeFromName(source.media_path),

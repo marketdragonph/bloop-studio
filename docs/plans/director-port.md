@@ -1,4 +1,4 @@
-# Director: port of bloop's Spaces Director — PLANNED
+# Director: port of bloop's Spaces Director — PARTIAL
 
 The Space Director in Bloop Studio becomes a faithful port of bloop's Spaces Director (bloop `main` @ 21e93e36d,
 `modules/Spaces/`), adapted only where local models force it. Source of truth: bloop's code first, then
@@ -106,21 +106,23 @@ Local rendering:
 
 ## Phases
 
-### Phase 1 — conversation core (this replaces the current Director)
-- [ ] Tables: `director_plans`, `director_build_stages`, `director_plan_beats`; history = `director_log` text rows.
-- [ ] `BoardOps` (ops, validator, wire legality from `node-types.js`, one transaction, refs/`@id`, lane/stage layout).
-- [ ] Skills: plan_board, advance_build (rail), propose_board_ops (+ planFirst gate), inspect_board, audit_board.
-- [ ] Turn loop: 5 hops, tools off on the last, ledger + closing logic + OpsFromProse, echo guard.
-- [ ] Prompt composition: Persona (adapted), NodeVocabulary (local types), BoardOpsContract, PlanFirst,
-      SpacesGuide (Bloop Studio's UI), BuildStages, snapshot.
-- [ ] Tests: plan → answer → rail → ops; gate; refusals; closing branches; snapshot budget.
+### Phase 1 — conversation core (this replaces the current Director) — built on branch `director-port`
+- [x] Tables: `director_plans`, `director_build_stages`, `director_plan_beats` (005); history = `director_log` text rows.
+- [x] `BoardOps` (director/ops/): ops, validator, wire legality from `node-types.js`, one transaction, refs/`@id`, lane/stage layout.
+- [x] Skills: plan_board, advance_build (rail), propose_board_ops (+ planFirst gate), inspect_board, audit_board.
+- [x] Turn loop: 5 rounds, tools off on the last, ledger + closing logic + OpsFromProse, echo guard.
+- [x] Prompt composition (director/prompts/): bloop's doctrine in bloop's order, board state last, bloop's snapshot.
+- [x] Tests: tests/director-port.test.js, director-build.test.js.
+- [ ] One REAL live turn with a Claude or OpenAI key (bloop R53) before merging to main.
 
-### Phase 2 — build_board and beat writers
-- [ ] build_board (beats, refs narrowed to who the brief names, hook first / resolution last, runtime check,
+### Phase 2 — build_board and beat writers — built on branch `director-port`
+- [x] build_board (beats, refs narrowed to who the brief names, hook first / resolution last, runtime check,
       music, song_lyrics, look, narration / voice_over, language), lane allocation, background beat writers (3 at a time).
-- [ ] BeatWriter with a local BeatForm: SECONDS (from the local menu), SHOT, STILL, CLIP, SOUND, VO, LINE, SPEAKERS;
+- [x] BeatWriter with a local BeatForm: SECONDS (from the local menu), SHOT, STILL, CLIP, SOUND, VO, LINE, SPEAKERS;
       the craft doctrine blocks it composes.
-- [ ] Bed and look cards; script card; build progress events.
+- [x] Bed and look cards; script card; build progress events (`event: build`, the panel's worklist).
+- [x] Each still is drawn FROM its cast/prop/place sheet pictures (up to 3, people first) on Qwen-Image-Edit 2511
+      when the PC has it, with image locks ("@mira-sen is picture 1"). Clips start from their still.
 
 ### Phase 3 — the critic
 - [ ] BoardAudit ported for local lanes: underfed, dangling, LANE_UNLINKED (a plate named but its look not wired),
@@ -132,6 +134,8 @@ Local rendering:
       the "N cards" key that selects and zooms to them, per-turn Undo, Copy, Try again.
 - [ ] Empty state with seed chips, first-run variant, Enter / Shift+Enter, pictures dropped into the chat.
 
-### Phase 5 — identity by picture (later)
-- [ ] An image edit preset (Qwen-Image-Edit 2511, up to 3 pictures) so plate pictures can be wired into stills;
-      cloud models with references when signed in; then bloop's PLATE_PICTURE checks.
+### Phase 5 — identity by picture
+- [x] Image cards take up to 3 pictures; 2+ render on Qwen-Image-Edit 2511 (workflows/qwenedit-ref{1,2,3}.json,
+      scripts/build-qwen-edit.mjs), in the installer for NVIDIA 11 GB+. Two references → 1024x576 in 64 s on 12 GB.
+- [ ] Cloud: bloop's render route takes one `picture`; send every wired picture when bloop takes `pictures[]`.
+- [ ] bloop's PLATE_PICTURE_UNWIRED check.

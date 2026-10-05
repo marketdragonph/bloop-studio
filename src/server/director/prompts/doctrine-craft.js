@@ -54,6 +54,11 @@ wasted the shot — the model will hold on it.
   darkens, steam rises across the frame, the barista's shoulders settle. Ends
   tighter than it starts."
 
+WHEN A PICTURE IS WIRED INTO THE STILL, THE PICTURE IS THE SUBJECT. A beat's cast
+and prop sheets are wired into its still: name each one plainly by its @tag and
+spend the words on what it is doing, the camera, the light and the place.
+Describing its look again pulls the model away from the picture.
+
 WHERE A STILL FEEDS A CLIP, the still IS the clip's first frame: the
 cinematographer describes what happens NEXT, not the picture again. Repeating the
 still's description in the clip is the commonest way a lane comes out lifeless.

@@ -18,7 +18,9 @@ export const NODE_TYPES = {
 export const SOCKETS = {
     image: [
         { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
-        { key: 'reference', label: 'Picture', accepts: ['image'], icon: 'image' },
+        // Up to three reference pictures (cast and prop sheets, a place): one renders on Z-Image as before, two or
+        // more on Qwen-Image-Edit 2511, which draws the shot FROM them (presets.js choosePreset).
+        { key: 'reference', label: 'Pictures', accepts: ['image'], icon: 'image', multiple: true, max: 3 },
     ],
     video: [
         { key: 'prompt', label: 'Words', accepts: ['text'], icon: 'text', multiple: true },
@@ -38,7 +40,9 @@ export const SOCKETS = {
 /** Sockets that carry words, not a picture or sound: nothing to render or upload first. */
 export const isTextSocket = (key) => key === 'prompt' || key === 'lyrics';
 
-const isFull = (socket, taken) => !socket.multiple && taken.includes(socket.key);
+const isFull = (socket, taken) => (socket.multiple
+    ? Boolean(socket.max) && taken.filter((k) => k === socket.key).length >= socket.max
+    : taken.includes(socket.key));
 
 /** Can this specific socket on `to` take what `from` offers? */
 export function socketAccepts(from, to, socketKey) {
@@ -109,7 +113,7 @@ export function checkConnection({ from, to, existing, socketKey = null }) {
         const socket = socketsOf(to.type).find((s) => s.key === socketKey);
         if (!socket) return { ok: false, reason: 'That socket does not exist.' };
         if (!socketAccepts(from, to, socketKey)) return { ok: false, reason: `${socket.label} takes ${socket.accepts.join(' or ')}, not this card.` };
-        if (isFull(socket, taken)) return { ok: false, reason: `${socket.label} is already connected. Remove that wire first.` };
+        if (isFull(socket, taken)) return { ok: false, reason: socket.max ? `${socket.label} takes up to ${socket.max}. Remove one first.` : `${socket.label} is already connected. Remove that wire first.` };
         return { ok: true, socket: socketKey };
     }
 

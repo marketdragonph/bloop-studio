@@ -14,6 +14,7 @@ const NEEDS = [
     [/^wan5b-.*\.json$/, 8],
     [/^acestep-.*\.json$/, 8],
     [/^music3-.*\.json$/, 11],
+    [/^qwenedit-.*\.json$/, 11],
 ];
 
 for (const name of readdirSync(dir).filter((f) => f.endsWith('.json'))) {

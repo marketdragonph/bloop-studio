@@ -151,6 +151,7 @@ export const buildBoard = {
             resolution,
             language: String(args.language ?? '').trim().slice(0, 40) || null,
             clip_family: t.clipFamily,
+            edit_family: t.editFamily ?? null,
             lengths: t.lengths,
             with_sound: t.withSound,
         });

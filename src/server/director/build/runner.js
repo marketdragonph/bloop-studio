@@ -97,7 +97,7 @@ export class BuildRunner {
             const written = parseBeat(answer, beat.brief);
             const { ops } = laneOps(beat, written, {
                 lane: beat.lane, aspect: plan.aspect, plates: plan.plates, lookId: intent.look_node_id,
-                clipFamily: intent.clip_family ?? null, lengths, withSound,
+                clipFamily: intent.clip_family ?? null, editFamily: intent.edit_family ?? null, lengths, withSound,
             });
             const applied = this.ops.apply(plan.space_id, ops, { origin: this.stages.origin(plan), aspect: plan.aspect });
             this.plans.setBeat(beat.id, { state: 'written', node_ids: applied.nodes.map((n) => n.id), finished_at: new Date().toISOString() });

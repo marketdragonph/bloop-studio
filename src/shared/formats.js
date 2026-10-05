@@ -58,6 +58,12 @@ export const FAMILIES = {
         frames: (seconds) => Math.round((seconds * 25) / 8) * 8 + 1,
         qualities: [{ id: 'final', label: 'Final (8 steps)', steps: 8 }],
     },
+    // Qwen-Image-Edit 2511 with the 4-step Lightning LoRA: a still drawn from up to three reference pictures.
+    // 1024x576 from two pictures took 64 s on the 12 GB card (2026-10-05).
+    qwenedit: {
+        resolutions: [{ id: '1k', label: '1K (≈1 MP)', mp: 1.0 }],
+        qualities: [{ id: 'final', label: 'Final (4 steps)', steps: 4 }],
+    },
     // Music (Audio cards): only a length. The song may end a little early (MiniMax Music 3 decides).
     acestep: { durations: [15, 30, 60, 90, 120, 180], defaultDuration: 30 },
     music3: { durations: [15, 30, 60, 90, 120, 180], defaultDuration: 30 },

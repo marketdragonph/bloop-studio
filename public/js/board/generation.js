@@ -75,6 +75,9 @@ export const generationMethods = {
         const offered = this.families[node.type] ?? [];
         // A voice wired into a Video card is lip sync, which LTX renders whatever the card's pick (presets.js choosePreset).
         if (node.type === 'video' && this.isSocketConnected(node, { key: 'audio' }) && offered.some((f) => f.id === 'ltx')) return 'ltx';
+        // Two or more reference pictures render on the edit model that takes them (presets.js choosePreset).
+        const pictures = this.connections.filter((c) => c.to_node_id === node.id && c.to_socket === 'reference').length;
+        if (node.type === 'image' && pictures > 1 && offered.some((f) => f.id === 'qwenedit')) return 'qwenedit';
         const chosen = node.settings?.family;
         return offered.some((f) => f.id === chosen) ? chosen : offered[0]?.id ?? '';
     },

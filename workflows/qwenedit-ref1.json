@@ -1,0 +1,244 @@
+{
+  "id": "qwenedit-ref1",
+  "variant": "int8-lightning",
+  "minVramGb": 11,
+  "label": "Qwen-Image-Edit 2511 (a still drawn from your reference pictures)",
+  "card": "image",
+  "needs": [
+    "reference"
+  ],
+  "references": 1,
+  "output": "image",
+  "knobs": "qwenedit",
+  "defaults": {
+    "width": 1024,
+    "height": 576
+  },
+  "bindings": {
+    "prompt": [
+      "@positive",
+      "prompt"
+    ],
+    "seed": [
+      "@sampler",
+      "seed"
+    ],
+    "width": [
+      "@latent",
+      "width"
+    ],
+    "height": [
+      "@latent",
+      "height"
+    ],
+    "reference1": [
+      "@picture1",
+      "image"
+    ]
+  },
+  "graph": {
+    "1": {
+      "class_type": "UNETLoader",
+      "_meta": {
+        "title": "@model"
+      },
+      "inputs": {
+        "unet_name": "qwen_image_edit_2511_int8_convrot.safetensors",
+        "weight_dtype": "default"
+      }
+    },
+    "2": {
+      "class_type": "LoraLoaderModelOnly",
+      "_meta": {
+        "title": "@lightning"
+      },
+      "inputs": {
+        "model": [
+          "1",
+          0
+        ],
+        "lora_name": "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+        "strength_model": 1
+      }
+    },
+    "3": {
+      "class_type": "ModelSamplingAuraFlow",
+      "_meta": {
+        "title": "@shift"
+      },
+      "inputs": {
+        "model": [
+          "2",
+          0
+        ],
+        "shift": 3.1
+      }
+    },
+    "4": {
+      "class_type": "CFGNorm",
+      "_meta": {
+        "title": "@cfgnorm"
+      },
+      "inputs": {
+        "model": [
+          "3",
+          0
+        ],
+        "strength": 1
+      }
+    },
+    "5": {
+      "class_type": "CLIPLoader",
+      "_meta": {
+        "title": "@clip"
+      },
+      "inputs": {
+        "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        "type": "qwen_image",
+        "device": "default"
+      }
+    },
+    "6": {
+      "class_type": "VAELoader",
+      "_meta": {
+        "title": "@vae"
+      },
+      "inputs": {
+        "vae_name": "qwen_image_vae.safetensors"
+      }
+    },
+    "7": {
+      "class_type": "TextEncodeQwenImageEditPlus",
+      "_meta": {
+        "title": "@positive"
+      },
+      "inputs": {
+        "clip": [
+          "5",
+          0
+        ],
+        "prompt": "",
+        "vae": [
+          "6",
+          0
+        ],
+        "image1": [
+          "31",
+          0
+        ]
+      }
+    },
+    "8": {
+      "class_type": "TextEncodeQwenImageEditPlus",
+      "_meta": {
+        "title": "@negative"
+      },
+      "inputs": {
+        "clip": [
+          "5",
+          0
+        ],
+        "prompt": "",
+        "vae": [
+          "6",
+          0
+        ],
+        "image1": [
+          "31",
+          0
+        ]
+      }
+    },
+    "9": {
+      "class_type": "EmptySD3LatentImage",
+      "_meta": {
+        "title": "@latent"
+      },
+      "inputs": {
+        "width": 1024,
+        "height": 576,
+        "batch_size": 1
+      }
+    },
+    "10": {
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "@sampler"
+      },
+      "inputs": {
+        "model": [
+          "4",
+          0
+        ],
+        "positive": [
+          "7",
+          0
+        ],
+        "negative": [
+          "8",
+          0
+        ],
+        "latent_image": [
+          "9",
+          0
+        ],
+        "seed": 0,
+        "steps": 4,
+        "cfg": 1,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1
+      }
+    },
+    "11": {
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "@decode"
+      },
+      "inputs": {
+        "samples": [
+          "10",
+          0
+        ],
+        "vae": [
+          "6",
+          0
+        ]
+      }
+    },
+    "12": {
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "@output"
+      },
+      "inputs": {
+        "images": [
+          "11",
+          0
+        ],
+        "filename_prefix": "bloop-studio/image"
+      }
+    },
+    "21": {
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "@picture1"
+      },
+      "inputs": {
+        "image": "example.png"
+      }
+    },
+    "31": {
+      "class_type": "FluxKontextImageScale",
+      "_meta": {
+        "title": "@scale1"
+      },
+      "inputs": {
+        "image": [
+          "21",
+          0
+        ]
+      }
+    }
+  }
+}

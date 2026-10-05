@@ -78,7 +78,13 @@ export function choosePreset(presets, { type, settings = {}, wired = [] }) {
     const lipSync = wired.includes('audio') ? candidates.find((p) => p.needs?.includes('audio')) : null;
     const family = (lipSync && familyOf(lipSync.id))
         ?? [settings.family, DEFAULT_FAMILY[type]].find((f) => available.has(f)) ?? familyOf(candidates[0]?.id ?? '');
-    const pool = candidates.filter((p) => familyOf(p.id) === family);
+    // Two or more reference pictures need a model that takes them (Qwen-Image-Edit), whatever the card's pick;
+    // one picture keeps the card's own model (Z-Image redraws it, an edit model draws from it).
+    const references = wired.filter((w) => w === 'reference').length;
+    const editor = candidates.find((p) => p.references);
+    if (references > 1 && editor && familyOf(editor.id) !== family) return choosePreset(presets, { type, settings: { ...settings, family: familyOf(editor.id) }, wired });
+    const pool = candidates.filter((p) => familyOf(p.id) === family)
+        .filter((p) => !p.references || p.references === Math.min(Math.max(references, 1), 3));
     // Prefer the variant whose needs are all wired; among those, the one that uses the most.
     const usable = pool.filter((p) => (p.needs ?? []).every((need) => wired.includes(need)));
     usable.sort((a, b) => (b.needs?.length ?? 0) - (a.needs?.length ?? 0));

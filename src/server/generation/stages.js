@@ -49,6 +49,15 @@ export async function buildPrompt(ctx, next) {
 export async function uploadInputs(ctx, next) {
     const { comfy, media } = ctx.deps;
     ctx.uploads = {};
+    // An edit preset takes several reference pictures, in wire order: reference1, reference2, reference3.
+    if (ctx.preset.references) {
+        const pictures = ctx.upstream.filter((n) => n.to_socket === 'reference' && n.media_path).slice(0, ctx.preset.references);
+        for (const [i, source] of pictures.entries()) {
+            const bytes = await media.read(source.media_path);
+            ctx.uploads[`reference${i + 1}`] = await comfy.uploadImage(bytes, `bloop-${ctx.node.id}-reference${i + 1}-${basename(source.media_path)}`, source.media_mime);
+        }
+        return next();
+    }
     for (const need of ctx.preset.needs ?? []) {
         const source = ctx.upstream.find((n) => n.to_socket === need && n.media_path);
         if (!source) throw new StageError(`Connect ${need === 'audio' ? 'a voice or song' : 'a picture'} to the ${need.replace('_', ' ')} socket.`);
