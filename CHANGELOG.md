@@ -5,11 +5,12 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the Director now works like bloop's. On a new board it plans first: a pitch, the cast, the places and the shots, and at most two questions. After your answer it lays the cast and the places, then writes every shot in the background (you see each lane land), with the camera, the sound, the lines and the music. It checks its own work and never claims a change that didn't land. Its replies are formatted text.
+- New: Image cards take up to three pictures. With two or more, the still is drawn from them on Qwen-Image-Edit 2511 (the same faces, outfits and places), and the Director wires each shot's cast sheets into its still. Qwen-Image-Edit is in the engine installer.
+
 ## 2026.1005.1156
 
 - Fixed: a card no longer sits on "generating" forever when ComfyUI is restarted mid-render. It now stops with a message after about 20 seconds, so you can generate it again.
-- Changed: the Director now works like bloop's. On a new board it plans first: a pitch, the cast, the places and the shots, and at most two questions. After your answer it lays the cast and the places, then writes every shot in the background (you see each lane land), with the camera, the sound, the lines and the music. It checks its own work and never claims a change that didn't land. Its replies are formatted text.
-- New: Image cards take up to three pictures. With two or more, the still is drawn from them on Qwen-Image-Edit 2511 (the same faces, outfits and places), and the Director wires each shot's cast sheets into its still. Qwen-Image-Edit is in the engine installer.
 
 ## 2026.1005.1134
 
