@@ -10,7 +10,7 @@ import { BloopClient } from './bloop-client.js';
 export const BLOOP_URL = process.env.BLOOP_URL ?? 'https://marketdragon.ph';
 
 const SIGN_IN_TIMEOUT_MS = 5 * 60_000;
-const MODELS_MAX_AGE_MS = 5 * 60_000;
+const MODELS_MAX_AGE_MS = 5 * 60_000; // older than this: still shown at once, and checked again in the background
 
 const base64url = (buffer) => buffer.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
@@ -21,7 +21,8 @@ const page = (title, text) => `<!doctype html><meta charset="utf-8"><title>${tit
 export class BloopAccount {
     #pending = null; // { server, state, verifier, timer }
     #error = null;
-    #models = null; // { at, data }
+    #models = null; // { at, data, who }: also saved in settings (bloopModels) so a launch shows it at once
+    #fetching = null;
 
     /** @param {{ settings, openExternal: (url: string) => unknown, clientFor?: Function, now?: () => number }} deps */
     constructor({ settings, openExternal, baseUrl = BLOOP_URL, clientFor = (url, token) => new BloopClient(url, token), now = Date.now }) {
@@ -87,26 +88,66 @@ export class BloopAccount {
     }
 
     /**
-     * bloop's model list for the signed-in account, cached a few minutes; null when there is none to
-     * offer. bloop decides what a plan sees (free plans: the lower-cost models), not this app.
+     * bloop's model list for the signed-in account; null when there is none to offer. bloop decides what a plan
+     * sees (free plans: the lower-cost models), not this app. The last list is kept on this PC for this sign-in, so
+     * cards show their models and durations at once, even right after launch; a list older than a few minutes is
+     * still answered at once and checked again with bloop in the background (one request at a time). Only with no
+     * list at all does a call wait for bloop.
      */
     async models({ refresh = false } = {}) {
         if (!this.signedIn) return null;
-        if (!refresh && this.#models && this.now() - this.#models.at < MODELS_MAX_AGE_MS) return this.#models.data;
+        const who = this.#who();
+        if (this.#models?.who !== who) this.#models = this.#saved(who);
+        const have = this.#models;
+        if (have && !refresh) {
+            if (this.now() - have.at >= MODELS_MAX_AGE_MS) this.#fetchModels();
+            return have.data;
+        }
+        return this.#fetchModels();
+    }
+
+    /** One models request at a time; resolves with the list (or the last one when bloop cannot be reached). */
+    #fetchModels() {
+        this.#fetching ??= this.#loadModels().finally(() => { this.#fetching = null; });
+        return this.#fetching;
+    }
+
+    async #loadModels() {
+        const who = this.#who();
         try {
-            this.#models = { at: this.now(), data: await this.client().models() };
+            const data = await this.client().models();
+            if (this.#who() === who) this.#keep({ at: this.now(), data, who });
+            return data;
         } catch (error) {
-            if (error.status === 401) this.#forget('Your bloop sign-in expired. Sign in again to use bloop models.');
+            if (error.status === 401) {
+                this.#forget('Your bloop sign-in expired. Sign in again to use bloop models.');
+                return null;
+            }
             if (error.status === 402) {
-                // This plan gets no bloop models: remember that for the cache window, and refresh
-                // the account so Settings shows the plan bloop now reports.
-                this.#models = { at: this.now(), data: null };
+                // This plan gets no bloop models: remember that, and refresh the account so Settings shows the
+                // plan bloop now reports.
+                this.#keep({ at: this.now(), data: null, who });
                 await this.refresh();
                 return null;
             }
-            return this.#models?.data ?? null; // offline: keep offering what we last saw
+            return this.#models?.data ?? null; // offline or slow: keep offering what we last saw
         }
-        return this.#models.data;
+    }
+
+    /** Which sign-in a saved list belongs to: a short hash of the token (never the token itself). */
+    #who() {
+        const token = this.settings.get('bloopToken');
+        return token ? createHash('sha256').update(token).digest('hex').slice(0, 16) : null;
+    }
+
+    #saved(who) {
+        const saved = this.settings.get('bloopModels');
+        return saved && saved.who === who && Number.isFinite(saved.at) ? saved : null;
+    }
+
+    #keep(entry) {
+        this.#models = entry;
+        this.settings.update({ bloopModels: entry });
     }
 
     async #onCallback(req, res) {
@@ -148,7 +189,7 @@ export class BloopAccount {
 
     #forget(message) {
         this.settings.clearSecret('bloopToken');
-        this.settings.update({ bloopAccount: null });
+        this.settings.update({ bloopAccount: null, bloopModels: null });
         this.#models = null;
         this.#error = message;
     }

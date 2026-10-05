@@ -276,7 +276,8 @@ A port of bloop's Spaces Director (docs/plans/director-port.md), adapted to loca
 - Signed in, bloop's curated cloud models join every card's Model list after the local ones, marked
   "bloop cloud · from N credits", each with only the knobs it takes (bloop decides what a plan sees).
   Renders run on bloop with the person's credits and come back as ordinary takes; a failed one says
-  whether the credits came back.
+  whether the credits came back. The list is kept on this PC per sign-in and shown at once on launch (re-checked
+  in the background); the engine profile is likewise answered at once while a re-check runs (2026-10-06).
 - **Searchable lists:** a list of 9 or more options (the Model list) gets a search box that matches the
   name and the description ("kling", "cloud", "credits").
 - Plan: [docs/plans/bloop-account.md](plans/bloop-account.md).

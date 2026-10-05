@@ -12,7 +12,8 @@ with the person's bloop credits. The server side lives in the bloop repo (`modul
   the one-time code bloop sends back for a token (`POST api/v1/studio/token`). No password passes
   through the app; any bloop login works (Google, TikTok, Facebook, email). The token is encrypted
   with Windows (`bloopToken` in the settings store) and only ever sent to `bloopUrl`.
-- **Models:** `GET api/v1/studio/models`, cached 5 minutes. Each becomes a card family
+- **Models:** `GET api/v1/studio/models` (10 s limit), kept per sign-in in settings `bloopModels` (`who` = a hash of
+  the token) and answered at once; older than 5 minutes it is re-checked in the background (2026-10-06). Each becomes a card family
   `bloop:<model key>` (`src/server/generation/cloud-models.js`), listed after the local families as
   "bloop cloud · from N credits". Its knobs are the model's own params (aspect_ratio, resolution,
   duration, quality); a knob the model lacks is hidden.

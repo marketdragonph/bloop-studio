@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: when you're signed in to bloop, cards show their bloop models and video lengths straight away, even right after you start the app. Bloop Studio keeps your last model list on this computer and checks for updates in the background. A busy or offline ComfyUI no longer holds up the lists either.
+
 ## 2026.1006.742
 
 - New: clips on the Cut's timeline show their own frames along their length, like a filmstrip. Zoom in and you see the picture under every moment, so it's easy to find the exact frame to trim on. The frames are made once per clip in the background and never slow down a render or an export.

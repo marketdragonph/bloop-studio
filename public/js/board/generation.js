@@ -24,14 +24,15 @@ export const generationMethods = {
         STREAMS.get(this.$refs.board)?.close();
     },
 
+    /** The three Model lists at once (the server answers from what it last saw: bloop-account.js, engine-profile.js). */
     async loadFamilies() {
-        for (const type of ['image', 'video', 'audio']) {
+        await Promise.all(['image', 'video', 'audio'].map(async (type) => {
             try {
                 this.families[type] = await api('GET', `/presets/${type}`);
             } catch {
                 this.families[type] = [];
             }
-        }
+        }));
         this.tidyAfterRender(); // the knobs just appeared, so render cards are taller now
     },
 

@@ -21,6 +21,9 @@ const DEFAULTS = {
     // Optional bloop account (cloud models on credits), always at bloop itself (BLOOP_URL in development).
     // The token is a secret; the account is the last name/plan/credits bloop reported, shown offline.
     bloopAccount: null,
+    // The last bloop model list for this sign-in ({ at, data, who }: who is a hash of the token, never the token),
+    // so cards show their bloop models and durations at once after launch. Cleared on sign-out.
+    bloopModels: null,
     // The person's own ComfyUI folder ('' = found automatically) and whether it starts with the app.
     comfyPath: '',
     engineAutostart: false,

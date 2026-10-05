@@ -1,6 +1,9 @@
 // The bloop web app's Studio API (api/v1/studio): the optional account that adds bloop's cloud
 // models to cards, paid with the person's bloop credits. The token is only ever sent to that bloop.
 
+/** Lists and the account answer fast or not at all: past this the app keeps what it last saw. Renders get longer. */
+const QUICK_MS = 10_000;
+
 export class BloopError extends Error {
     constructor(message, status, body = {}) {
         super(message);
@@ -27,11 +30,11 @@ export class BloopClient {
     }
 
     me() {
-        return this.#request('GET', '/me');
+        return this.#request('GET', '/me', { timeoutMs: QUICK_MS });
     }
 
     models() {
-        return this.#request('GET', '/models');
+        return this.#request('GET', '/models', { timeoutMs: QUICK_MS });
     }
 
     /** One render: { kind, model, prompt, label, params, pictures: { picture|first_frame|last_frame: { bytes, mime, name } } }. */
@@ -65,7 +68,7 @@ export class BloopClient {
         return { bytes: Buffer.from(await response.arrayBuffer()), mime: response.headers.get('content-type')?.split(';')[0] ?? null };
     }
 
-    async #request(method, path, { json, form } = {}) {
+    async #request(method, path, { json, form, timeoutMs = 120_000 } = {}) {
         const headers = { accept: 'application/json' };
         if (this.token) headers.authorization = `Bearer ${this.token}`;
         if (json) headers['content-type'] = 'application/json';
@@ -76,7 +79,7 @@ export class BloopClient {
                 method,
                 headers,
                 body: json ? JSON.stringify(json) : form,
-                signal: AbortSignal.timeout(120_000),
+                signal: AbortSignal.timeout(timeoutMs),
             });
         } catch {
             throw new BloopError(`Could not reach bloop at ${this.baseUrl}.`, 0);

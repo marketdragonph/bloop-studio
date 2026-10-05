@@ -63,8 +63,10 @@ test('the cache expires, and a different engine address is detected afresh', asy
 });
 
 test('offline: keeps the last profile of that engine, else offers best variants unchecked', async () => {
+    let clock = 0;
     const state = { url: 'http://a', files: ['small.safetensors'], offline: true };
-    const engine = new EngineProfile({ catalog, comfy: fakeEngine(state).comfy, maxAgeMs: 0 });
+    const fake = fakeEngine(state);
+    const engine = new EngineProfile({ catalog, comfy: fake.comfy, maxAgeMs: 0, now: () => clock });
 
     const unseen = await engine.current();
     assert.equal(unseen.detected, false);
@@ -72,7 +74,11 @@ test('offline: keeps the last profile of that engine, else offers best variants 
     assert.equal(unseen.presets.get('zimage-t2i').variant, 'bf16');
 
     state.offline = false;
-    await engine.current();
+    const reads = fake.reads();
+    assert.equal((await engine.current()).detected, false, 'a failed check is remembered for 30 s: no new request');
+    assert.equal(fake.reads(), reads);
+    clock = 31_000;
+    assert.equal((await engine.current()).detected, true);
     state.offline = true;
     const remembered = await engine.current();
     assert.equal(remembered.detected, true);
