@@ -1,0 +1,44 @@
+{{-- A card's sound as an instrument (public/js/components/audio-player.js): play key, waveform seek bar,
+     time, the VOICE sensor, a level gauge and mute. --}}
+<div class="audio-player" x-data="AudioPlayer()" x-effect="load(mediaUrl(node))"
+     :class="{ 'is-playing': playing, 'is-ready': ready, 'is-flat': failed }" @pointerdown.stop @dblclick.stop>
+  <audio x-ref="el" :src="src" preload="metadata"
+         @loadedmetadata="duration = $el.duration" @durationchange="duration = $el.duration"
+         @timeupdate="current = $el.currentTime" @play="onPlay()" @pause="onPause()" @ended="onPause()"></audio>
+  <div class="audio-player__row">
+    <button type="button" class="ae-key ae-key--accent ae-key--square audio-player__play" @click.stop="toggle()"
+            :aria-label="playing ? 'Pause' : 'Play'" :aria-pressed="playing ? 'true' : 'false'">
+      <span x-show="!playing">{{{ icon('play') }}}</span><span x-show="playing">{{{ icon('pause') }}}</span>
+    </button>
+    <div class="audio-player__wave" role="slider" tabindex="0" aria-label="Seek"
+         aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(progress())" @click.stop="seek($event)"
+         @keydown.left.prevent.stop="nudge(-5)" @keydown.right.prevent.stop="nudge(5)" @keydown.space.prevent.stop="toggle()">
+      <template x-if="ready">
+        <div class="audio-player__bars" aria-hidden="true">
+          <template x-for="(p, i) in peaks" :key="i">
+            <span class="audio-player__bar" :class="{ 'is-played': isPlayed(i), 'is-quiet': !barVoice[i] }"
+                  :style="{ height: Math.max(6, Math.round(p * 100)) + '%' }"></span>
+          </template>
+        </div>
+      </template>
+      <template x-if="!ready">
+        <div class="audio-player__flat" aria-hidden="true">
+          <div class="audio-player__flat-fill" :style="{ width: progress() + '%' }"></div>
+          <template x-if="!failed"><span class="audio-player__scan"></span></template>
+        </div>
+      </template>
+      <span class="audio-player__head" aria-hidden="true" :style="{ left: progress() + '%' }"></span>
+    </div>
+  </div>
+  <div class="audio-player__foot">
+    <span class="ae-readout audio-player__time" x-text="fmt(current) + ' / ' + fmt(duration)"></span>
+    <span class="audio-player__signal" :class="{ 'is-live': speaking }" :title="ready ? 'Speech in ' + Math.round(speechRatio * 100) + '% of the track' : ''">
+      <span class="ae-sensor-dot" x-show="speaking" aria-hidden="true"></span><span x-text="signal()"></span>
+    </span>
+    <div class="ae-level audio-player__level" aria-hidden="true"><div class="ae-level__fill" :style="{ width: Math.round(level * 100) + '%' }"></div></div>
+    <span class="ae-readout" x-show="ready" x-text="Math.round(speechRatio * 100) + '% voice'"></span>
+    <button type="button" class="ae-key ae-key--sm ae-key--square" @click.stop="toggleMute()" :aria-label="muted ? 'Unmute' : 'Mute'">
+      <span x-show="!muted">{{{ icon('volume') }}}</span><span x-show="muted">{{{ icon('mute') }}}</span>
+    </button>
+  </div>
+</div>

@@ -39,6 +39,9 @@
     --on-media: #FFFFFF;
     --media-scrim: rgb(8 10 14 / 0.15);
     --media-scrim-strong: rgb(8 10 14 / 0.45);
+    --media-scrim-deck: rgb(8 10 14 / 0.78);
+    --media-chip: rgb(8 10 14 / 0.55);
+    --media-ground: #000000;
 
     --fs-3xs: 0.625rem;
     --fs-2xs: 0.6875rem;

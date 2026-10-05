@@ -1,0 +1,31 @@
+{{-- The deck under a clip (ported from bloop's media-deck): markup only. It expects an x-data="MediaPlayer(…)"
+     around it and x-ref="vid" on the <video>; every binding is that component's (public/js/components/media-player.js). --}}
+<div class="ae-player__deck" @pointerdown.stop @click.stop @dblclick.stop>
+  <div class="ae-player__scrub" role="slider" tabindex="0" aria-label="Seek"
+       aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(progress())"
+       @pointerdown.stop="scrubStart($event)" @keydown.stop="key($event)">
+    <div class="ae-player__track">
+      <div class="ae-player__buffer" :style="{ width: Math.round(buffered * 100) + '%' }"></div>
+      <div class="ae-player__fill" :style="{ width: progress() + '%' }"></div>
+    </div>
+    <span class="ae-player__head" :style="{ left: progress() + '%' }" aria-hidden="true"></span>
+  </div>
+  <div class="ae-player__bar">
+    <button type="button" class="ae-player__key" @click.stop="togglePlay()" :aria-label="playing ? 'Pause' : 'Play'">
+      <span x-show="!playing">{{{ icon('play') }}}</span><span x-show="playing">{{{ icon('pause') }}}</span>
+    </button>
+    <span class="ae-player__time" x-text="fmt(current) + ' / ' + fmt(duration)"></span>
+    <span class="ae-player__gap"></span>
+    <div class="ae-player__volume">
+      <button type="button" class="ae-player__key" @click.stop="toggleMute()" :aria-label="muted ? 'Unmute (m)' : 'Mute (m)'">
+        <span x-show="volumeIcon() === 'volume'">{{{ icon('volume') }}}</span><span x-show="volumeIcon() === 'mute'">{{{ icon('mute') }}}</span>
+      </button>
+      <div class="ae-player__vol" role="slider" tabindex="0" aria-label="Volume"
+           aria-valuemin="0" aria-valuemax="100" :aria-valuenow="Math.round(shownVolume() * 100)"
+           @pointerdown.stop="volumeStart($event)" @wheel.prevent.stop="volumeWheel($event)" @keydown.stop="key($event)">
+        <div class="ae-player__vol-track"><div class="ae-player__vol-fill" :style="{ width: Math.round(shownVolume() * 100) + '%' }"></div></div>
+      </div>
+    </div>
+    <button type="button" class="ae-player__key" @click.stop="fullscreen()" aria-label="Fullscreen (f)">{{{ icon('expand') }}}</button>
+  </div>
+</div>

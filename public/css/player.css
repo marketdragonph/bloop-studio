@@ -1,0 +1,179 @@
+/* The video deck and the audio player (ported from bloop's player.css and spaces-audio.css).
+   Media primitives, not a room: any surface that plays a clip or a sound wears them. Colours are tokens:
+   over a picture there is no theme surface, so the deck is --on-media ink on a --media-scrim-deck ground. */
+
+/* ── The video player ─────────────────────────────────────────────────── */
+.ae-player { position: relative; display: block; width: 100%; height: 100%; background: var(--media-ground); }
+.ae-player video { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+/* The centre key: a cut key over the picture. Shown at rest; while playing only under the pointer. */
+.ae-player__centre {
+    position: absolute;
+    inset: 0 0 3.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity var(--duration-fast) ease;
+}
+.ae-player.is-playing .ae-player__centre { opacity: 0; }
+.ae-player.is-playing:hover .ae-player__centre { opacity: 1; }
+.ae-player__centre-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    background: var(--media-chip);
+    color: var(--on-media);
+    backdrop-filter: blur(6px);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.4375rem), calc(100% - 0.4375rem) 100%, 0 100%);
+    transition: background-color var(--duration-fast) ease;
+}
+.ae-player__centre-key svg { width: 0.875rem; height: 0.875rem; }
+.ae-player__centre:hover .ae-player__centre-key { background: color-mix(in srgb, var(--accent) 80%, var(--media-chip)); }
+
+/* The deck: bottom-anchored on a scrim; steps back while playing until the pointer returns. */
+.ae-player__deck {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    padding: 1.25rem var(--space-2) 0.375rem;
+    background: linear-gradient(to top, var(--media-scrim-deck), color-mix(in srgb, var(--media-scrim-deck) 50%, transparent) 60%, transparent);
+    color: var(--on-media);
+    transition: opacity var(--duration-fast) ease;
+}
+.ae-player.is-playing .ae-player__deck { opacity: 0; }
+.ae-player.is-playing:hover .ae-player__deck,
+.ae-player.is-scrubbing .ae-player__deck,
+.ae-player__deck:focus-within { opacity: 1; }
+
+/* The scrubber: a hairline that thickens under the pointer; played run in orange, buffered a shade up. */
+.ae-player__scrub { position: relative; display: flex; align-items: center; height: 0.875rem; cursor: pointer; outline: none; }
+.ae-player__track {
+    position: relative;
+    width: 100%;
+    height: 3px;
+    background: color-mix(in srgb, var(--on-media) 22%, transparent);
+    overflow: hidden;
+    transition: height 0.1s ease;
+}
+.ae-player__scrub:hover .ae-player__track,
+.ae-player.is-scrubbing .ae-player__track,
+.ae-player__scrub:focus-visible .ae-player__track { height: 5px; }
+.ae-player__buffer, .ae-player__fill { position: absolute; inset-block: 0; left: 0; }
+.ae-player__buffer { background: color-mix(in srgb, var(--on-media) 22%, transparent); }
+.ae-player__fill { background: var(--accent); }
+.ae-player__head {
+    position: absolute;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-left: -0.25rem;
+    background: var(--on-media);
+    transform: translateY(-50%) scale(0);
+    pointer-events: none;
+    transition: transform 0.1s ease;
+}
+.ae-player__scrub:hover .ae-player__head,
+.ae-player.is-scrubbing .ae-player__head,
+.ae-player__scrub:focus-visible .ae-player__head { transform: translateY(-50%) scale(1); }
+.ae-player__scrub:focus-visible, .ae-player__vol:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+.ae-player__bar { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.125rem; }
+.ae-player__gap { flex: 1; }
+.ae-player__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    color: var(--on-media);
+    background: color-mix(in srgb, var(--on-media) 10%, transparent);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.3125rem), calc(100% - 0.3125rem) 100%, 0 100%);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+.ae-player__key svg { width: 0.75rem; height: 0.75rem; }
+.ae-player__key:hover { background: color-mix(in srgb, var(--accent) 80%, var(--media-chip)); }
+.ae-player__key:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ae-player__time {
+    font-family: var(--font-stencil);
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--on-media) 85%, transparent);
+}
+
+/* The volume: a short level beside mute; a drag surface and a wheel target, shared by every player. */
+.ae-player__volume { display: flex; align-items: center; gap: var(--space-1); }
+.ae-player__vol { display: flex; align-items: center; width: 3.25rem; height: 1.25rem; cursor: pointer; outline: none; }
+.ae-player__vol-track { position: relative; width: 100%; height: 3px; background: color-mix(in srgb, var(--on-media) 22%, transparent); }
+.ae-player__vol-fill { position: absolute; inset-block: 0; left: 0; background: var(--on-media); }
+.ae-player__vol:hover .ae-player__vol-track, .ae-player__vol:focus-visible .ae-player__vol-track { height: 5px; }
+
+/* In the viewer the deck plays at full size. */
+.viewer__player { width: auto; height: auto; }
+
+/* ── The audio player ──────────────────────────────────────────────────── */
+.audio-player { display: flex; flex-direction: column; gap: 0.375rem; width: 100%; padding: var(--space-2); background: var(--bg-secondary); }
+.audio-player__row { display: flex; align-items: center; gap: var(--space-2); }
+.audio-player__play { flex-shrink: 0; }
+
+/* The waveform is the seek bar: played bars light orange, bars the detector called quiet stay dim. */
+.audio-player__wave { position: relative; flex: 1; min-width: 0; height: 2.25rem; padding: var(--space-1) 0; cursor: pointer; outline: none; }
+.audio-player__wave:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.audio-player__bars { display: flex; align-items: center; gap: 1px; height: 100%; }
+.audio-player__bar { flex: 1; min-width: 1px; background: var(--ae-seam-strong); transition: background-color 0.1s linear, opacity 0.1s linear; }
+.audio-player__bar.is-quiet { opacity: 0.4; }
+.audio-player__bar.is-played { background: var(--accent); opacity: 1; }
+.audio-player__bar.is-played.is-quiet { opacity: 0.55; }
+.audio-player__head {
+    position: absolute;
+    inset-block: 0;
+    width: 1px;
+    background: var(--text-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--duration-fast) ease;
+}
+.audio-player.is-playing .audio-player__head, .audio-player__wave:hover .audio-player__head { opacity: 0.7; }
+
+/* Before the picture arrives (or if it never does): a flat track with a travelling light. */
+.audio-player__flat { position: relative; top: 50%; height: 0.25rem; transform: translateY(-50%); background: var(--ae-seam); overflow: hidden; }
+.audio-player__flat-fill { height: 100%; background: var(--accent); }
+.audio-player__scan {
+    position: absolute;
+    inset-block: 0;
+    width: 18%;
+    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--accent) 70%, transparent), transparent);
+    animation: audio-player-scan 1.4s linear infinite;
+}
+@keyframes audio-player-scan { from { left: -18%; } to { left: 100%; } }
+
+.audio-player__foot { display: flex; align-items: center; gap: var(--space-2); min-height: 1.5rem; }
+.audio-player__time { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.audio-player__signal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    min-width: 3.25rem;
+    font-family: var(--font-stencil);
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.audio-player__signal.is-live { color: var(--sensor-text); }
+.audio-player__level { --ae-level-accent: var(--sensor); flex: 1; min-width: 2rem; }
+.audio-player__level .ae-level__fill { transition: width 0.06s linear; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ae-player__centre, .ae-player__centre-key, .ae-player__deck, .ae-player__track, .ae-player__head, .ae-player__key,
+    .audio-player__bar, .audio-player__head, .audio-player__level .ae-level__fill { transition: none; }
+    .audio-player__scan { animation: none; left: 41%; }
+}

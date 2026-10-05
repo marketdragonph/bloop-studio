@@ -1,0 +1,14 @@
+{{-- A card's clip with the hangar deck. Fullscreen hands it to the board's viewer. --}}
+<div class="ae-player" x-data="MediaPlayer({ fullscreen: () => openViewer(node) })" x-effect="attach(mediaUrl(node))"
+     :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing }">
+  <video :src="mediaUrl(node)" x-ref="vid" preload="metadata" playsinline
+         @loadedmetadata="duration = $el.duration; applyVolume()" @durationchange="duration = $el.duration"
+         @progress="_sync()" @volumechange="onVolumeChange()" @play="onPlay()" @pause="onPause()" @ended="onPause()"
+         @click.stop="togglePlay()"></video>
+  <div class="ae-player__centre" @click.stop="togglePlay()" @dblclick.stop>
+    <span class="ae-player__centre-key" aria-hidden="true">
+      <span x-show="!playing">{{{ icon('play') }}}</span><span x-show="playing">{{{ icon('pause') }}}</span>
+    </span>
+  </div>
+  @include('pages/spaces/media-deck')
+</div>

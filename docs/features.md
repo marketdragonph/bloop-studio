@@ -14,6 +14,13 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   drop a file on the card, or click it to choose one.
 - **Media**: full-screen viewer, download under the card's name, and *Show in folder* (File Explorer).
 
+- **Players** (2026-10-05, ported from bloop's media deck and audio player): clips play in the hangar deck
+  (centre key, scrubber, time, volume level shared by every player and remembered, fullscreen = the viewer;
+  keys ← → seek, ↑ ↓ volume, space, m, f), on cards, uploads and in the viewer. Sound plays in the audio
+  instrument: play key, a waveform that is the seek bar (decoded once from the local file), time, a VOICE sensor,
+  a level gauge and the share of the track with speech. No browser control bars left. `public/js/components/
+  media-player.js`, `audio-player.js`, `public/css/player.css`.
+
 ## Rendering
 
 - **Generate** on an Image or Video card queues a job; one GPU worker renders on the local ComfyUI.

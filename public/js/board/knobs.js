@@ -55,7 +55,7 @@ export const knobMethods = {
         if (key === 'resolution') return options.resolutions[0]?.value;
         if (key === 'quality') return options.qualities.at(-1)?.value;
         // 5 s unless the model offers less: a 10 s clip takes minutes and is chosen, never a default.
-        if (key === 'duration') return (match(5) ?? options.durations.filter((d) => Number(d.value) <= 5).at(-1) ?? options.durations[0])?.value;
+        if (key === 'duration') return match(5) ?? (options.durations.filter((d) => Number(d.value) <= 5).at(-1) ?? options.durations[0])?.value;
         if (key === 'voice') return options.voices[0]?.value;
         return DEFAULT_KNOBS[key];
     },
@@ -77,7 +77,7 @@ export const knobMethods = {
     },
 
     previewAspect(node) {
-        if (node.type === 'audio') return '4 / 1'; // a strip for the player, not a frame
+        if (node.type === 'audio') return 'auto'; // the player sets its own height, not a frame
         return aspectCss(this.knobValue(node, 'aspect'));
     },
 };

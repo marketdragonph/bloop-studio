@@ -49,10 +49,10 @@
             <img :src="mediaUrl(node)" :alt="node.label || 'Uploaded picture'">
           </template>
           <template x-if="mediaUrl(node) && isAudio(node)">
-            <audio :src="mediaUrl(node)" controls preload="metadata"></audio>
+            @include('pages/spaces/media-audio')
           </template>
           <template x-if="mediaUrl(node) && isVideo(node)">
-            <video :src="mediaUrl(node)" controls preload="metadata"></video>
+            @include('pages/spaces/media-video')
           </template>
           <span class="card__drop-hint" x-show="!mediaUrl(node)">
             {{{ icon('upload') }}}<span x-text="node.status === 'generating' ? 'Uploading…' : 'Drop a picture, clip or voice, or click to choose'"></span>

@@ -7,10 +7,10 @@
       <img :src="mediaUrl(node)" alt="" loading="lazy">
     </template>
     <template x-if="mediaUrl(node) && node.type === 'video'">
-      <video :src="mediaUrl(node)" controls preload="metadata"></video>
+      @include('pages/spaces/media-video')
     </template>
     <template x-if="mediaUrl(node) && node.type === 'audio'">
-      <audio :src="mediaUrl(node)" controls preload="metadata"></audio>
+      @include('pages/spaces/media-audio')
     </template>
     @include('pages/spaces/card-loader')
     <template x-if="!mediaUrl(node) && !isBusy(node)">

@@ -12,7 +12,15 @@
           <img class="viewer__media" :src="viewer.url" :alt="viewer.title">
         </template>
         <template x-if="viewer.video">
-          <video class="viewer__media" :src="viewer.url" controls autoplay loop></video>
+          {{-- The same deck as on the cards; fullscreen here is the screen itself. --}}
+          <div class="ae-player viewer__player" x-data="MediaPlayer({ fullscreen: (v) => v?.parentElement?.requestFullscreen?.() })"
+               x-effect="attach(viewer.url)" :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing }">
+            <video class="viewer__media" :src="viewer.url" x-ref="vid" autoplay loop playsinline
+                   @loadedmetadata="duration = $el.duration; applyVolume()" @durationchange="duration = $el.duration"
+                   @progress="_sync()" @volumechange="onVolumeChange()" @play="onPlay()" @pause="onPause()"
+                   @click.stop="togglePlay()"></video>
+            @include('pages/spaces/media-deck')
+          </div>
         </template>
       </div>
     </template>
