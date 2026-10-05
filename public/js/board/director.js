@@ -26,13 +26,32 @@ export const directorMethods = {
         }
     },
 
-    async refreshBoard() {
+    /**
+     * Brings the board in line with the server. Cards are updated in place and only new ones are added,
+     * so a Director build redraws what changed, not all 60 cards for every card it adds (that lagged).
+     */
+    async refreshBoard({ tidy = true } = {}) {
         const board = await api('GET', `${this.base}/board.json`);
-        // Keep live render state for cards that are still rendering.
-        const live = new Map(this.nodes.map((n) => [n.id, n]));
-        this.nodes = board.nodes.map((n) => ({ ...n, progress: live.get(n.id)?.progress, progressLabel: live.get(n.id)?.progressLabel }));
-        this.connections = board.connections;
-        this.tidyAfterRender();
+        const fresh = new Map(board.nodes.map((n) => [n.id, n]));
+        this.nodes = this.nodes.filter((n) => fresh.has(n.id));
+        for (const n of board.nodes) {
+            const current = this.nodeById(n.id);
+            // Live render state (progress, label) is the event stream's, not the saved row's.
+            if (current) Object.assign(current, { ...n, progress: current.progress, progressLabel: current.progressLabel });
+            else this.nodes.push(n);
+        }
+        const same = board.connections.length === this.connections.length && board.connections.every((c, i) => c.id === this.connections[i]?.id);
+        if (!same) this.connections = board.connections;
+        if (tidy) this.tidyAfterRender();
+    },
+
+    /** While the Director builds: at most two board refreshes a second, the last one after its final change. */
+    refreshSoon() {
+        if (this._refreshTimer) return;
+        this._refreshTimer = setTimeout(() => {
+            this._refreshTimer = null;
+            this.refreshBoard({ tidy: false }).catch(() => {});
+        }, 500);
     },
 
     async sendDirector() {
@@ -62,7 +81,7 @@ export const directorMethods = {
 
     /** One event of a Director run on this board, from the board's event stream (generation.js). */
     onDirectorStream({ runId, event, data }) {
-        if (event === 'actions') this.refreshBoard().catch(() => {});
+        if (event === 'actions') this.refreshSoon();
         // Write through Alpine's reactive copy: mutating a plain object would never repaint the bubble.
         let reply = this.directorLog.find((entry) => entry.runId === runId);
         if (!reply) {
