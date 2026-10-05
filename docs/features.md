@@ -89,25 +89,23 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 
 ## Director
 
-- A chat panel per board that builds the board for you with Claude or OpenAI (your own key): cast cards and
-  character sheets, locations, then shots left to right, all wired. It never renders; you press Generate.
-- **Runs as a background job** (2026-10-05, `director/runs.js`, table `director_runs`): a request returns at
-  once; the turn keeps going when the panel closes or the page reloads, and its words and board changes
-  arrive on the board's event stream (`event: director`). One run per board; Stop ends it, the cards it
-  added stay. 30 model rounds per turn (the last one can only answer); out of steps, the run carries on by
-  itself in the same reply, up to 4 turns. A run cut off by a closed app resumes when the app starts.
-  No buttons to press: replies say what was built, never which buttons to use; renders stay the person's.
-- **Talks first** (as bloop's PlanFirst): a new project on an empty board gets a plan (pitch, cast, places,
-  numbered shots with seconds, the music) and at most 2 questions; it builds after the answer. Enforced in
-  `tools.js`: an empty board with no conversation takes at most 3 cards. Questions get answers, not cards.
-- **Sound and music:** every shot text ends with a "Sound: …" line (LTX / MiniMax-H3 render it), and a
-  film gets a "Score" audio card (style text card, optional lyrics card) as long as the film (≤ 180 s).
-- **Checks its own work** (ported from bloop's BoardAudit, `director/audit.js`): after every round that
-  changes the board the model gets a board check (render cards with nothing in Words, a cast or location
-  named in a shot but not wired into it, unused text, a last frame or voice without a first frame, failed
-  renders) and fixes it before replying. Tools: `add_card` (incl. audio), `connect` (optional socket:
-  lyrics, audio, reference, last_frame), `update_card` (text, label, aspect, duration), `inspect_cards`,
-  `audit_board`. The board snapshot shows each card's render state and aspect / duration.
+A port of bloop's Spaces Director (docs/plans/director-port.md), adapted to local models.
+- **Plan first** (plan_board): on a new board it pitches the approach, names the cast, places and props, says
+  the shape back ("TikTok, so 9:16") and asks at most two questions (questions about voice are dropped in
+  code). It writes nothing to the board on a plan turn; a second plan only applies corrections.
+- **Staged rail** (advance_build): each plate is a look note + a reference-sheet note → a picture, plus a voice
+  note for a speaking person; cast first, then places and props, or all at once when told to get on with it.
+- **The beats** (build_board): every guard bloop has (runtime reachable, hook first, resolution last, only who
+  each brief names, drafted plates for unknown subjects), the music bed and the look card, then the beats are
+  written in the background, three writers at a time (director/build/). A lane: brief + still words (SHOT line,
+  image locks) → still, drawn FROM the cast/prop/place sheet pictures on Qwen-Image-Edit; motion + sound +
+  script (`[@tag (how)] line`, `[VO]`) + voice card → clip on LTX-2.3, sized to its words.
+- **Changes** through propose_board_ops (one op list, all or nothing, lane/stage, refs or @id), with the critic
+  on its own work; inspect_board and audit_board read. Plan-first gate on empty boards; ops written as text
+  are recovered once; a turn that changed nothing says so; a pasted-back reply is refused.
+- Runs in the background (director/runs.js); the panel shows what it is doing, the build lanes as they land,
+  replies as markdown (escaped first), and bloop's example asks. It never renders and never tells you which
+  buttons to press.
 
 ## Bloop account (optional)
 
