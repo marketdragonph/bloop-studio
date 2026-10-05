@@ -38,19 +38,22 @@ export const FAMILIES = {
         frames: h3Frames,
         qualities: [{ id: 'draft', label: 'Draft (6 steps)', steps: 6 }, { id: 'final', label: 'Final (8 steps)', steps: 8 }],
     },
-    // int8 H3 with the 4-step 768p turbo LoRA: 5 s took 65 s at 480p and 190 s at 768p.
+    // int8 H3 with the 4-step 768p turbo LoRA: 5 s took 65 s at 480p and 190 s at 768p; 10 s at 480p
+    // took 146 s (2026-10-05). Past 5 s only at 480p until 768p is tried that long on 12 GB.
     'h3-int8': {
         resolutions: [{ id: '480p', label: '480p', mp: 0.41 }, { id: '768p', label: '768p (slower)', mp: 1.03 }],
-        durations: [3, 4, 5],
+        durations: [3, 4, 5, 6, 8, 10],
+        longest: { '768p': 5 },
         fps: 24,
         frames: h3Frames,
         qualities: [{ id: 'final', label: 'Final (4 steps)', steps: 4 }],
     },
     // LTX-2.3 distilled: 8 fixed sigmas (no steps knob), 25 fps, frames 8n + 1. 5 s took 55 s at
-    // 480p and 105 s at 720p on 12 GB.
+    // 480p and 105 s at 720p on 12 GB; 10 s at 480p took 215 s (2026-10-05). Past 5 s only at 480p.
     ltx: {
         resolutions: [{ id: '480p', label: '480p', mp: 0.41 }, { id: '720p', label: '720p (slower)', mp: 0.92 }],
-        durations: [3, 4, 5],
+        durations: [3, 4, 5, 6, 8, 10],
+        longest: { '720p': 5 },
         fps: 25,
         frames: (seconds) => Math.round((seconds * 25) / 8) * 8 + 1,
         qualities: [{ id: 'final', label: 'Final (8 steps)', steps: 8 }],
@@ -75,7 +78,10 @@ export function knobOptions(family) {
     return {
         aspects: ASPECTS.map(({ id, label }) => ({ value: id, label })),
         resolutions: f.resolutions.map(({ id, label }) => ({ value: id, label })),
-        durations: (f.durations ?? []).map((s) => ({ value: s, label: `${s} s` })),
+        // Long clips take much longer (10 s ≈ 2–4 min on 12 GB, against ~1 min for 5 s): the label says so.
+        durations: (f.durations ?? []).map((s) => ({ value: s, label: s > 5 ? `${s} s (slower)` : `${s} s` })),
+        // The longest clip per resolution, where a high resolution is not tried that long yet.
+        longest: f.longest ?? {},
         qualities: f.qualities.map(({ id, label }) => ({ value: id, label })),
     };
 }
@@ -88,7 +94,9 @@ export function knobInputs(family, settings = {}) {
     const quality = f.qualities.find((q) => q.id === settings.quality) ?? f.qualities.at(-1);
     const inputs = { ...sizeFor(settings.aspect ?? DEFAULT_KNOBS.aspect, resolution.mp), steps: quality.steps };
     if (f.frames) {
-        const seconds = f.durations.includes(Number(settings.duration)) ? Number(settings.duration) : f.durations.at(-1);
+        const cap = f.longest?.[resolution.id] ?? Infinity;
+        const offered = f.durations.filter((s) => s <= cap);
+        const seconds = offered.includes(Number(settings.duration)) ? Number(settings.duration) : Math.min(5, offered.at(-1));
         inputs.length = f.frames(seconds);
         // The clip's exact length in seconds: a wired audio track is trimmed to it (lip sync, ltx-ia2v).
         if (f.fps) inputs.seconds = (inputs.length - 1) / f.fps;

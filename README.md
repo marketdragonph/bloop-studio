@@ -151,7 +151,16 @@ Tips:
 - The **Director** (top right on a board) can lay out cast, locations and shots for you. You still press
   Generate.
 
-### Times on an RTX 3080 Ti (5-second clips)
+### Times on an RTX 3080 Ti
+
+Up to 10-second clips at 480p (LTX-2.3, MiniMax-H3, lip sync); 720p and 768p stay at 5 seconds.
+
+| Model | 10 s at 480p |
+|---|---|
+| MiniMax-H3 Turbo | about 2½ min |
+| LTX-2.3 Distilled | about 2–4 min |
+
+5-second clips:
 
 | Model | 480p | Higher resolution |
 |---|---|---|

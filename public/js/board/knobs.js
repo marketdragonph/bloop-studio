@@ -34,7 +34,11 @@ export const knobMethods = {
         const family = this.familyFor(node);
         // A bloop cloud model brings its own options (its params); a local family names a formats table.
         const none = { aspects: [], resolutions: [], durations: [], qualities: [], voices: [] };
-        return { ...none, ...(family?.options ?? knobOptions(family?.knobs)) };
+        const options = { ...none, ...(family?.options ?? knobOptions(family?.knobs)) };
+        // A long clip only at the resolutions tried that long (formats.js `longest`).
+        const resolution = node.settings?.resolution ?? options.resolutions[0]?.value;
+        const cap = options.longest?.[resolution];
+        return cap ? { ...options, durations: options.durations.filter((d) => Number(d.value) <= cap) } : options;
     },
 
     knobValue(node, key) {
@@ -50,7 +54,8 @@ export const knobMethods = {
         if (key === 'aspect' && offered?.length && match(DEFAULT_KNOBS.aspect) === undefined) return offered[0].value;
         if (key === 'resolution') return options.resolutions[0]?.value;
         if (key === 'quality') return options.qualities.at(-1)?.value;
-        if (key === 'duration') return options.durations.at(-1)?.value;
+        // 5 s unless the model offers less: a 10 s clip takes minutes and is chosen, never a default.
+        if (key === 'duration') return (match(5) ?? options.durations.filter((d) => Number(d.value) <= 5).at(-1) ?? options.durations[0])?.value;
         if (key === 'voice') return options.voices[0]?.value;
         return DEFAULT_KNOBS[key];
     },

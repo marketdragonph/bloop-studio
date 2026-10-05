@@ -42,3 +42,15 @@ test('options and preview ratio for the card UI', () => {
     assert.deepEqual(knobOptions('h3').durations.map((d) => d.value), [3, 4, 5]);
     assert.equal(aspectCss('9:16'), '9 / 16');
 });
+
+test('long clips: up to 10 s at 480p, 5 s at the higher resolutions, 5 s when nothing is picked', () => {
+    const seconds = (family, settings) => {
+        const { length } = knobInputs(family, settings);
+        return Math.round((length - 1) / (family === 'ltx' ? 25 : 24)); // whole seconds: LTX frames are 8n + 1
+    };
+    assert.equal(seconds('ltx', { resolution: '480p', duration: 10 }), 10);
+    assert.equal(seconds('ltx', { resolution: '720p', duration: 10 }), 5); // not tried that long at 720p on 12 GB
+    assert.equal(seconds('ltx', { resolution: '480p' }), 5); // a 10 s clip takes minutes: chosen, never a default
+    assert.equal(knobOptions('ltx').durations.at(-1).label, '10 s (slower)');
+    assert.deepEqual(knobOptions('ltx').longest, { '720p': 5 });
+});
