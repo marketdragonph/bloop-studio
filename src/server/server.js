@@ -41,6 +41,14 @@ import { BoardCut } from './cut/board-cut.js';
 import { CappedFfmpeg } from './media/capped-ffmpeg.js';
 import { TakeMeasurer } from './generation/measure-take.js';
 import { cutRoutes } from './routes/cut.js';
+import { CutExportsRepository } from './repositories/cut-exports.js';
+import { ToolsQueue } from './media/tools-queue.js';
+import { VideoTools } from './media/video-tools.js';
+import { CutExporter } from './cut/export/index.js';
+import { Packer } from './cut/pack/index.js';
+import { recoverToolsJobs } from './cut/tools-jobs.js';
+import { cutExportRoutes } from './routes/cut-exports.js';
+import { videoToolsRoutes } from './routes/video-tools.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -54,7 +62,7 @@ const startBrowser = async (url) => {
     spawn('rundll32', ['url.dll,FileProtocolHandler', url], { detached: true, stdio: 'ignore' }).unref();
 };
 
-export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, openExternal = startBrowser, bloopUrl = undefined, updates = NO_UPDATES, onThemeChange = () => {} }) {
+export async function createServer({ settings, dataDir, port = 0, dbPath = join(dataDir, 'bloop-studio.db'), startWorker = true, reveal = explorerReveal, pickFile = async () => null, openExternal = startBrowser, bloopUrl = undefined, updates = NO_UPDATES, onThemeChange = () => {} }) {
     const csrfToken = randomBytes(32).toString('hex');
     const views = createViews({ csrfToken, getTheme: () => settings.get('theme') });
     const db = openDatabase(dbPath);
@@ -72,6 +80,13 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const boardCut = new BoardCut({ db, exists: (path) => Boolean(media.resolve(path) && existsSync(media.resolve(path))) });
     const ffmpeg = new CappedFfmpeg({ getSettingsPath: () => settings.get('ffmpegPath') });
     const measurer = new TakeMeasurer({ ffmpeg, cuts, media, events });
+    // Export and Pack (P3): one media-tools queue, separate from the GPU worker; jobs left by a closed app fail now.
+    const exportsRepo = new CutExportsRepository(db);
+    const toolsQueue = new ToolsQueue();
+    const videoTools = new VideoTools({ ffmpeg, settings });
+    await recoverToolsJobs({ exportsRepo, media });
+    const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue: toolsQueue });
+    const packer = new Packer({ db, cuts, exportsRepo, media, events, queue: toolsQueue });
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer });
     const director = new DirectorRepository(db);
     // The Director (a port of bloop's Spaces Director): plans, the board ops, the staged rail, and the beat writers.
@@ -84,13 +99,14 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
     directorRuns.recover();
     runner.resume();
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
     app.use('/assets/*', staticFiles('/assets/'));
     app.use('/shared/*', staticFiles('/shared/', '../../shared/')); // src/shared
     app.route('/', homeRoutes(deps));
+    app.route('/settings/video-tools', videoToolsRoutes(deps));
     app.route('/settings', settingsRoutes(deps));
     app.route('/engine/install', engineInstallRoutes(deps));
     app.route('/engine', engineRoutes(deps));
@@ -100,6 +116,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/', generationRoutes(deps));
     app.route('/', directorRoutes(deps));
     app.route('/', cutRoutes(deps));
+    app.route('/', cutExportRoutes(deps));
     app.notFound((c) => c.html(views.render('pages/not-found', {}), 404));
     app.onError((error, c) => {
         console.error(error);

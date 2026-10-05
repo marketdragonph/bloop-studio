@@ -24,6 +24,8 @@ const DEFAULTS = {
     // The person's own ComfyUI folder ('' = found automatically) and whether it starts with the app.
     comfyPath: '',
     engineAutostart: false,
+    // Settings › Video tools › Choose ffmpeg.exe… ('' = the copy that ships with the app).
+    ffmpegPath: '',
 };
 
 export class SettingsStore {

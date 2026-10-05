@@ -1,0 +1,42 @@
+{{-- The pack sheet (01-core.md §8, 05 §5.7), inside the export sheet's frame: what a pack holds, Include prompts
+     and seeds (on by default; off for a client job), Pack assets, then its own small sensor level and Show in
+     folder. One pack per space at a time; the job runs on the tools queue, never the GPU. --}}
+<template x-if="cutSheet === 'pack'">
+  <div class="cut-sheet__body">
+    <header class="cut-sheet__head">
+      <h3 class="ae-stencil cut-sheet__title" id="cut-sheet-pack" tabindex="-1" data-sheet-focus="pack">{{ controlLabel('cut.pack') }}</h3>
+      <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutCloseSheet()" data-control="cut.sheetClose"
+              aria-label="{{ controlLabel('cut.sheetClose') }}" title="{{ controlLabel('cut.sheetClose') }}">{{{ icon('close') }}}</button>
+    </header>
+    <div class="cut-sheet__stack">
+      <p class="cut-sheet__note" x-show="['ready', 'refused'].includes(cutPackState())" x-text="cutCopy('packNote')"></p>
+      <label class="choice cut-sheet__choice" x-show="['ready', 'refused'].includes(cutPackState())" data-control="cut.includePrompts">
+        <input type="checkbox" x-model="cutPackPrompts">
+        <span>{{ controlLabel('cut.includePrompts') }}</span>
+      </label>
+
+      <template x-if="['starting', 'queued', 'running'].includes(cutPackState())">
+        <div class="cut-sheet__stack" role="status">
+          <p class="cut-sheet__step" x-text="cutPackText()"></p>
+          <div class="ae-level cut-sheet__level" role="progressbar" aria-label="Pack progress" aria-valuemin="0" aria-valuemax="100"
+               :aria-valuenow="Math.round((cutPack?.progress ?? 0) * 100)">
+            <div class="ae-level__fill" :style="{ '--cut-progress': Math.round((cutPack?.progress ?? 0) * 100) + '%' }"></div>
+          </div>
+        </div>
+      </template>
+
+      <p class="cut-sheet__done" role="status" x-show="cutPackState() === 'done'" x-text="cutPackText()"></p>
+      <p class="cut-sheet__path" x-show="cutPackState() === 'done' && cutPack?.media_path" x-text="cutPack?.media_path"></p>
+      <p class="cut-sheet__alert" role="alert" x-show="['failed', 'cancelled', 'refused'].includes(cutPackState())" x-text="cutPackText()"></p>
+
+      <div class="cut-sheet__foot">
+        <button type="button" class="ae-key ae-key--sm" x-show="cutPackState() === 'done' && cutPack?.media_path" @click="cutShowFolder('pack')"
+                data-control="cut.showFolder">{{{ icon('folder') }}}<span>{{ controlLabel('cut.showFolder') }}</span></button>
+        <button type="button" class="ae-key ae-key--sm" x-show="['failed', 'cancelled', 'refused'].includes(cutPackState())" @click="cutPackAgain()"
+                data-control="cut.exportRetry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.exportRetry') }}</span></button>
+        <button type="button" class="ae-key ae-key--sm ae-key--accent" x-show="cutPackState() === 'ready'" @click="cutPackStart()"
+                data-control="cut.pack">{{{ icon('sheet') }}}<span>{{ controlLabel('cut.pack') }}</span></button>
+      </div>
+    </div>
+  </div>
+</template>

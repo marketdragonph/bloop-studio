@@ -182,3 +182,16 @@ test('the shared rules: level text and clamp, J and L cuts need sound to borrow'
     assert.match(checkItems([clipA, { ...clipB, join: { type: 'cut', audio_ms: 1600 } }]), /at most 1\.5 s/);
     assert.equal(CUT_LIMITS.maxItems, 50);
 });
+
+test('Set as poster: settings.poster_ms is kept with the cut; a time outside the cut is refused', async () => {
+    const { space, clips } = f.board('poster', ['s1']);
+    const items = [item('a', clips.s1)];
+    const res = await put(space.id, { revision: 0, items, settings: { resolution: 1080, fps: 30, poster_ms: 1500 } });
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).cut.settings.poster_ms, 1500);
+    const kept = await put(space.id, { revision: 1, items });
+    assert.equal((await kept.json()).cut.settings.poster_ms, 1500, 'a save without settings keeps the poster');
+    const bad = await put(space.id, { revision: 2, items, settings: { poster_ms: -5 } });
+    assert.equal(bad.status, 422);
+    assert.match((await bad.json()).error, /poster frame/);
+});

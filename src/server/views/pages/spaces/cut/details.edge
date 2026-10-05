@@ -25,6 +25,8 @@
             data-control="cut.mute" aria-keyshortcuts="M">{{{ icon('volume') }}}<span>{{ controlLabel('cut.mute') }}</span></button>
     <button type="button" class="ae-key ae-key--sm" @click="cutUseNewTake(cutEditable())" x-show="cutEditable()?.newTake"
             data-control="cut.useNewTake">{{ controlLabel('cut.useNewTake') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutSetPoster()" :aria-pressed="cutPosterAt(cutEditable()) ? 'true' : 'false'"
+            data-control="cut.poster">{{{ icon('poster') }}}<span>{{ controlLabel('cut.poster') }}</span></button>
     <button type="button" class="ae-key ae-key--sm" @click="cutRemove()" data-control="cut.remove" aria-keyshortcuts="Delete">{{{ icon('delete') }}}<span>{{ controlLabel('cut.remove') }}</span></button>
   </div>
 </div>

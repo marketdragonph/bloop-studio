@@ -3,6 +3,7 @@
    covered. Tokens only: seam greys, orange for action and the playhead, blue for in progress. */
 
 .cut-dock {
+    position: relative; /* the export sheet opens above the rail (cut-export.css) */
     grid-row: 3;
     display: grid;
     grid-template-rows: auto;

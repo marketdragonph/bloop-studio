@@ -5,6 +5,6 @@
 /** Every phase, in build order (owner decision 6: P2b after P2, P6 after P5, both before K1). */
 export const PHASES = Object.freeze(['P0', 'P1', 'P2', 'P2b', 'P3', 'P4', 'P5', 'P6', 'K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7', 'K8']);
 
-export const SHIPPED = Object.freeze(['P0', 'P1', 'P2']);
+export const SHIPPED = Object.freeze(['P0', 'P1', 'P2', 'P3']);
 
 export const isShipped = (phase, shipped = SHIPPED) => shipped.includes(phase);

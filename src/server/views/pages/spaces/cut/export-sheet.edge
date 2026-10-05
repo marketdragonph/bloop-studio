@@ -1,0 +1,125 @@
+{{-- The export sheet (02-dock.md §5, 01-core.md §6, 05 §2.6 §3.6 §5.1): it opens above the rail from Export.
+     Preflight: length, picture, size, what goes in and what is skipped (beats named), Check your cut with Show me,
+     the Preset choice, "Export runs on this PC. Free.", and Export. Pressing it saves pending edits first, then
+     the progress runs on a sensor-blue .ae-level with the step ("Joining clip 4 of 6") and Cancel. Every end state
+     has a way forward. Live updates come only from the board's stream (cut-export.js). The pack sheet is below.
+     Keys pressed in a sheet are its own (Space presses its key, never Play); Escape closes it. --}}
+<div class="cut-sheet" id="cut-sheet" x-show="cutSheet" x-cloak role="dialog" aria-modal="false"
+     :aria-labelledby="'cut-sheet-' + cutSheet" @keydown.stop="$event.key === 'Escape' && cutCloseSheet()">
+  <template x-if="cutSheet === 'export'">
+    <div class="cut-sheet__body">
+      <header class="cut-sheet__head">
+        <h3 class="ae-stencil cut-sheet__title" id="cut-sheet-export" tabindex="-1" data-sheet-focus="export" x-text="cutCopy('exportTitle')"></h3>
+        <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutCloseSheet()" data-control="cut.sheetClose"
+                aria-label="{{ controlLabel('cut.sheetClose') }}" title="{{ controlLabel('cut.sheetClose') }}">{{{ icon('close') }}}</button>
+      </header>
+
+      {{-- Preflight (also behind a refusal or an unsaved save, so the person sees what they would export). --}}
+      <template x-if="['preflight', 'refused', 'unsaved'].includes(cutExportState())">
+        <div class="cut-sheet__stack">
+          <dl class="cut-sheet__readout">
+            <div class="cut-sheet__row"><dt>Length</dt><dd class="ae-readout" x-text="cutPreflight().length"></dd></div>
+            <div class="cut-sheet__row"><dt>Picture</dt><dd class="ae-readout" x-text="cutPreflight().picture"></dd></div>
+            <div class="cut-sheet__row"><dt>Size</dt><dd class="ae-readout" x-text="cutPreflight().size"></dd></div>
+            <div class="cut-sheet__row"><dt>Beats in</dt><dd class="ae-readout" x-text="cutPreflight().clips + ' of ' + cutPreflight().beats"></dd></div>
+          </dl>
+          <p class="cut-sheet__note" :class="{ 'cut-sheet__note--warn': cutPreflight().skipped.length }" x-text="cutPreflight().skippedText"></p>
+
+          <section class="cut-check" aria-labelledby="cut-check-title" data-control="cut.check">
+            <h4 class="ae-stencil cut-check__title" id="cut-check-title" x-text="cutCheckTitle()"></h4>
+            <p class="cut-check__ready" x-show="!cutChecks().length">{{{ icon('check') }}}<span x-text="cutCopy('checkReady')"></span></p>
+            <ul class="cut-check__list" x-show="cutChecks().length">
+              <template x-for="check in cutChecks()" :key="check.key">
+                <li class="cut-check__line">
+                  <span x-text="check.text"></span>
+                  <button type="button" class="ae-key ae-key--sm" x-show="check.target" @click="cutShowMe(check)"
+                          data-control="cut.showMe">{{ controlLabel('cut.showMe') }}</button>
+                </li>
+              </template>
+            </ul>
+          </section>
+
+          <fieldset class="cut-presets" data-control="cut.preset">
+            <legend class="ae-stencil">{{ controlLabel('cut.preset') }}</legend>
+            <template x-for="preset in cutPresets" :key="preset.id">
+              <label class="cut-preset" :class="{ 'is-on': cutPreset === preset.id }">
+                <input type="radio" name="cut-preset" class="cut-preset__input" :value="preset.id"
+                       :checked="cutPreset === preset.id" @change="cutPickPreset(preset.id)">
+                <span class="cut-preset__name" x-text="preset.label"></span>
+                <span class="cut-preset__note" x-text="preset.note"></span>
+                <span class="cut-preset__line ae-readout" x-text="cutPresetLine(preset.id)"></span>
+              </label>
+            </template>
+          </fieldset>
+
+          <p class="cut-sheet__note" x-text="cutCopy('exportNoCaptions')"></p>
+          <p class="cut-sheet__alert" role="alert" x-show="cutExportBlock() || cutExportState() !== 'preflight'">
+            <span x-text="cutExportState() === 'preflight' ? cutExportBlock() : cutExportText()"></span>
+            <a class="cut-sheet__link" href="/settings#video-tools" x-show="cutToolsMissing()" data-control="settings.videoTools">Open Settings › {{ controlLabel('settings.videoTools') }}</a>
+          </p>
+          <div class="cut-sheet__foot">
+            <p class="cut-sheet__free" x-text="cutCopy('exportFree')"></p>
+            <button type="button" class="ae-key ae-key--sm" x-show="cutExportState() === 'unsaved'" @click="cutExportRetrySave()"
+                    data-control="cut.saveRetry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.saveRetry') }}</span></button>
+            <template x-if="cutDraft && cutCanFill()">
+              <button type="button" class="ae-key ae-key--sm" @click="cutFill()" :disabled="cutFilling" data-control="cut.fill">{{{ icon('wand') }}}<span>{{ controlLabel('cut.fill') }}</span></button>
+            </template>
+            <button type="button" class="ae-key ae-key--accent" @click="cutExportStart()" :disabled="Boolean(cutExportBlock())"
+                    data-control="cut.export">{{{ icon('export') }}}<span>{{ controlLabel('cut.export') }}</span></button>
+          </div>
+        </div>
+      </template>
+
+      {{-- Saving, starting, waiting for the slot, exporting: sensor blue, never orange. --}}
+      <template x-if="['saving', 'starting', 'queued', 'running'].includes(cutExportState())">
+        <div class="cut-sheet__stack" role="status">
+          <p class="cut-sheet__step" x-text="cutExportText()"></p>
+          <div class="ae-level cut-sheet__level" role="progressbar" aria-label="Export progress" aria-valuemin="0" aria-valuemax="100"
+               :aria-valuenow="cutExportPercent()" :aria-valuetext="cutExportText() + ', ' + cutExportPercent() + '%'">
+            <div class="ae-level__fill" :style="{ '--cut-progress': cutExportPercent() + '%' }"></div>
+          </div>
+          <div class="cut-sheet__foot">
+            <span class="ae-readout cut-sheet__percent" x-text="cutExportPercent() + '%'"></span>
+            <button type="button" class="ae-key ae-key--sm" x-show="['queued', 'running'].includes(cutExportState())" @click="cutExportCancel()"
+                    data-control="cut.exportCancel">{{ controlLabel('cut.exportCancel') }}</button>
+          </div>
+        </div>
+      </template>
+
+      {{-- Done, or done but the cut changed since (stale). --}}
+      <template x-if="['done', 'stale'].includes(cutExportState())">
+        <div class="cut-sheet__stack" role="status">
+          <p class="cut-sheet__done" x-text="cutExportText()"></p>
+          <p class="cut-sheet__path" x-show="cutExport?.media_path" x-text="cutExport?.media_path"></p>
+          <div class="cut-sheet__keys">
+            <button type="button" class="ae-key ae-key--sm" x-show="cutExport?.media_path" @click="cutShowFolder()" data-control="cut.showFolder">{{{ icon('folder') }}}<span>{{ controlLabel('cut.showFolder') }}</span></button>
+            <button type="button" class="ae-key ae-key--sm" x-show="cutExport?.media_path" @click="cutCopyPath()" data-control="cut.copyPath">{{{ icon('copy') }}}<span>{{ controlLabel('cut.copyPath') }}</span></button>
+            <a class="ae-key ae-key--sm" x-show="cutDownloadUrl()" :href="cutDownloadUrl()" data-control="cut.download">{{{ icon('download') }}}<span>{{ controlLabel('cut.download') }}</span></a>
+            <button type="button" class="ae-key ae-key--sm" x-show="cutExport?.node_id != null" @click="cutShowOnBoard()" data-control="cut.showOnBoard">{{{ icon('board') }}}<span>{{ controlLabel('cut.showOnBoard') }}</span></button>
+            <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': cutExportState() === 'stale' }" @click="cutExportAgain()"
+                    :disabled="Boolean(cutExportBlock())" data-control="cut.exportAgain">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.exportAgain') }}</span></button>
+          </div>
+        </div>
+      </template>
+
+      {{-- Stopped: at one clip, on limits or a plain reason, or cancelled. "Nothing was saved." --}}
+      <template x-if="['failed', 'cancelled'].includes(cutExportState())">
+        <div class="cut-sheet__stack">
+          <p class="cut-sheet__alert" role="alert" x-text="cutExportText()"></p>
+          <div class="cut-sheet__keys">
+            <template x-if="cutExport?.error_beat">
+              <button type="button" class="ae-key ae-key--sm ae-key--accent" @click="cutRemoveAndExport()" data-control="cut.removeAndExport">{{ controlLabel('cut.removeAndExport') }}</button>
+            </template>
+            <button type="button" class="ae-key ae-key--sm" x-show="cutExportBeatItem() && cutCanGo(cutExportBeatItem())"
+                    @click="cutSheet = null; cutGoToCard(cutExportBeatItem())" data-control="cut.goToCard">{{ controlLabel('cut.goToCard') }}</button>
+            <button type="button" class="ae-key ae-key--sm" :class="{ 'ae-key--accent': !cutExport?.error_beat }" @click="cutExportAgain()"
+                    :disabled="Boolean(cutExportBlock())" data-control="cut.exportRetry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.exportRetry') }}</span></button>
+          </div>
+          <p class="cut-sheet__note" x-show="cutExportBlock()" x-text="cutExportBlock()"></p>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  @include('pages/spaces/cut/pack-sheet')
+</div>

@@ -134,3 +134,42 @@ test('locate: settings, then BLOOP_FFMPEG, then bundled, then PATH', () => {
     const path = locateFfmpeg({ env: {}, resourcesPath: '/r', exists: () => false });
     assert.deepEqual([path.source, path.ffmpeg], ['path', `ffmpeg${exe}`]);
 });
+
+// ── P3: temp-dir outputs, the null muxer for analysis, info calls ──
+
+test('an export step may only write inside its temp folder; the null muxer writes nothing', async () => {
+    const calls = [];
+    const tmp = join(dir, 'job');
+    assert.throws(() => runner('ok', calls).run(['-i', 'in.mp4', '-t', '4', join(dir, 'elsewhere.mp4')], { outputDir: tmp }), /temp folder/);
+    assert.throws(() => runner('ok', calls).run(['-i', 'in.mp4', '-t', '4', join(tmp, '..', 'escape.mp4')], { outputDir: tmp }), /temp folder/);
+    assert.equal(calls.length, 0);
+    await runner('ok', calls).run(['-i', 'in.mp4', '-t', '4', join(tmp, 'part.mov')], { outputDir: tmp });
+    await runner('ok', calls).run(['-i', 'in.mp4', '-af', 'ebur128=peak=true', '-t', '4', '-f', 'null', 'NUL'], { outputDir: tmp, analysis: true });
+    assert.equal(calls.length, 2);
+    const analysis = calls[1].args;
+    assert.equal(analysis[analysis.indexOf('-loglevel') + 1], 'info');
+    assert.ok(analysis.includes('-nostats'));
+    // Analysis still needs its output -t, and may not write a file.
+    assert.throws(() => runner('ok', calls).run(['-i', 'in.mp4', '-f', 'null', 'NUL'], { analysis: true }), FfmpegRefused);
+    assert.throws(() => runner('ok', calls).run(['-i', 'in.mp4', '-t', '4', join(tmp, 'x.wav')], { analysis: true }), /writes no file/);
+});
+
+test('info calls: no input allowed, stdout returned', async () => {
+    const calls = [];
+    await assert.rejects(runner('ok', calls).info(['-i', 'anullsrc', '-version']), FfmpegRefused);
+    const out = await runner('ok', calls).info(['-encoders']);
+    assert.match(out, /-encoders/);
+    assert.deepEqual(calls.at(-1).args, ['-hide_banner', '-encoders']);
+    await runner('ok', calls).info(['-version'], { tool: 'ffprobe' });
+    assert.match(calls.at(-1).bin, /ffprobe(\.exe)?$/);
+});
+
+test('locate: the dev copy in vendor/ffmpeg after the bundled one, never the engine folder', () => {
+    const exe = process.platform === 'win32' ? '.exe' : '';
+    const dev = locateFfmpeg({ env: {}, resourcesPath: '/r', appRoot: '/app', exists: (p) => p.includes('vendor') });
+    assert.equal(dev.source, 'vendor');
+    assert.equal(dev.ffmpeg, join('/app', 'vendor', 'ffmpeg', `ffmpeg${exe}`));
+    const seen = [];
+    locateFfmpeg({ env: {}, resourcesPath: '/r', appRoot: '/app', exists: (p) => { seen.push(p); return false; } });
+    assert.ok(seen.every((p) => !/comfy|engine/i.test(p)));
+});

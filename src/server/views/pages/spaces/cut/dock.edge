@@ -2,14 +2,15 @@
      undo, autosave and the preview. Nested in the SpaceBoard scope (Go to card pans the board), outside
      .board__world (the board transform never repaints it). Folded it is one rail and holds no media; the body
      (preview videos, beds, lanes) exists only while open (x-if). Keys pressed in here are the dock's
-     (cutOnKey); the board's onKeyDown skips them. --}}
+     (cutOnKey); the board's onKeyDown skips them. The export and pack sheets open above the rail (P3). --}}
 <section class="cut-dock" x-data="CutDock" aria-label="{{ controlLabel('cut.dock') }}" data-control="cut.dock"
          :class="{ 'is-open': cutOpen, 'is-beside-director': directorOpen, 'is-dragging': cutDrag }"
          @keydown="cutOnKey($event)"
          @board:cut.window="onCutEvent($event.detail)" @board:node.window="onCutNode($event.detail)"
-         @board:nodes.window="cutRefetchSoon()">
+         @board:nodes.window="cutRefetchSoon()" @board:cut-export.window="onCutExport($event.detail)">
   @include('pages/spaces/cut/rail')
   @include('pages/spaces/cut/banner')
+  @include('pages/spaces/cut/export-sheet')
 
   <template x-if="cutOpen">
     <div class="cut-dock__body" id="cut-dock-body">

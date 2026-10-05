@@ -144,5 +144,7 @@ export function checkSettings(settings) {
     if (!RESOLUTIONS.includes(settings.resolution)) return 'The cut exports at 720p or 1080p.';
     if (!FRAME_RATES.includes(settings.fps)) return 'The cut exports at 30 frames a second.';
     if (settings.aspect != null && !ASPECTS.includes(settings.aspect)) return 'The cut is 16:9, 9:16 or 1:1.';
+    const poster = settings.poster_ms;
+    if (poster != null && !(Number.isInteger(poster) && poster >= 0 && poster <= CUT_LIMITS.maxTotalMs)) return 'The poster frame must be a time inside the cut.';
     return null;
 }

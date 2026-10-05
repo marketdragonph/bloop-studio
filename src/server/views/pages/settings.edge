@@ -53,6 +53,13 @@
       })
     @end
 
+    @component('components/plate', { heading: controlLabel('settings.videoTools'), labelledBy: 'video-tools-h' })
+      <p class="plate-note">Export and Pack assets in the Cut dock run on this PC with ffmpeg. Free, and nothing is uploaded.</p>
+      <div id="video-tools" hx-get="/settings/video-tools" hx-trigger="load" hx-swap="innerHTML" aria-live="polite">
+        <p class="plate-note">Looking for the video tools…</p>
+      </div>
+    @end
+
     @component('components/plate', { heading: 'Director', labelledBy: 'director-h' })
       <fieldset class="choice-row">
         <legend class="field__label ae-stencil">Language model</legend>

@@ -26,4 +26,9 @@ export class BoardEvents extends EventEmitter {
     cut(update) {
         this.emit('cut', update);
     }
+
+    /** An export or pack job moved: { spaceId, exportId, kind, status, progress, step, error?, error_beat?, media_path?, bytes?, nodeId?, node? }. */
+    cutExport(update) {
+        this.emit('cut_export', update);
+    }
 }

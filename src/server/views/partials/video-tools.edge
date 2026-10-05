@@ -1,0 +1,54 @@
+{{-- Settings › Video tools (01-core.md §9, Mini Katana P3): the ffmpeg the app uses for Export, Pack and analysis,
+     its version and licence line, and the encoders in use. Every "video tools are missing" message links here.
+     Ways forward: Check again, and Choose ffmpeg.exe… (the folder must also hold ffprobe.exe). Preview never needs it.
+     Locals: tools = the settings row (routes/video-tools.js rowOf: path, encoder, audio_encoder) or VideoTools#state()
+     (ffmpeg, encoders.video/audio), plus found, ready, reason, source, version, licence; checked (after Check again or
+     Choose); error (a chosen file that is not a working ffmpeg). --}}
+@let(exe = tools ? (tools.path || tools.ffmpeg) : null)
+@let(videoEncoder = tools ? (tools.encoder || (tools.encoders && tools.encoders.video)) : null)
+@let(audioEncoder = tools ? (tools.audio_encoder || (tools.encoders && tools.encoders.audio)) : null)
+<div class="stack-sm" data-control="settings.videoTools">
+  @if(tools && tools.found)
+    <p class="plate-note">
+      @if(tools.ready)
+        <span class="status-light status-light--ok"><span class="status-light__dot" aria-hidden="true"></span><span>Ready</span></span>
+      @else
+        <span class="status-light status-light--fault"><span class="status-light__dot" aria-hidden="true"></span><span>Not ready</span></span>
+      @end
+      {{ tools.version || 'ffmpeg' }} at <code>{{ exe }}</code>
+      @if(tools.source === 'settings')
+        (chosen in Settings)
+      @elseif(tools.source === 'env')
+        (from BLOOP_FFMPEG)
+      @else
+        (shipped with Bloop Studio)
+      @end
+    </p>
+    @if(tools.licence)
+      <p class="plate-note">Licence: {{ tools.licence }}. It runs as a separate program; Choose ffmpeg.exe replaces it.</p>
+    @end
+    <p class="plate-note">
+      Video encoder: <span class="ae-readout">{{ videoEncoder || 'none found' }}</span> ·
+      Audio encoder: <span class="ae-readout">{{ audioEncoder || 'none found' }}</span>
+    </p>
+  @else
+    <p class="plate-note">
+      <span class="status-light status-light--fault"><span class="status-light__dot" aria-hidden="true"></span><span>Missing</span></span>
+      The video tools are missing, so Export and Pack assets cannot run. The preview still works.
+      Reinstall Bloop Studio, or choose an ffmpeg.exe below.
+    </p>
+  @end
+  @if(tools && tools.found && !tools.ready && tools.reason)
+    @!component('components/alert', { tone: 'alert', message: tools.reason })
+  @elseif(error)
+    @!component('components/alert', { tone: 'alert', message: error })
+  @elseif(checked && tools && tools.ready)
+    @!component('components/alert', { tone: 'ok', message: 'Checked. The video tools work.' })
+  @end
+  <div class="row">
+    <button type="button" class="ae-key" hx-post="/settings/video-tools/check" hx-target="#video-tools" hx-swap="innerHTML"
+            hx-disabled-elt="this" data-control="settings.checkAgain">{{ controlLabel('settings.checkAgain') }}</button>
+    <button type="button" class="ae-key" hx-post="/settings/video-tools/choose" hx-target="#video-tools" hx-swap="innerHTML"
+            hx-disabled-elt="this" data-control="settings.chooseFfmpeg">{{ controlLabel('settings.chooseFfmpeg') }}…</button>
+  </div>
+</div>

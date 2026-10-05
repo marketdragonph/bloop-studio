@@ -1,6 +1,6 @@
 {{-- The Cut's rail: always there, 32 px folded (44 px on touch). Stencil, Play, the readout, the save chip,
      the 8 s "Removed … Undo" line, Undo / Redo / Fit while open, and the fold key. Every key is a registry
-     control (katana-controls.js). Export and Pack join it in P3. --}}
+     control (katana-controls.js). P3 adds Pack assets, Export (accent) and a running job's line. --}}
 <div class="cut-rail">
   <h2 class="ae-stencil cut-rail__title">{{{ icon('cut') }}}<span>{{ controlLabel('cut.dock') }}</span></h2>
   <button type="button" class="ae-key ae-key--sm ae-key--square" x-show="cutStatus === 'ready' && cutLay().entries.length" x-cloak
@@ -32,6 +32,24 @@
   </div>
   <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'error'" x-cloak
           @click="cutRetry()" data-control="cut.retry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.retry') }}</span></button>
+  {{-- P3: a running job's line (its sheet closed), a finished pack's way to its file, then Pack assets and Export. --}}
+  <span class="status-light status-light--busy cut-rail__job" x-show="cutJobLine('pack') && cutSheet !== 'pack'" x-cloak role="status">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutJobLine('pack')"></span>
+  </span>
+  <span class="cut-rail__job" x-show="cutPackOnRail()" x-cloak role="status">
+    <span class="ae-readout" x-text="cutPackText()"></span>
+    <button type="button" class="ae-key ae-key--sm" @click="cutShowFolder('pack'); cutPack = { ...cutPack, seen: true }"
+            data-control="cut.showFolder">{{{ icon('folder') }}}<span>{{ controlLabel('cut.showFolder') }}</span></button>
+  </span>
+  <span class="status-light status-light--busy cut-rail__job" x-show="cutJobLine('export') && cutSheet !== 'export'" x-cloak role="status">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutJobLine('export')"></span>
+  </span>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'ready' && !cutEmpty()" x-cloak
+          @click="cutOpenSheet('pack')" data-control="cut.pack" aria-controls="cut-sheet" :aria-expanded="cutSheet === 'pack' ? 'true' : 'false'"
+          aria-haspopup="dialog">{{{ icon('sheet') }}}<span>{{ controlLabel('cut.pack') }}</span></button>
+  <button type="button" class="ae-key ae-key--sm ae-key--accent" x-show="cutStatus === 'ready' && !cutEmpty()" x-cloak
+          @click="cutOpenSheet('export')" data-control="cut.export" aria-controls="cut-sheet" :aria-expanded="cutSheet === 'export' ? 'true' : 'false'"
+          aria-haspopup="dialog">{{{ icon('export') }}}<span>{{ controlLabel('cut.export') }}</span></button>
   <button type="button" class="ae-key ae-key--sm ae-key--square cut-rail__fold" @click="cutToggle()"
           data-control="cut.fold" aria-controls="cut-dock-body" :aria-expanded="cutOpen ? 'true' : 'false'"
           :aria-label="cutOpen ? '{{ controlLabel('cut.fold') }} the cut' : 'Open the cut'"

@@ -54,7 +54,11 @@ export class CutValidator {
 
         const settings = { ...stored.settings, ...(input.settings ?? {}) };
         this.#refuse(checkSettings(settings));
-        return { items, sound, settings: { resolution: settings.resolution, fps: settings.fps, ...(settings.aspect ? { aspect: settings.aspect } : {}) } };
+        return { items, sound, settings: {
+            resolution: settings.resolution, fps: settings.fps,
+            ...(settings.aspect ? { aspect: settings.aspect } : {}),
+            ...(settings.poster_ms != null ? { poster_ms: settings.poster_ms } : {}), // Set as poster (05 §5.3), export ms
+        } };
     }
 
     #refuse(reason) {

@@ -5,7 +5,8 @@
 // (the board must not lag): the dock keeps its own small item list, changed only by those events and edits.
 // P2 edits (cut-actions.js, cut-strip.js), undo (cut-history.js) and autosave (cut-persistence.js) are method
 // modules spread in here, so one scope holds one copy of the items; the preview is CutPlayer (cut-player.js).
-// It never starts a render: Go to card takes the person to the card, where they press Generate.
+// It never starts a render: Go to card takes the person to the card, where they press Generate. Export and Pack
+// (cut-export.js) start only on the person's press.
 import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
 import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerTicks, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
 import { entryKey, laneEntries, layoutLane, toScreen } from '/shared/cut-timeline.js';
@@ -14,6 +15,7 @@ import { cutHistoryMethods } from './cut-history.js';
 import { cutPersistenceMethods } from './cut-persistence.js';
 import { cutActionMethods } from './cut-actions.js';
 import { cutStripMethods } from './cut-strip.js';
+import { cutExportMethods } from './cut-export.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -93,6 +95,7 @@ export default function CutDock() {
             this.cutInitHistory();
             this.cutInitPersistence();
             this.cutLoad();
+            this.cutInitExport();
             if (this.cutOpen) this.$nextTick(() => this.cutWatchSize());
         },
 
@@ -153,6 +156,7 @@ export default function CutDock() {
             const cut = data.cut ?? {};
             this.cutBeatsMs = Array.isArray(data.beats_ms) ? data.beats_ms : [];
             this._cutSlots = Array.isArray(data.slots) ? data.slots : [];
+            this.cutFindings = Array.isArray(data.findings) ? data.findings : [];
             const beds = Array.isArray(data.beds) ? data.beds : [];
             this.cutBeds = {
                 music: beds.find((b) => b.kind === 'music') ?? null,
@@ -440,5 +444,6 @@ export default function CutDock() {
         ...cutPersistenceMethods,
         ...cutActionMethods,
         ...cutStripMethods,
+        ...cutExportMethods,
     };
 }

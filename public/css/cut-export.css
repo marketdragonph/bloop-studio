@@ -1,0 +1,111 @@
+/* The Cut's export and pack sheets and the rail's job line (Mini Katana P3, plan katana/02-dock.md §5).
+   The sheet opens above the rail, over the board, never over the lanes' own keys. Tokens only: orange is the one
+   action (Export, Remove it and export again), blue is in progress (the level, the job line), the rest seam grey. */
+
+.cut-sheet {
+    position: absolute;
+    right: var(--space-4);
+    bottom: calc(100% + var(--space-2));
+    z-index: var(--z-sticky);
+    width: min(26rem, calc(100vw - 2 * var(--space-4)));
+    max-height: calc(100dvh - var(--topbar-height) - var(--cut-rail) - 3 * var(--space-4));
+    overflow-y: auto;
+    border: 1px solid var(--ae-seam-strong);
+    border-top: 2px solid var(--accent);
+    background: var(--bg-secondary);
+    box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--bg-primary) 60%, transparent);
+}
+
+.cut-sheet__body { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); }
+.cut-sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.cut-sheet__title { margin: 0; font-size: var(--fs-2xs); }
+.cut-sheet__title:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.cut-sheet__stack { display: grid; gap: var(--space-3); min-width: 0; }
+
+/* Open, the dock is taller: the sheet keeps to the board above it and scrolls inside. */
+.cut-dock.is-open .cut-sheet { max-height: calc(100dvh - var(--topbar-height) - var(--cut-open) - 3 * var(--space-4)); }
+
+/* ── Preflight readout ── */
+.cut-sheet__readout { display: grid; gap: var(--space-1); margin: 0; }
+.cut-sheet__row { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--fs-xs); color: var(--text-secondary); }
+.cut-sheet__row dt { margin: 0; }
+.cut-sheet__row dd { margin: 0; color: var(--text-primary); font-variant-numeric: tabular-nums; text-align: right; }
+
+.cut-sheet__note { margin: 0; color: var(--text-secondary); font-size: var(--fs-xs); }
+.cut-sheet__note--warn { color: var(--status-warn-text); }
+.cut-sheet__alert { display: grid; gap: var(--space-1); margin: 0; color: var(--status-alert-text); font-size: var(--fs-sm); }
+.cut-sheet__alert:empty { display: none; }
+.cut-sheet__link { color: var(--accent-text); font-size: var(--fs-xs); }
+.cut-sheet__link:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.cut-sheet__free { flex: 1; margin: 0; color: var(--text-secondary); font-size: var(--fs-xs); font-weight: 600; }
+.cut-sheet__foot {
+    position: sticky; /* Export, Cancel and Retry stay in reach while the readout scrolls */
+    bottom: calc(-1 * var(--space-4));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    border-top: 1px solid var(--ae-seam);
+    background: var(--bg-secondary);
+}
+.cut-sheet__keys { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.cut-sheet__choice { font-size: var(--fs-sm); }
+
+/* ── Check your cut: an honest list; nothing to fix is "Ready", seam grey, never green ── */
+.cut-check { display: grid; gap: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--ae-seam); }
+.cut-check__title { margin: 0; font-size: var(--fs-3xs); }
+.cut-check__ready { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--text-secondary); font-size: var(--fs-xs); }
+.cut-check__list { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.cut-check__line { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-xs); color: var(--text-primary); }
+
+/* ── Preset choice: two plates, the chosen one with an orange edge ── */
+.cut-presets { display: grid; gap: var(--space-2); margin: 0; padding: var(--space-2) 0 0; border: 0; border-top: 1px solid var(--ae-seam); }
+.cut-presets legend { padding: 0 0 var(--space-2); font-size: var(--fs-3xs); }
+
+.cut-preset {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    column-gap: var(--space-2);
+    row-gap: var(--space-1);
+    align-items: baseline;
+    min-height: var(--touch-min);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--ae-seam-strong);
+    border-left: 3px solid var(--ae-seam-strong);
+    cursor: pointer;
+}
+.cut-preset.is-on { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+.cut-preset:has(:focus-visible) { outline: 2px solid var(--text-primary); outline-offset: 1px; }
+.cut-preset__input { grid-row: 1 / span 2; accent-color: var(--accent); }
+.cut-preset__name { font-weight: 700; font-size: var(--fs-sm); color: var(--text-primary); }
+.cut-preset__note { grid-column: 3; min-width: 0; font-size: var(--fs-2xs); color: var(--text-muted); }
+.cut-preset__line { grid-column: 2 / -1; font-size: var(--fs-3xs); color: var(--text-secondary); }
+
+/* ── Progress: sensor blue, the step in words ── */
+.cut-sheet__step { margin: 0; color: var(--sensor-text); font-size: var(--fs-sm); font-weight: 600; }
+.cut-sheet__level { --ae-level-accent: var(--sensor); height: 0.375rem; }
+.cut-sheet__level .ae-level__fill { width: var(--cut-progress, 0%); }
+.cut-sheet__percent { color: var(--sensor-text); }
+.cut-sheet__done { margin: 0; color: var(--text-primary); font-size: var(--fs-sm); font-weight: 600; }
+.cut-sheet__path { margin: 0; overflow-wrap: anywhere; color: var(--text-secondary); font-size: var(--fs-2xs); }
+
+/* ── The rail's job line (its sheet closed) ── */
+.cut-rail__job { display: inline-flex; flex: none; align-items: center; gap: var(--space-2); color: var(--sensor-text); white-space: nowrap; }
+
+@media (pointer: coarse) {
+    .cut-sheet .ae-key { min-height: var(--touch-min); }
+    .cut-sheet .ae-key--square { width: var(--touch-min); }
+}
+
+/* Narrow: the sheet spans the window above the rail. */
+@media (max-width: 40rem) {
+    .cut-sheet { right: var(--space-2); left: var(--space-2); width: auto; }
+    .cut-dock.is-open .cut-sheet { max-height: calc(40vh - var(--topbar-height) - 2 * var(--space-4)); }
+    .cut-rail__job .ae-readout { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cut-sheet__level .ae-level__fill { transition: none; }
+}

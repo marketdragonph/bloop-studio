@@ -94,15 +94,21 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
             const onCut = (update) => {
                 if (update.spaceId === spaceId) stream.writeSSE({ event: 'cut', data: JSON.stringify({ space_id: update.spaceId, ...update }) });
             };
+            // Export and Pack jobs of this board (throttled to 4 frames a second by the job).
+            const onCutExport = ({ spaceId: id, exportId, nodeId, ...update }) => {
+                if (id === spaceId) stream.writeSSE({ event: 'cut_export', data: JSON.stringify({ space_id: id, export_id: exportId, node_id: nodeId ?? null, ...update }) });
+            };
             events.on('node', onNode);
             events.on('queue', onQueue);
             events.on('director', onDirector);
             events.on('cut', onCut);
+            events.on('cut_export', onCutExport);
             stream.onAbort(() => {
                 events.off('node', onNode);
                 events.off('queue', onQueue);
                 events.off('director', onDirector);
                 events.off('cut', onCut);
+                events.off('cut_export', onCutExport);
             });
             await onQueue(jobs.activeQueue());
             while (!stream.aborted) {

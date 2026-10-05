@@ -1,4 +1,4 @@
-# Katana 01 — Mini Katana core: storage, routes, reader, clock, export, Pack — PLANNED
+# Katana 01 — Mini Katana core: storage, routes, reader, clock, export, Pack — PARTIAL (P0–P3 backend built)
 
 Part of [../katana.md](../katana.md). Settled conflicts there win over this file.
 Source ported: bloop `docs/plans/spaces-mini-timeline.md` (owner decisions A ×5), `01-timeline.md` §4–§6,
@@ -319,6 +319,58 @@ Recommended plan:
   `npm run vendor`, so `npm start` never downloads 62 MB); `build-installer.mjs` refuses when vendor/ffmpeg is missing.
   `tests/build-installer.test.js` asserts the block is present.
 - Size: measure both exes in P0 and note the installer growth in ../katana.md.
+
+## 10b. P3 backend as built (2026-10-05, katana-mini)
+
+- [x] `007_cut_exports.sql`: `preset`, `snapshot` (the cut as pressed), `options` (pack), `error_code`, `report`
+  (skipped, loudness, ducks, poster, files), `started_at`. One table for Export and Pack; no packs table.
+- [x] `media/tools-queue.js` (one job at a time, exports and packs ahead of analysis, cancel drops or aborts) and
+  `media/video-tools.js` (cached `-version` / `-encoders` / `-filters`, licence from the configure line, Choose ffmpeg.exe…).
+- [x] CappedFfmpeg: `outputDir` (an export step writes only inside its temp dir), `analysis` (null muxer, info log level
+  for the ebur128 summary), `info()` (no `-i`, 10 s / 20 s, 1 MB stdout), and the dev copy in `vendor/ffmpeg` after
+  `resources/ffmpeg` (fixes the spike's "dev mode does not find ffmpeg").
+- [x] Stages, merged into fewer files to stay small: `export/check-probe.js` (CheckCut via `cut/preflight.js`,
+  ProbeSources), `export/build-picture.js` (NormalizeClips, JoinClips), `export/finish-sound.js` (MixSound with the
+  shared duck envelope from `src/shared/cut-sound.js`; Loudness: ebur128 measure, one linear `volume` gain capped at
+  −1.5 dBTP, the one AAC encode), `export/store-result.js` (poster, story name, `Cut · r{rev} · {Preset}` card with a
+  `preset 'cut'` take), `export/recipe.js` (every command, pure). Spike fixes 1–3 are in the recipe.
+- [x] Frame grid: a dissolve snaps on its own (0.75 s → 23 frames) and each clip's end snaps from the clock, so the
+  total stays within half a frame. Real gate (`scratchpad/p3b/gate.mjs`, the 8 spike clips, 3 dissolves, bed + voice
+  + duck): 7.3 s wall, file 42.767 s vs clock 42.777 s (−10 ms), H.264 1920×1080 30 fps + AAC 48 kHz stereo.
+- [x] Pack: `pack/{collect,manifest,board-section,zip-writer,index}.js`. Store-only, the CRC patched into the local
+  header (no data descriptor), ZIP64 when needed. Windows `tar.exe -tf` lists both plain and ZIP64 packs.
+- [x] Routes in `routes/cut-exports.js`: `GET /spaces/:id/cut/preflight`; `POST /spaces/:id/cut/exports`
+  {preset, revision?, poster_ms?} → 202 {export} | 200 (running, or this revision already done) | 422 {error, code,
+  beat} | 409 (the cut moved past `revision`); `GET` and `DELETE /spaces/:id/cut/exports/:id` (either kind);
+  `POST /spaces/:id/cut/pack` (and `/packs`). `routes/video-tools.js` at `/settings/video-tools`: GET, POST `check`,
+  POST and DELETE `choose`; HTMX requests get the `partials/video-tools` row, others JSON.
+- [x] SSE `cut_export` {space_id, export_id, kind, status, progress 0..1, step, error?, error_code?, error_beat?,
+  media_path?, bytes?, node_id?, node?}, at most 4 frames a second; the done frame carries the new card.
+- [x] Presets in `src/shared/export-presets.js`: Master −16 LUFS (the plan's shape), YouTube −14 LUFS (16:9), both
+  30 fps, as in 05 §5.1.
+- [x] Tests: `cut-export`, `cut-pack`, `safe-name`, `video-tools`, and the P3 cases in `capped-ffmpeg`. Fake ffmpeg only.
+- [ ] Owner: `COPYING.GPLv3` beside `LICENSE.txt`; check `resources/ffmpeg` inside a packaged install.
+
+### 10c. P3 gate (2026-10-05, katana-mini)
+
+Real server on throwaway data (`scratchpad/p3gate/real.mjs`): Settings › Video tools › Choose ffmpeg.exe… picked the
+fetched build (LGPL-3.0-or-later, `h264_mf` + `aac_mf`); the cut (8 spike clips, 3 dissolves, music bed with a duck
+under the voice, poster at 4 s) saved through `PUT /cut`; Export pressed through `POST /cut/exports` with the CSRF
+header (403 without it).
+
+- [x] Done in 7.5 s: file 42.767 s vs clock 42.777 s (−10 ms, inside one frame), H.264 1920×1080 30 fps yuv420p
+  (`h264_mf` writes Constrained Baseline), AAC 48 kHz stereo, 40.5 MB, poster beside it, a new card. Measured
+  −18.3 LUFS → +0.9 dB, capped by the −1.5 dBTP ceiling: −17.4 LUFS, true peak −1.5 dBFS. Electron 44 (Chromium 152):
+  `canplay` in 297 ms, played, seeked to 21.4 s, 0 dropped frames.
+- [x] Pressing Export again on the same revision and preset returns the same export (no new job).
+- [x] Cancel at 20 % ("Preparing clip 2 of 8", ffmpeg running, `.cut-tmp/export-2` present): `DELETE` → cancelled,
+  "Export cancelled. Nothing was saved."; no temp folder, no `ffmpeg.exe` process left, no file.
+- [x] Pack: 11 files (8 clips, the export and its poster, `manifest.json`), 57 MB; Windows `tar.exe -tvf` lists them.
+- [x] Fixed at the gate: `cut_export` frames went over 4 a second when every report was a new step (13 in one
+  second); `JobProgress` now throttles every frame to 250 ms with a trailing frame and is closed before the end frame
+  (running frames ≤ 4 a second on the real run). `settings.poster_ms` is kept with the cut (`validate-cut.js`,
+  `checkSettings`), so Set as poster survives a reload; a done export is reused only when the poster is the same.
+  Download no longer names the file `….mp4.mp4`.
 
 ## 10. Files (each under 500 lines) and tests
 

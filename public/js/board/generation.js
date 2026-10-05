@@ -13,6 +13,7 @@ export const generationMethods = {
         source.addEventListener('director', (event) => this.onDirectorStream(JSON.parse(event.data)));
         // The Cut dock (cut-dock.js) listens on the window: one stream per board, no second EventSource.
         source.addEventListener('cut', (event) => window.dispatchEvent(new CustomEvent('board:cut', { detail: JSON.parse(event.data) })));
+        source.addEventListener('cut_export', (event) => window.dispatchEvent(new CustomEvent('board:cut-export', { detail: JSON.parse(event.data) })));
         source.addEventListener('error', () => { this.streamDown = source.readyState !== EventSource.OPEN; });
         source.addEventListener('open', () => { this.streamDown = false; });
         STREAMS.set(this.$refs.board, source);

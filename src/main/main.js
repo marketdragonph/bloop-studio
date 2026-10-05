@@ -1,5 +1,5 @@
 // Electron entry: starts the local server on 127.0.0.1 and opens the studio window on it.
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { createServer } from '../server/server.js';
 import { SettingsStore, settingsPath } from './settings-store.js';
@@ -17,6 +17,11 @@ async function boot() {
         settings,
         dataDir: app.getPath('userData'),
         reveal: (fullPath) => shell.showItemInFolder(fullPath),
+        // Settings › Video tools › Choose ffmpeg.exe…: the path, or null when the person closes the picker.
+        pickFile: async ({ title, filters } = {}) => {
+            const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow ?? undefined, { title, filters, properties: ['openFile'] });
+            return canceled ? null : filePaths[0] ?? null;
+        },
         openExternal: (target) => shell.openExternal(target), // bloop sign-in opens in the real browser
         updates: createUpdater(app),
         onThemeChange: () => chrome?.themeChanged(),

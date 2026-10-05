@@ -30,7 +30,26 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   left/right), trim (handles, `[` `]`, Shift+arrows), remove with an 8 s Undo, cut or dissolve joins (D), clip
   sound (M), newer take swap, music and voice levels, 50-step undo in the dock. Autosave with a local draft and
   "changed in another window" recovery (409). The preview plays the cut on two stacked players with dissolves,
-  gap slates, music and voice in sync, and an "As exported" toggle. Nothing in the dock renders or exports.
+  gap slates, music and voice in sync, and an "As exported" toggle. Nothing in the dock renders.
+  **Export (P3)**: the accent key on the rail opens a sheet above it: length, picture, size, the beats skipped by
+  name, **Check your cut** with **Show me**, the **Preset** (Master, YouTube; `src/shared/export-presets.js`) and
+  "Export runs on this PC. Free." Export saves pending edits first ("The latest changes are not saved yet" /
+  Retry otherwise), then shows the step ("Joining clip 4 of 6") on a sensor-blue level with **Cancel**, live from
+  the board's one event stream (`cut_export`, no polling). End states: done (**Show in folder**, **Copy path**,
+  **Download**, **Show on board**), stale (**Export again**), stopped at a clip (**Remove it and export again**,
+  Go to card, **Try again**), cancelled or failed (**Try again**), video tools missing (link to Settings ›
+  Video tools). **Pack assets** has its own sheet (**Include prompts and seeds**), a small level and **Show in
+  folder**. **Set as poster** in a clip's details. `public/js/components/cut-export.js`,
+  `src/server/views/pages/spaces/cut/export-sheet.edge`, `pack-sheet.edge`, `public/css/cut-export.css`.
+  **Settings › Video tools** (`partials/video-tools.edge`): the ffmpeg in use, version, licence, encoders,
+  **Check again**, **Choose ffmpeg.exe…**.
+  The export runs on this PC with the LGPL ffmpeg that ships with the app (`resources/ffmpeg`, `vendor/ffmpeg` in
+  dev; never a GPL build or filter): a media-tools queue separate from the GPU worker (`media/tools-queue.js`), the
+  stages in `src/server/cut/export/` (check, probe, normalize, join with dissolves, music + voice with ducking,
+  loudness to the preset capped at −1.5 dBTP, one AAC encode with `aac_mf`, H.264 with `h264_mf`), a story-named file
+  (`night-market-youtube-r12.mp4`) with a poster beside it and a new `Cut · r{rev} · {Preset}` card. Cancel, a
+  deleted space or a closed app leave no temp files. Pack writes `spaces/{id}/packs/*.zip` with manifest v1, no keys,
+  ZIP64 when needed (`src/server/cut/pack/`). Routes in `routes/cut-exports.js` and `routes/video-tools.js`.
   Media is served with byte ranges, so long clips seek without loading the whole file.
 
 ## Rendering
