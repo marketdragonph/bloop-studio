@@ -18,6 +18,8 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const FFMPEG_DIR = join(ROOT, 'vendor', 'ffmpeg');
 export const MANIFEST_PATH = join(FFMPEG_DIR, 'manifest.json');
 const CACHE_DIR = join(ROOT, 'vendor', '.cache');
+/** The GPL-3.0 text kept in the repo, so a build never depends on gnu.org answering (it refuses some clients). */
+const BUNDLED_GPL = join(ROOT, 'build', 'licenses', 'gpl-3.0.txt');
 
 /** The one build we ship. Month-end BtbN autobuilds are kept long term; change all fields together. */
 export const PINNED = Object.freeze({
@@ -113,9 +115,16 @@ const withAgent = (fetchImpl) => (url, options = {}) => fetchImpl(url, { ...opti
  * Puts COPYING.GPLv3 in `dir` unless the right text is already there. True when it wrote it.
  * @throws when the download does not match the pinned hash (nothing is written)
  */
-export async function ensureGplText({ dir = FFMPEG_DIR, cache = CACHE_DIR, fetchImpl = fetch, log = () => {}, pin = GPL_TEXT } = {}) {
+export async function ensureGplText({ dir = FFMPEG_DIR, cache = CACHE_DIR, bundled = BUNDLED_GPL, fetchImpl = fetch, log = () => {}, pin = GPL_TEXT } = {}) {
     const target = join(dir, pin.file);
     if (existsSync(target) && (await sha256Of(target)) === pin.sha256) return false;
+    // The repo's own copy wins when it matches the pin; gnu.org is only the fallback.
+    if (bundled && existsSync(bundled) && (await sha256Of(bundled)) === pin.sha256) {
+        mkdirSync(dir, { recursive: true });
+        copyFileSync(bundled, target);
+        log(`ffmpeg: ${pin.file} from ${bundled}`);
+        return true;
+    }
     const cached = join(cache, 'gpl-3.0.txt');
     // A copy already in the cache with the pinned hash is used as is (an offline rebuild); anything else is fetched.
     if (!existsSync(cached) || (await sha256Of(cached)) !== pin.sha256) {

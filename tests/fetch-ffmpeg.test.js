@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { configureFlags, ensureGplText, GPL_TEXT, licenceId, licenceProblem, PINNED } from '../scripts/fetch-ffmpeg.mjs';
 import { nativeComponents } from '../scripts/third-party-notices.mjs';
 
@@ -61,6 +62,17 @@ test('ensureGplText writes the text only when its hash matches the pin, and fetc
     const calls = asked.length;
     assert.equal(await ensureGplText({ dir, cache, pin, fetchImpl: serve(text) }), false);
     assert.equal(asked.length, calls, 'already in place: no download');
+});
+
+test('the GPL text kept in the repo matches the pin and is used without asking gnu.org', async (t) => {
+    const bundled = fileURLToPath(new URL('../build/licenses/gpl-3.0.txt', import.meta.url));
+    assert.equal(createHash('sha256').update(readFileSync(bundled)).digest('hex'), GPL_TEXT.sha256);
+    const root = mkdtempSync(join(tmpdir(), 'bloop-gpl-'));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const dir = join(root, 'ffmpeg');
+    const refuse = async () => { throw new Error('gnu.org must not be asked'); };
+    assert.equal(await ensureGplText({ dir, cache: join(root, 'cache'), bundled, fetchImpl: refuse }), true);
+    assert.deepEqual(readFileSync(join(dir, 'COPYING.GPLv3')), readFileSync(bundled));
 });
 
 test('the notices list COPYING.GPLv3 beside the LGPL text for ffmpeg', (t) => {
