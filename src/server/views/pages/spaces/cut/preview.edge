@@ -20,8 +20,8 @@
       <span class="cut-slate__text" x-text="slate?.text"></span>
     </div>
     <p class="cut-preview__empty" x-show="!cutLay().entries.some((e) => e.kind === 'clip')" x-text="cutCopy('noClips')"></p>
-    <div class="cut-preview__tags" x-show="cutSelected()">
-      <span class="cut-chip" x-text="cutSelected()?.title"></span>
+    <div class="cut-preview__tags" x-show="cpTag()">
+      <span class="cut-chip" x-text="cpTag()"></span>
     </div>
     <p class="cut-caption" x-show="cutCaptionLines.length && !cutCropping()" x-cloak aria-hidden="true">
       <template x-for="(line, i) in cutCaptionLines" :key="i"><span class="cut-caption__line" x-text="line"></span></template>

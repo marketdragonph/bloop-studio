@@ -3,7 +3,8 @@
 // small sheet: GET /spaces/:id/render-plan says how many cards, on which models, the time on this PC (only when
 // past renders measured it) or, on bloop, the credits and the balance FIRST. Only the person's press on
 // "Render N cards" posts; a shortfall is refused plainly with nothing queued. Gap slots then turn into blue lights
-// from the board's own `node` events. Cancel all stops every render of this board. The Director never calls any of it.
+// from the board's own `node` events. Cancel all stops the renders this press queued (the board's `queue` stream marks
+// them `origin: 'render-plan'`); a card the person started with Generate keeps going. The Director never calls any of it.
 import { copy } from '/shared/katana-controls.js';
 
 const OWED = new Set(['never_rendered', 'failed']);
@@ -130,7 +131,12 @@ export const cutRenderMethods = {
         return this.cutItems.some((i) => i.live);
     },
 
-    /** Cancel all: every render of this board stops. */
+    /** Renders Render missing beats queued on this board that are still queued or running (the board's `queue` stream). */
+    cutPlanRenders() {
+        return (this.renderQueue ?? []).filter((job) => job.spaceId === this.spaceId && job.origin === 'render-plan').length;
+    },
+
+    /** Cancel all: the renders this press queued stop; a card's own Generate keeps going. */
     async cutCancelAll() {
         const { status, data } = await call('DELETE', `/spaces/${this.spaceId}/render-plan`);
         this.cutAnnounce = status === 200 ? copy('renderCancelled', { n: data?.cancelled ?? 0 }) : (data?.error ?? copy('renderFailed'));

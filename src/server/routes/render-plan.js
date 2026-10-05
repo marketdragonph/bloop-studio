@@ -1,6 +1,6 @@
 // Render missing beats (05-irresistible.md §2.2). GET: the sheet's numbers (cards, models, time or credits and
 // balance, what is skipped and why), reads only. POST: the person's press queues every owed card, or refuses with a
-// plain reason and nothing queued. DELETE: Cancel all, every render of this board. CSRF guards the mutations.
+// plain reason and nothing queued. DELETE: Cancel all, the renders this press queued on this board (never a card's own Generate). CSRF guards the mutations.
 // No Director tool calls these routes; the Director never renders (katana.md §2).
 import { Hono } from 'hono';
 import { RenderPlan, RenderRefused } from '../generation/render-plan/index.js';

@@ -108,7 +108,8 @@ test('deleting a clip card needs the CSRF header, then sends a cut event for tha
         assert.equal(refused.status, 403);
         assert.equal(sent.length, 0);
         const res = await app.request(`/spaces/${space.id}/nodes/${extra.id}`, { method: 'DELETE', headers: { 'x-csrf-token': TOKEN } });
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 200);
+        assert.deepEqual(await res.json(), { takes: [] }, 'the takes ride on the answer, for the undo of the board');
         assert.deepEqual(sent, [{ spaceId: space.id, revision: 0, by: 'card_deleted', changed: [extra.id] }]);
 
         // A text card is not in the cut: no event.

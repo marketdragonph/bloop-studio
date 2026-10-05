@@ -89,3 +89,20 @@ test('delete then restore brings the card back with its id and wires', () => {
     assert.equal(board.nodes.find((n) => n.id === text.id).text_content, 'keep me');
     assert.equal(board.connections[0].id, wire.id);
 });
+
+test('undo of a delete puts the card\'s takes back with their ids and measured lengths (a clip in the Cut keeps its take)', () => {
+    const { repo, space } = fresh();
+    const clip = repo.createNode(space.id, { type: 'video', label: 's1' });
+    repo.db.prepare("INSERT INTO takes (node_id, media_path, media_mime, preset, seed, params, duration_ms) VALUES (?, 'spaces/1/c/a.mp4', 'video/mp4', 'wan5b', 7, '{}', 4200)").run(clip.id);
+    const snapshot = repo.findNode(space.id, clip.id);
+    const takes = repo.deleteNode(space.id, clip.id);
+    assert.equal(takes.length, 1);
+    assert.equal(repo.db.prepare('SELECT COUNT(*) AS n FROM takes').get().n, 0, 'the takes go with the card');
+    repo.restoreNode(space.id, snapshot, [], JSON.parse(JSON.stringify(takes)));
+    const back = repo.db.prepare('SELECT * FROM takes WHERE node_id = ?').all(clip.id);
+    assert.deepEqual(back.map((t) => [t.id, t.media_path, t.duration_ms, t.seed]), [[takes[0].id, 'spaces/1/c/a.mp4', 4200, 7]]);
+    // A malformed take is skipped, never half-written.
+    repo.deleteNode(space.id, clip.id);
+    repo.restoreNode(space.id, snapshot, [], [{ id: 'x', media_path: 3 }]);
+    assert.equal(repo.db.prepare('SELECT COUNT(*) AS n FROM takes').get().n, 0);
+});

@@ -25,3 +25,14 @@
     </template>
   </span>
 </div>
+{{-- P5: two or more songs came in with Bring my clips. None is guessed: each song is a key, or No song. --}}
+<div class="cut-banner ae-signal" x-show="cutBringSongs.length && !cutBanner" x-cloak role="status">
+  <span class="cut-banner__text" x-text="cutCopy('bringSongs', { n: cutBringSongs.length })"></span>
+  <span class="cut-banner__keys" role="group" aria-label="{{ controlLabel('cut.pickSong') }}">
+    <template x-for="song in cutBringSongs" :key="song.node_id">
+      <button type="button" class="ae-key ae-key--sm" @click="cutBringPickSong(song)" data-control="cut.pickSong"
+              :aria-label="'{{ controlLabel('cut.pickSong') }}: ' + song.name" x-text="song.name"></button>
+    </template>
+    <button type="button" class="ae-key ae-key--sm" @click="cutBringPickSong(null)" data-control="cut.noSong">{{ controlLabel('cut.noSong') }}</button>
+  </span>
+</div>

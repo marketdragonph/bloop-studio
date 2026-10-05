@@ -63,12 +63,15 @@ export const CONTROLS = Object.freeze([
     c('cut.renderMissing', 'dock', 'Render missing beats', "the rail and the board's render readout when beats have no video", 'opens a sheet with what it would queue', 'P2b'),
     c('cut.renderConfirm', 'dock', 'Render', 'the Render missing beats sheet', 'queues every card the plan still needs, one at a time', 'P2b'),
     c('cut.renderNotNow', 'dock', 'Not now', 'the Render missing beats sheet', 'closes the sheet; nothing is queued', 'P2b'),
-    c('cut.renderCancelAll', 'dock', 'Cancel all', 'the rail while this board renders', 'stops every render of this board', 'P2b'),
+    c('cut.renderCancelAll', 'dock', 'Cancel all', 'the rail while Render missing beats runs', 'stops the renders it queued; a card started with Generate keeps going', 'P2b'),
     c('cut.openSettings', 'dock', 'Open Settings', 'the Render missing beats sheet when nothing can render', 'opens Settings to install the engine', 'P2b'),
     c('cut.signIn', 'dock', 'Sign in to bloop', 'the Render missing beats sheet when nothing can render', 'opens Settings to sign in and render on bloop', 'P2b'),
     c('board.starter', 'board', 'Start from a starter', 'the empty board and the empty Spaces list', 'lays out a ready plan', 'P2b'),
     c('board.starterPick', 'board', 'Lay it out', 'each starter in Start from a starter', 'lays that starter out, cards wired and words written', 'P2b'),
     c('board.bringClips', 'board', 'Bring my clips', 'the empty board and the empty dock', 'puts your own videos and one song into the cut', 'P2b'),
+    // ── P5: polish ──
+    c('cut.pickSong', 'dock', 'Use as music', 'the dock, when several songs came in with Bring my clips', 'puts that song under the clips', 'P5'),
+    c('cut.noSong', 'dock', 'No song', 'the same line', 'leaves the cut without music', 'P5'),
     // ── P3: export and Pack ──
     c('cut.export', 'dock', 'Export', 'the rail and the export sheet', 'makes the cut into one video file on this PC', 'P3'),
     c('cut.preset', 'dock', 'Preset', 'the export sheet', 'picks the file\'s size and quality', 'P3'),
@@ -191,6 +194,12 @@ export const COPY = Object.freeze({
     bringNoClips: 'Drop video files (MP4 or WebM), and one song if you like.',
     bringFailed: 'Could not copy {name}: {reason}',
     bringNotEmpty: 'Bring my clips works on an empty cut. Add an Upload card for one more clip.',
+    // ── P5: polish ──
+    bringFailedRemoved: '{name} did not copy, so its empty card was taken off the board. {reason}',
+    bringUndo: 'Bring {n} files',
+    bringSongs: 'You brought {n} songs. Pick the one that goes under the clips.',
+    bringNoSong: 'No song under the clips. Label an Audio card music bed to add one later.',
+    bringSongPicked: '{name} is under the clips',
     // ── P3: export and Pack (02-dock.md §5, 01-core.md §6, 05 §2.6) ──
     exportTitle: 'Export the cut',
     exportFree: 'Export runs on this PC. Free.',

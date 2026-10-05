@@ -6,14 +6,15 @@
  * @param {{ spaces: import('../repositories/spaces.js').SpacesRepository, jobs: import('../repositories/jobs.js').JobsRepository,
  *   events: import('./events.js').BoardEvents }} deps
  * @param {object} node a card on the board (image, video or audio)
- * @param {{ family?: string|null, announce?: boolean }} [options] `family`: the first offered family, for a card with no pick.
- *   `announce: false` skips the queue event (a batch sends one at the end).
+ * @param {{ family?: string|null, announce?: boolean, origin?: string|null }} [options] `family`: the first offered family,
+ *   for a card with no pick. `announce: false` skips the queue event (a batch sends one at the end). `origin`: which press
+ *   ('render-plan'), so that press's Cancel all stops only its own renders.
  * @returns {{ job: object, node: object, position: number }}
  */
-export function queueCard({ spaces, jobs, events }, node, { family = null, announce = true } = {}) {
+export function queueCard({ spaces, jobs, events }, node, { family = null, announce = true, origin = null } = {}) {
     let card = node;
     if (!card.settings?.family && family) card = spaces.updateNode(card.space_id, card.id, { settings: { family } });
-    const job = jobs.enqueue({ nodeId: card.id, preset: card.settings?.family ?? 'auto' });
+    const job = jobs.enqueue({ nodeId: card.id, preset: card.settings?.family ?? 'auto', origin });
     spaces.setNodeResult(card.id, { status: 'queued' });
     events.node({ spaceId: card.space_id, nodeId: card.id, status: 'queued' });
     if (announce) events.queue(jobs.activeQueue());

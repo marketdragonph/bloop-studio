@@ -37,6 +37,7 @@ export default function CutPlayer() {
         front: 'a',
         incoming: null, // 'a' | 'b' while a dissolve fades it in
         slate: null, // { title, text } while a gap plays
+        nowKey: null, // the lane key of the entry on screen: the tag over the picture names it (P5)
 
         init() {
             Object.assign(this, readVolume());
@@ -138,6 +139,7 @@ export default function CutPlayer() {
 
         cpShowNothing() {
             s.cur = -1;
+            this.nowKey = null;
             s.mode = 'idle';
             this.slate = null;
             this.incoming = null;
@@ -150,6 +152,7 @@ export default function CutPlayer() {
         cpShow(index, offsetMs) {
             const entry = this.cpEntries()[index];
             s.cur = index;
+            this.cpNow(entry);
             this.incoming = null;
             this.cpBack()?.pause();
             if (entry.kind === 'gap' || this.cutUnplayable.includes(entryKey(entry))) {
@@ -336,6 +339,7 @@ export default function CutPlayer() {
             this.front = this.front === 'a' ? 'b' : 'a';
             this.slate = null;
             s.cur = index;
+            this.cpNow(entry);
             s.mode = 'clip';
             s.t = entry.start_ms + offsetMs;
             this.cpVolume(back, entry);
@@ -344,6 +348,18 @@ export default function CutPlayer() {
             if (this.playing) this.cpWatch(back);
             const after = nextClip(lay, index);
             if (after >= 0) this.cpPrime(old, after, 0);
+        },
+
+        /** The entry on screen changed: one reactive write, only when it is a different clip or gap. */
+        cpNow(entry) {
+            const key = entry ? entryKey(entry) : null;
+            if (key !== this.nowKey) this.nowKey = key;
+        },
+
+        /** The tag over the picture: the clip on screen (playing or paused), else the selected clip. */
+        cpTag() {
+            const now = this.nowKey != null && this.cutItems.find((item) => item.key === this.nowKey);
+            return now?.title ?? this.cutSelected()?.title ?? '';
         },
 
         /** A clip that will not load: named on its lane, skipped by the preview (02-dock.md §5). */

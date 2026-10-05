@@ -17,6 +17,8 @@ export const cutAutoMethods = {
     /** A 200 from our own save: remember the server copy, and say once that the live cut is now off. */
     cutAfterSave(cut) {
         this.cutSetBase(cut);
+        // The server keeps the list of clips taken out on purpose (cut-edits.js leftOutAfter); only that key is adopted.
+        if (cut?.settings) this.cutSettings = { ...this.cutSettings, left_out: cut.settings.left_out ?? [] };
         if (this.cutAuto && cut?.auto === false) {
             this.cutAuto = false;
             this.cutAnnounce = copy('autoOff');
@@ -37,11 +39,17 @@ export const cutAutoMethods = {
         return true;
     },
 
-    /** Ready clips on the board that are not in the cut (Add new clips). */
+    /**
+     * Ready clips on the board that are not in the cut (Add new clips). A clip the person took out on purpose is not
+     * new: the saved list (`settings.left_out`, same card and take) and a remove not saved yet (in the base, not here).
+     */
     cutNewCount() {
         if (this.cutDraft) return 0;
         const inCut = new Set(this.cutModel.map((item) => item.node_id));
-        return (this._cutSlots ?? []).filter((s) => s.state === 'ready' && s.node_id != null && !inCut.has(s.node_id)).length;
+        const leftOut = [...(this.cutSettings?.left_out ?? []),
+            ...(this._cutBase?.items ?? []).filter((i) => !inCut.has(i.node_id)).map((i) => ({ node_id: i.node_id, take_id: i.take_id ?? null }))];
+        const out = (s) => leftOut.some((e) => e.node_id === s.node_id && (e.take_id == null || e.take_id === s.take_id));
+        return (this._cutSlots ?? []).filter((s) => s.state === 'ready' && s.node_id != null && !inCut.has(s.node_id) && !out(s)).length;
     },
 
     /** Add new clips shows once the live cut is off (or on a board with no plan, where it never runs). */

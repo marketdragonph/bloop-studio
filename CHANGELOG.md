@@ -31,6 +31,12 @@ that heading into the version number and uses the section as the release notes.
 - New: Settings › Director › Editing style, a box where you write how you like your cuts ("no dissolves, hold the last shot"). The Director reads it on every turn.
 - Changed: with ducking on, the music now also dips under the spoken lines inside your clips, in the preview and in the exported file.
 - Changed: Check your cut also finds a cut-off line, dead air, a clip much louder or quieter than the ones around it, music that stops before the picture, a cut that runs long, a clip shorter than its beat asked for, and two of the same shot in a row.
+- Fixed: Cancel all in the Cut dock stops only the renders Render missing beats queued. A card you started with Generate keeps rendering.
+- Fixed: a clip you took out of the cut stays out. Add new clips and the self-building cut no longer put it back, unless that card gets a new take.
+- Fixed: undoing a deleted clip card brings back its takes too, so the clip comes back to the cut at its measured length.
+- Changed: Bring my clips can be undone on the board in one step. A file that fails to copy no longer leaves an empty Upload card behind. When you bring two or more songs, the Cut dock asks which one goes under the clips (or none) instead of leaving the music out without a word.
+- Fixed: the name over the Cut preview now follows the clip that is playing, not only the one you selected.
+- Fixed: an error in the developer console on every board ("Applying inline style violates the Content Security Policy").
 
 ## 2026.1005.1232
 

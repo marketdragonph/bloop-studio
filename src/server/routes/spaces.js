@@ -108,16 +108,17 @@ export function spacesRoutes({ views, spaces, events, cuts, settings = null }) {
         return node ? c.json(node) : c.notFound();
     }));
 
+    // The deleted card's takes ride on the answer, so the board's undo can put them back (restore below).
     routes.delete('/:id/nodes/:nodeId', json((c) => {
         const node = spaces.findNode(id(c), id(c, 'nodeId'));
-        spaces.deleteNode(id(c), id(c, 'nodeId'));
+        const takes = spaces.deleteNode(id(c), id(c, 'nodeId'));
         cutChanged(id(c), node, 'card_deleted');
-        return c.body(null, 204);
+        return c.json({ takes });
     }));
 
     routes.post('/:id/nodes/:nodeId/restore', json(async (c) => {
-        const { node, connections } = await c.req.json();
-        const restored = spaces.restoreNode(id(c), { ...node, id: id(c, 'nodeId') }, connections);
+        const { node, connections, takes } = await c.req.json();
+        const restored = spaces.restoreNode(id(c), { ...node, id: id(c, 'nodeId') }, connections, takes);
         cutChanged(id(c), restored, 'card_restored');
         return c.json(restored, 201);
     }));

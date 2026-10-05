@@ -10,6 +10,9 @@ import { estimate, checkCredits, RenderRefused } from './estimate.js';
 
 export { RenderRefused };
 
+/** The jobs this press queued carry this origin, so Cancel all stops only them (never a card's own Generate). */
+export const ORIGIN = 'render-plan';
+
 /** The press: each owed card in wire order, through the same path as its own Generate key. */
 export async function enqueueOwed(ctx, next) {
     const { spaces, jobs, events } = ctx.deps;
@@ -18,7 +21,7 @@ export async function enqueueOwed(ctx, next) {
         if (jobs.activeForNode(card.node_id)) continue;
         const node = spaces.findNode(ctx.spaceId, card.node_id);
         if (!node) continue;
-        const { job } = queueCard({ spaces, jobs, events }, node, { family: card.pick, announce: false });
+        const { job } = queueCard({ spaces, jobs, events }, node, { family: card.pick, announce: false, origin: ORIGIN });
         ctx.queued.push({ node_id: node.id, job_id: job.id });
     }
     if (ctx.queued.length) events.queue(jobs.activeQueue());
@@ -52,10 +55,10 @@ export class RenderPlan {
         return { queued: ctx.queued, summary: ctx.summary };
     }
 
-    /** Cancel all: every render of this board that is queued or running. Returns how many were stopped. */
+    /** Cancel all: the renders this sheet queued on this board, queued or running; never a card's own Generate. */
     async cancelAll(spaceId) {
         const { jobs, worker } = this.deps;
-        const active = jobs.activeQueue().filter((job) => job.spaceId === spaceId);
+        const active = jobs.activeQueue().filter((job) => job.spaceId === spaceId && job.origin === ORIGIN);
         // Queued first, so none of them starts while the running one stops.
         active.sort((a, b) => (a.status === 'running') - (b.status === 'running'));
         let stopped = 0;

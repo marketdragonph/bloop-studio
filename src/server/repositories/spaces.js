@@ -130,13 +130,20 @@ export class SpacesRepository {
         this.db.prepare(`UPDATE space_nodes SET ${sets.join(', ')} WHERE id = ?`).run(...values, nodeId);
     }
 
+    /**
+     * Deletes a card. Returns its takes as they were (with the measured length), so an undo can put them back: the
+     * Cut's items point at a take, and a clip that came back without one would lose its length.
+     */
     deleteNode(spaceId, nodeId) {
+        const takes = this.db.prepare(`SELECT t.id, t.media_path, t.media_mime, t.preset, t.seed, t.params, t.created_at, t.duration_ms
+            FROM takes t JOIN space_nodes n ON n.id = t.node_id WHERE t.node_id = ? AND n.space_id = ? ORDER BY t.id`).all(nodeId, spaceId);
         this.db.prepare('DELETE FROM space_nodes WHERE id = ? AND space_id = ?').run(nodeId, spaceId);
         this.#touch(spaceId);
+        return takes.map((take) => ({ ...take }));
     }
 
-    /** Re-inserts a deleted card with its id and wires (undo of delete). */
-    restoreNode(spaceId, node, connections = []) {
+    /** Re-inserts a deleted card with its id, wires and takes (undo of delete). A take keeps its id when it is free. */
+    restoreNode(spaceId, node, connections = [], takes = []) {
         transaction(this.db, () => {
             this.db.prepare(`
                 INSERT INTO space_nodes (id, space_id, type, label, position_x, position_y, width, height, prompt, text_content, media_path, media_mime, settings)
@@ -144,8 +151,19 @@ export class SpacesRepository {
             `).run(node.id, spaceId, node.type, node.label ?? null, node.position_x, node.position_y, node.width ?? null, node.height ?? null,
                 node.prompt ?? null, node.text_content ?? null, node.media_path ?? null, node.media_mime ?? null, JSON.stringify(node.settings ?? {}));
             for (const c of connections) this.#insertConnection(spaceId, c.from_node_id, c.to_node_id, c.to_socket, c.id);
+            for (const t of Array.isArray(takes) ? takes : []) this.#restoreTake(node.id, t);
         });
         return this.findNode(spaceId, node.id);
+    }
+
+    #restoreTake(nodeId, t) {
+        if (typeof t?.media_path !== 'string' || typeof t.media_mime !== 'string' || typeof t.preset !== 'string') return;
+        const free = Number.isInteger(t.id) && !this.db.prepare('SELECT 1 FROM takes WHERE id = ?').get(t.id);
+        const duration = Number.isInteger(t.duration_ms) && t.duration_ms > 0 ? t.duration_ms : null;
+        this.db.prepare(`INSERT INTO takes (id, node_id, media_path, media_mime, preset, seed, params, created_at, duration_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')), ?)`)
+            .run(free ? t.id : null, nodeId, t.media_path, t.media_mime, t.preset, Number.isInteger(t.seed) ? t.seed : null,
+                typeof t.params === 'string' ? t.params : JSON.stringify(t.params ?? {}), typeof t.created_at === 'string' ? t.created_at : null, duration);
     }
 
     // ── Wires ──

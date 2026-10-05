@@ -83,7 +83,7 @@ export const cardMethods = {
             let current = node;
             this.history.push({
                 label: `Add ${NODE_TYPES[type].label} card`,
-                undo: async () => { await this.removeCard(current.id, { record: false }); },
+                undo: async () => { current = (await this.removeCard(current.id, { record: false })) ?? current; },
                 redo: async () => { current = await this.restoreCard(current, []); },
             });
         } catch (error) {
@@ -123,22 +123,25 @@ export const cardMethods = {
         const node = this.nodeById(id);
         if (!node) return;
         const wires = this.connections.filter((c) => c.from_node_id === id || c.to_node_id === id);
-        await api('DELETE', `${this.base}/nodes/${id}`);
+        const gone = await api('DELETE', `${this.base}/nodes/${id}`);
         this.nodes = this.nodes.filter((n) => n.id !== id);
         this.connections = this.connections.filter((c) => !wires.includes(c));
         this.selectedNodeIds = this.selectedNodeIds.filter((sid) => sid !== id);
+        // The card's takes come back with it on undo (a clip in the Cut keeps its take and its measured length).
+        const snapshot = { ...JSON.parse(JSON.stringify(node)), takes: gone?.takes ?? [] };
         if (record) {
-            const snapshot = JSON.parse(JSON.stringify(node));
             this.history.push({
                 label: 'Delete card',
                 undo: async () => { await this.restoreCard(snapshot, wires); },
                 redo: async () => { await this.removeCard(id, { record: false }); },
             });
         }
+        return snapshot;
     },
 
     async restoreCard(snapshot, wires) {
-        const node = await api('POST', `${this.base}/nodes/${snapshot.id}/restore`, { node: snapshot, connections: wires });
+        const { takes = [], ...card } = snapshot;
+        const node = await api('POST', `${this.base}/nodes/${snapshot.id}/restore`, { node: card, connections: wires, takes });
         this.nodes.push(node);
         // Only wires whose other end still exists come back.
         this.connections.push(...wires.filter((w) => this.nodeById(w.from_node_id) && this.nodeById(w.to_node_id)));

@@ -53,7 +53,7 @@
       </template>
 
       <div class="marquee" x-show="marquee"
-           :style="marquee && { left: Math.min(marquee.x1, marquee.x2) + 'px', top: Math.min(marquee.y1, marquee.y2) + 'px', width: Math.abs(marquee.x2 - marquee.x1) + 'px', height: Math.abs(marquee.y2 - marquee.y1) + 'px' }"></div>
+           :style="marquee ? { left: Math.min(marquee.x1, marquee.x2) + 'px', top: Math.min(marquee.y1, marquee.y2) + 'px', width: Math.abs(marquee.x2 - marquee.x1) + 'px', height: Math.abs(marquee.y2 - marquee.y1) + 'px' } : {}"></div>
     </div>
 
     {{-- The empty bay (05 §2.3): the shape of the result, then the three ways in. Drop files here for Bring my clips. --}}

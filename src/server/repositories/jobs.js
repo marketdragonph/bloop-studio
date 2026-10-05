@@ -8,10 +8,11 @@ export class JobsRepository {
         this.db = db;
     }
 
-    enqueue({ nodeId, preset, inputs = {} }) {
+    /** `origin`: 'render-plan' when Render missing beats queued it, null for a card's own Generate. */
+    enqueue({ nodeId, preset, inputs = {}, origin = null }) {
         const { lastInsertRowid } = this.db
-            .prepare('INSERT INTO jobs (node_id, preset, inputs) VALUES (?, ?, ?)')
-            .run(nodeId, preset, JSON.stringify(inputs));
+            .prepare('INSERT INTO jobs (node_id, preset, inputs, origin) VALUES (?, ?, ?, ?)')
+            .run(nodeId, preset, JSON.stringify(inputs), origin);
         return this.find(Number(lastInsertRowid));
     }
 
@@ -60,10 +61,10 @@ export class JobsRepository {
         this.db.prepare('UPDATE jobs SET status = ?, error = ?, finished_at = ? WHERE id = ?').run(status, error, now(), id);
     }
 
-    /** Every unfinished job in the order it will most likely run: the running one, then by age. */
+    /** Every unfinished job in the order it will most likely run: the running one, then by age. `origin` says which press. */
     activeQueue() {
         return this.db.prepare(`
-            SELECT j.id, j.node_id AS nodeId, n.space_id AS spaceId, j.status
+            SELECT j.id, j.node_id AS nodeId, n.space_id AS spaceId, j.status, j.origin
             FROM jobs j JOIN space_nodes n ON n.id = j.node_id
             WHERE j.status IN ('queued', 'running')
             ORDER BY j.status = 'running' DESC, j.id`).all().map((row) => ({ ...row }));

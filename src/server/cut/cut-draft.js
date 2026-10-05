@@ -5,8 +5,8 @@
 //
 //   fill     build the cut in beat order, ONLY into an empty cut. A cut with clips: nothing is written, and the
 //            `cut` event offers a replace (offer: 'replace'); the choice is the person's.
-//   add_new  add ready beats whose card is not in the cut yet. Never moves, trims or removes an item: the
-//            items already there stay in their order with every field as it was.
+//   add_new  add ready beats whose card is not in the cut yet and was not taken out on purpose (settings.left_out).
+//            Never moves, trims or removes an item: the items already there stay in their order as they were.
 //   replace  the person's press after the offer: a fresh draft in beat order. The old items become the
 //            one-step Undo draft (previous_items).
 // Zero playable clips: no write, no event. Caps: at most 50 items and 600 s; a draft stops at the cap.
@@ -15,6 +15,7 @@ import { CutConflictError } from '../repositories/cuts.js';
 import { ASPECTS, CUT_LIMITS, FADE_OUT, MUSIC_LEVEL } from '../../shared/cut-rules.js';
 import { cutClock } from '../../shared/cut-clock.js';
 import { CutInvalidError } from './validate-cut.js';
+import { isLeftOut } from './cut-edits.js';
 
 export const DRAFT_MODES = Object.freeze(['fill', 'add_new', 'replace']);
 export const DRAFT_NOTE = 'Placed in beat order';
@@ -69,7 +70,8 @@ export class CutDraft {
 
         const kept = mode === 'add_new' ? cut.items : [];
         const inCut = new Set(kept.map((item) => item.node_id));
-        const fresh = ready.filter((slot) => !inCut.has(slot.node_id));
+        // A clip the person took out on purpose (settings.left_out) stays out of Add new clips and the live cut.
+        const fresh = ready.filter((slot) => !inCut.has(slot.node_id) && (mode !== 'add_new' || !isLeftOut(cut.settings?.left_out, slot)));
         // `bed` (the live cut): a music bed that landed after the clips goes in too, when the cut has none.
         const newBed = bed && mode === 'add_new' && !cut.sound?.music && read.beds.some((b) => b.kind === 'music');
         if (!fresh.length && !newBed) return result({ reason: 'nothing_new' });

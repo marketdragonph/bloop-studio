@@ -16,7 +16,7 @@
   <span class="status-light status-light--busy cut-rail__job" x-show="cutMeasuring()" x-cloak role="status">
     <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout" x-text="cutMeasuringText()"></span>
   </span>
-  <button type="button" class="ae-key ae-key--sm" x-show="cutRendering()" x-cloak @click="cutCancelAll()"
+  <button type="button" class="ae-key ae-key--sm" x-show="cutPlanRenders()" x-cloak @click="cutCancelAll()"
           data-control="cut.renderCancelAll">{{{ icon('close') }}}<span>{{ controlLabel('cut.renderCancelAll') }}</span></button>
   {{-- P2b: Bring my clips copying, Render missing beats (opens its sheet), Add new clips once the live cut is off. --}}
   <span class="status-light status-light--busy cut-rail__job" x-show="cutBringing" x-cloak role="status">

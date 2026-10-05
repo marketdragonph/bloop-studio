@@ -11,6 +11,7 @@ import { cutFixture, TOKEN } from './cut-fixture.js';
 import { csrf } from '../src/server/middleware/csrf.js';
 import { renderPlanRoutes } from '../src/server/routes/render-plan.js';
 import { RenderPlan } from '../src/server/generation/render-plan/index.js';
+import { queueCard } from '../src/server/generation/enqueue.js';
 import { defaultSource } from '../src/shared/card-source.js';
 import './cut-dock-fakes.js'; // maps /shared/ for the dock's own modules
 
@@ -106,7 +107,7 @@ test('the press queues each card once, in wire order, through the per-card path;
     assert.match((await again.json()).error, /already has its video, or is on its way/);
 });
 
-test('a time shows only when every model has past renders; Cancel all stops every render of this board', async (t) => {
+test('a time shows only when every model has past renders; Cancel all stops the renders the press queued', async (t) => {
     const f = await planFixture(t);
     const past = (preset, seconds) => {
         const job = f.jobs.enqueue({ nodeId: f.clips['s1-open'].node.id, preset });
@@ -121,10 +122,16 @@ test('a time shows only when every model has past renders; Cancel all stops ever
     assert.equal(summary.local.seconds, 20 + 100 + 100 + 60);
     assert.deepEqual(renderLines(summary), [`4 cards on this PC · ${renderTime(280)} · you can keep working`]);
 
+    // The person started a card of their own with Generate (the per-card path, no origin) before the press.
+    const mine = f.spaces.createNode(f.space.id, { type: 'image', label: 'my own still' });
+    queueCard(f.deps, mine);
     await f.send('POST', `/spaces/${f.space.id}/render-plan`);
+    const marked = f.jobs.activeQueue();
+    assert.deepEqual(marked.map((j) => j.origin), [null, 'render-plan', 'render-plan', 'render-plan', 'render-plan'], 'the queue stream says which press');
     const res = await f.send('DELETE', `/spaces/${f.space.id}/render-plan`);
     assert.deepEqual(await res.json(), { cancelled: 4 });
-    assert.equal(f.jobs.activeQueue().length, 0);
+    assert.deepEqual(f.jobs.activeQueue().map((j) => j.nodeId), [mine.id], 'a card started with Generate keeps going');
+    assert.ok(!f.cancelled.includes(mine.id));
 });
 
 test('on bloop: the credits and the balance come first, and a shortfall is refused with nothing queued', async (t) => {
