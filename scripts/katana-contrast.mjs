@@ -160,6 +160,7 @@ export const PAIRS = Object.freeze([
     text('Alert text (not saved, failed)', 'var(--status-alert-text)', DOCK),
     text('Warn text (sheet notes)', 'var(--status-warn-text)', DOCK),
     text('Key label', 'var(--text-primary)', KEY),
+    text('Muted note on a picked preset row', 'var(--text-secondary)', PICK_ON),
     text('Key label on hover', 'var(--accent-text)', [...DOCK, 'var(--bg-tertiary)', 'color-mix(in srgb, var(--accent) 14%, var(--bg-tertiary))']),
     text('Export key (ink on orange)', 'var(--ink-on-accent)', ['var(--accent)']),
     text('Playhead cap time', 'var(--ink-on-accent)', ['var(--accent)']),

@@ -51,6 +51,10 @@
     .cut-details .cut-preview__meta { display: none; }
 }
 
+/* ── Desktop: 24 px hit areas (WCAG 2.5.8) for the preview deck's seek bar and volume and for Snap to beats ── */
+.cut-screen .ae-player__scrub, .cut-screen .ae-player__vol { min-height: 1.5rem; }
+.cut-dock .cut-snap { min-height: 1.5rem; }
+
 /* ── Touch: 44 px hit areas for every key in the dock and its sheets (02-dock.md §10) ── */
 @media (pointer: coarse) {
     .cut-dock .ae-key { min-height: var(--touch-min); }

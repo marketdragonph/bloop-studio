@@ -80,7 +80,7 @@
 .cut-preset:has(:focus-visible) { outline: 2px solid var(--text-primary); outline-offset: 1px; }
 .cut-preset__input { grid-row: 1 / span 2; accent-color: var(--accent); }
 .cut-preset__name { font-weight: 700; font-size: var(--fs-sm); color: var(--text-primary); }
-.cut-preset__note { grid-column: 3; min-width: 0; font-size: var(--fs-2xs); color: var(--text-muted); }
+.cut-preset__note { grid-column: 3; min-width: 0; font-size: var(--fs-2xs); color: var(--text-secondary); } /* muted is 4.4:1 on a picked row */
 .cut-preset__line { grid-column: 2 / -1; font-size: var(--fs-3xs); color: var(--text-secondary); }
 
 /* ── Progress: sensor blue, the step in words ── */

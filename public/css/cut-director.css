@@ -169,7 +169,7 @@
 .cut-check__time { flex: none; }
 .cut-check__text { flex: 1; min-width: 0; }
 .cut-check__keys { display: inline-flex; flex: none; gap: var(--space-1); }
-.cut-rail__check.is-ready { color: var(--text-secondary); }
+/* "Ready" says the state in words; the key keeps its own label colour (secondary text on a key is 4.1:1 in dark). */
 
 .cut-details__why { margin: 0; color: var(--text-secondary); font-size: var(--fs-xs); }
 
