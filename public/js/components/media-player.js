@@ -38,18 +38,35 @@ export default function MediaPlayer(options = {}) {
         volume: 1,
         muted: false,
         scrubbing: false,
+        fullOn: false, // this player (or the stage around it) is the full-screen element
         _src: '',
         _raf: null,
         _drag: null,
 
         init() {
             Object.assign(this, readVolume());
+            this.watchFull();
             this.$nextTick(() => this.applyVolume());
         },
 
         destroy() {
             this._stopTick();
             this._endDrag();
+            this.unwatchFull();
+        },
+
+        /** Keeps fullOn true while this player, or the element around it, is the full-screen element (Esc included). */
+        watchFull() {
+            this._onFull = () => {
+                const fs = document.fullscreenElement;
+                this.fullOn = Boolean(fs && (fs === this.$el || fs.contains(this.$el) || this.$el.contains(fs)));
+            };
+            document.addEventListener?.('fullscreenchange', this._onFull);
+        },
+
+        unwatchFull() {
+            if (this._onFull) document.removeEventListener?.('fullscreenchange', this._onFull);
+            this._onFull = null;
         },
 
         vid() {
@@ -198,6 +215,10 @@ export default function MediaPlayer(options = {}) {
 
         /** Paused first: a viewer opening over a playing clip would leave its sound running behind it. */
         fullscreen() {
+            if (this.fullOn) {
+                document.exitFullscreen?.().catch(() => {});
+                return;
+            }
             const video = this.vid();
             if (options.fullscreen) video?.pause();
             options.fullscreen?.(video);

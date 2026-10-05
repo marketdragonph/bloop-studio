@@ -23,9 +23,6 @@
 
 .cut-screen.ae-player {
     position: relative;
-    height: auto;
-    max-height: 11rem;
-    aspect-ratio: 16 / 9;
     overflow: hidden;
 }
 

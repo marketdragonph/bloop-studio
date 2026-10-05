@@ -6,6 +6,9 @@
      it (cut-shape.js); Crop opens the crop box on the selected clip (cut-reframe.js); Captions shows the script's
      lines in the burned-in look; Soft bars draws a blurred copy behind a fitted clip (the bars canvas). --}}
 <div class="cut-preview" x-data="CutPlayer" data-control="cut.preview">
+  {{-- The stage: the column's full width; the screen inside it is the export's shape, as large as fits. Full screen
+       takes the stage, so the picture fills the monitor in that same shape. --}}
+  <div class="cut-stage" x-ref="cutStage" :class="{ 'is-full': fullOn }" @dblclick="cutCropping() || fullscreen()">
   <div class="cut-screen ae-player" x-ref="cutScreen" :class="{ 'is-playing': playing, 'is-scrubbing': scrubbing, 'is-cropping': cutCropping() }"
        :style="cutScreenVars()" :data-shape="cutShapeNow()">
     <canvas class="cut-screen__bars" data-cut-part="bars" width="32" height="18" aria-hidden="true"></canvas>
@@ -28,6 +31,7 @@
     </p>
     @include('pages/spaces/cut/crop-box')
     @include('pages/spaces/media-deck')
+  </div>
   </div>
   <audio class="cut-bed" x-ref="cutMusicEl" preload="auto"></audio>
   <audio class="cut-bed" x-ref="cutVoiceEl" preload="auto"></audio>

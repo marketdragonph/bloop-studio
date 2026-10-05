@@ -90,30 +90,43 @@ export function readout(items, exportMs = null) {
     return parts.join(' · ');
 }
 
+/** Label steps (s). Under a second the lanes are zoomed in (cut-zoom.js); the labels then read tenths. */
+const RULER_STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300];
+const FRAME_S = 1 / 30;
+const rulerStep = (pxPerSec, labelPx) => RULER_STEPS.find((s) => s * pxPerSec >= labelPx) ?? RULER_STEPS.at(-1);
+/** Minor ticks per label: frames under 0.2 s, fifths from 5 s, else halves. */
+const minorsPer = (step) => (step <= 0.2 ? Math.round(step / FRAME_S) : step >= 5 ? 5 : 2);
+const rulerLabel = (ms, step) => (step < 1 ? fmtLength(ms) : fmtClock(ms));
+
 /** Ruler ticks: a labelled major every `step` s (labels at least ~48 px apart), minors between. */
 export function rulerTicks(boardMs, pxPerSec, { labelPx = 48, maxTicks = 400 } = {}) {
-    const steps = [1, 2, 5, 10, 15, 30, 60, 120, 300];
-    const step = steps.find((s) => s * pxPerSec >= labelPx) ?? steps.at(-1);
-    const minor = step >= 5 ? step / 5 : step / 2;
+    const step = rulerStep(pxPerSec, labelPx);
+    const per = minorsPer(step);
+    const minor = step / per;
     const totalS = Math.max(boardMs / 1000, step);
     const ticks = [];
     for (let i = 0; i * minor <= totalS + 1e-9 && ticks.length < maxTicks; i++) {
-        const s = round(i * minor);
-        const major = Math.abs(s / step - Math.round(s / step)) < 1e-6;
-        ticks.push({ key: i, x: round(s * pxPerSec), major, label: major ? fmtClock(s * 1000) : '' });
+        const major = i % per === 0;
+        ticks.push({ key: i, x: round(i * minor * pxPerSec), major, label: major ? rulerLabel(Math.round(i * minor * 1000), step) : '' });
     }
     return ticks;
 }
 
 /**
  * The ruler as the dock draws it (P5): the labelled majors as elements, the minors as one repeating CSS gradient
- * every `minorPx` (a 150 s cut has ~150 ticks; drawing them as elements cost a long task on open).
+ * every `minorPx` (a 150 s cut has ~150 ticks; drawing them as elements cost a long task on open). The majors are
+ * counted by step, not from the tick list, so a deep zoom (a frame a minor) still labels the whole cut; minorPx
+ * keeps 4 decimals so the gradient stays on the frames across the whole span. `fromS`/`toS`: only the labels in
+ * that window (a zoomed lane draws the ones near the view; keys stay the step index).
  * @returns {{ majors: { key: number, x: number, label: string }[], minorPx: number }}
  */
-export function rulerScale(boardMs, pxPerSec, options = {}) {
-    const ticks = rulerTicks(boardMs, pxPerSec, options);
-    const minorPx = ticks.length > 1 ? ticks[1].x - ticks[0].x : 0;
-    return { majors: ticks.filter((t) => t.major).map(({ key, x, label }) => ({ key, x, label })), minorPx };
+export function rulerScale(boardMs, pxPerSec, { labelPx = 48, fromS = 0, toS = Infinity } = {}) {
+    const step = rulerStep(pxPerSec, labelPx);
+    const totalS = Math.max(boardMs / 1000, step);
+    const last = Math.floor((Math.min(totalS, toS) + 1e-9) / step);
+    const majors = [];
+    for (let k = Math.max(0, Math.floor(fromS / step)); k <= last; k++) majors.push({ key: k, x: round(k * step * pxPerSec), label: rulerLabel(Math.round(k * step * 1000), step) });
+    return { majors, minorPx: Math.round((step / minorsPer(step)) * pxPerSec * 10_000) / 10_000 };
 }
 
 /** Board ms for an export-time ms (beat ticks, bed spans). Past the last clip: the board end. */

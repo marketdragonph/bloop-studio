@@ -9,9 +9,8 @@
 // missing beats (cut-render.js) queues only on the person's press in its sheet. Export and Pack (cut-export.js) start
 // only on the person's press. P2b: the live cut (cut-auto.js) and Bring my clips (cut-bring.js).
 import { EMPTY_TEXT, SLOT_TEXT, copy } from '/shared/katana-controls.js';
-import { BED_DECODE_CAP_MS, bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, rulerScale, waveBars, wavePath, waveWindow } from '/shared/cut-lanes.js';
+import { bedSegments, fitScale, fmtClock, fmtLength, gapBlocks, ghostPeaks, wavePath } from '/shared/cut-lanes.js';
 import { entryKey, laneEntries, layoutLane } from '/shared/cut-timeline.js';
-import { mono, reduceTrack } from './audio-player.js';
 import { cutHistoryMethods } from './cut-history.js';
 import { cutPersistenceMethods } from './cut-persistence.js';
 import { cutActionMethods } from './cut-actions.js';
@@ -27,6 +26,8 @@ import { cutShapeMethods } from './cut-shape.js';
 import { cutOutputMethods } from './cut-outputs.js';
 import { cutNarrowMethods } from './cut-narrow.js';
 import { cutBedMethods } from './cut-beds.js';
+import { cutZoomMethods } from './cut-zoom.js';
+import { cutWaveMethods } from './cut-wave.js';
 import { patchList } from './cut-patch.js';
 
 const REFETCH_MS = 300;
@@ -34,7 +35,6 @@ const CALL_MS = 1600; // how long a card Go to card lands on stays lit
 const RING_MS = 2000; // items another window or the Director changed glow sensor blue this long
 const MAX_PPS = 160; // a 0.1 s clip never stretches the lane past this many px per second
 const BUSY = new Set(['queued', 'generating']);
-const WAVES = new Map(); // media url → peaks (decoded once per bed, per page)
 const GHOST_WAVE = wavePath(ghostPeaks());
 const LOADING = 'Loading the cut';
 const LOAD_ERROR = 'Could not load the cut. The board still works.';
@@ -81,8 +81,6 @@ export default function CutDock() {
         cutMusic: [],
         cutVoice: [],
         cutPauses: [],
-        cutWave: '',
-        cutWaveBars: 0,
         cutSelectedKey: null,
         cutAnnounce: '',
         cutEmptyText: EMPTY_TEXT,
@@ -202,20 +200,19 @@ export default function CutDock() {
             this._cutBoardMs = this.cutAsExported ? layoutLane(entries).total_ms : layout.total_ms;
             const shown = layout.entries.filter((e) => !e.hidden);
             const pps = Math.min(MAX_PPS, fitScale(width, shown.map((e) => ({ seconds: e.ms / 1000 }))));
-            this.cutPps = Math.max(pps, width > 0 && layout.total_ms > 0 ? width / (layout.total_ms / 1000) : 0);
+            this.cutPps = this.cutZoomPps(Math.max(pps, width > 0 && layout.total_ms > 0 ? width / (layout.total_ms / 1000) : 0)); // × zoom (cut-zoom.js)
             const items = shown.map((e) => this.cutViewItem(e, this.cutPps));
             this.cutItems = patchList(this.cutItems, items); // in place while the keys hold (a trim drag)
             const index = {};
             items.forEach((i, k) => { if (i.node_id != null) index[i.node_id] = k; });
             this.cutIndex = index;
             this.cutSpan = Math.max(width, Math.ceil(layout.total_ms / 1000 * this.cutPps));
-            const ruler = rulerScale(layout.total_ms, this.cutPps);
-            this.cutTicks = patchList(this.cutTicks, ruler.majors);
-            this.cutTickStep = ruler.minorPx;
+            this.cutRulerDraw(); // the labelled majors near the view, the minors' step (cut-zoom.js)
             this.cutMeasureLayout(layout, this.cutPps); // beat ticks, duck bands, dialogue spans
             this.cutPauses = gapBlocks(items);
             const music = this.cutBeds.music;
             this.cutMusic = music ? bedSegments(items, 0, this.cutBedMs(music), this.cutPps) : [];
+            this.cutWaveDraw(); // its detail follows the zoom (cut-wave.js)
             const voice = this.cutBeds.voice;
             this.cutVoice = voice ? bedSegments(items, Number(this.cutSound?.voice?.start_ms) || 0, this.cutBedMs(voice), this.cutPps) : [];
             if (!items.some((i) => i.key === this.cutSelectedKey)) this.cutSelectedKey = items.find((i) => i.ready)?.key ?? null;
@@ -309,44 +306,6 @@ export default function CutDock() {
                 this.cutLayout();
             });
             this._cutResize.observe(el);
-        },
-
-        // ── Music waveform: decoded only while the dock is open, once per bed ──
-
-        async cutLoadWave() {
-            const bed = this.cutBeds.music;
-            if (!bed?.media_url) { this.cutWave = ''; return; }
-            const bedMs = this.cutBedMs(bed);
-            if (bedMs > BED_DECODE_CAP_MS) { this.cutWave = ''; return; }
-            let wave = WAVES.get(bed.media_url);
-            if (!wave) {
-                try {
-                    const res = await fetch(bed.media_url);
-                    if (!res.ok) throw new Error(`media ${res.status}`);
-                    const ctx = new AudioContext();
-                    let buffer;
-                    try { buffer = await ctx.decodeAudioData(await res.arrayBuffer()); } finally { ctx.close().catch(() => {}); }
-                    const ms = Math.round(buffer.duration * 1000);
-                    wave = { ms, peaks: reduceTrack(mono(buffer), buffer.sampleRate, waveBars(ms, this.cutPps)).peaks };
-                    WAVES.set(bed.media_url, wave);
-                } catch {
-                    this.cutWave = '';
-                    return;
-                }
-            }
-            const current = this.cutBeds.music;
-            if (current?.media_url !== bed.media_url) return; // the bed changed while decoding
-            // Not measured on the server yet: the decoded length places the bed (display only).
-            if (!(Number(current.seconds) > 0) && wave.ms > 0) {
-                this.cutBeds = { ...this.cutBeds, music: { ...current, seconds: wave.ms / 1000 } };
-                this.cutLayout();
-            }
-            this.cutWaveBars = wave.peaks.length;
-            this.cutWave = wavePath(wave.peaks);
-        },
-
-        cutWaveBox(segment) {
-            return waveWindow(segment, this.cutBedMs(this.cutBeds.music), this.cutWaveBars || 1);
         },
 
         // ── Events from the board's stream ──────────────────────────────────
@@ -493,5 +452,7 @@ export default function CutDock() {
         ...cutOutputMethods,
         ...cutNarrowMethods,
         ...cutBedMethods,
+        ...cutZoomMethods,
+        ...cutWaveMethods,
     };
 }

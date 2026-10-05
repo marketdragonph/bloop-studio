@@ -82,6 +82,13 @@ of existing tokens. New layout tokens, no new colours: `--director-width: 26rem`
 
 - **Scale:** linear px per second. **Fit** fills the lane, but never below the scale where the shortest clip is
   `--cut-item-min`; past that the lanes scroll sideways. Ruler and playhead use the same scale.
+- [x] **Zoom** (2026-10-06, `public/js/components/cut-zoom.js`): Ctrl+scroll or a pinch zooms around the pointer (the
+  time under it holds to the pixel, one anchor per gesture; snapping is off while zoomed), Ctrl+= / Ctrl+- around the
+  playhead, Fit and Ctrl+0 back; up to 1200 px/s (40 px a frame). The ruler labels tenths with a tick a frame and
+  draws only the labels near the view; the waveform is decoded at 10 ms and drawn at the lane's scale (`cut-wave.js`).
+- [x] **Stage** (2026-10-06): the preview's stage spans the column on the media ground; the screen inside is the
+  export's shape as large as fits (`cqw`/`cqh`). Full screen takes the stage and toggles (Exit full screen, Esc); a
+  video's full screen is never remembered as the window's (only F11 is).
 - **Video lane:** one item per beat in beat order. A clip shows up to 4 frames (1 when narrower than 96 px), the
   beat tag, the length and a Director note (sensor dot + text, e.g. "Trimmed −1.5 s"). A person's edit clears it.
 - **Gap:** a hatched slot the size of the beat's planned length, "04 · Flashback / not rendered", **Go to card**.

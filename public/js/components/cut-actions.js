@@ -229,6 +229,7 @@ export const cutActionMethods = {
 
     /** Fit: back to the lane width, scrolled to the start. */
     cutFit() {
+        this.cutZoom = 1;
         this.cutLayout();
         this.cutPart('scroll')?.scrollTo({ left: 0 });
     },
@@ -260,6 +261,7 @@ export const cutActionMethods = {
         const mod = event.ctrlKey || event.metaKey;
         if (mod && key.toLowerCase() === 'z') return this.cutKey(event, () => (event.shiftKey ? this.cutRedo() : this.cutUndo()));
         if (mod && key.toLowerCase() === 'y') return this.cutKey(event, () => this.cutRedo());
+        if (mod && ['=', '+', '-', '0'].includes(key)) return this.cutKey(event, () => this.cutZoomKey(key === '+' ? '=' : key));
         if (mod) return;
         if (key === ' ' || event.code === 'Space') return this.cutKey(event, () => this.cutPlay());
         if (key === 'ArrowLeft' || key === 'ArrowRight') {

@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: zoom the Cut's timeline with Ctrl+scroll or a pinch. It zooms around your pointer, so the moment under it stays put, down to single frames. Ctrl+= and Ctrl+- zoom around the playhead, and Fit or Ctrl+0 shows the whole cut again. The ruler shows tenths of a second, and the music's waveform gets more detailed as you zoom.
+- Fixed: the Cut preview now fills its column from left to right. Its full-screen button now works both ways: the picture fills your screen in the shape you'll export, and the same button (or Esc) brings it back.
+- Fixed: watching a video in full screen no longer makes Bloop Studio open in full screen next time. Only F11 does.
 - Fixed: music made after you stitched the cut now reaches the Music lane. The Director can put any sound card on the Music lane or take the music off, Add new clips brings in music when the cut has none, and a card called Score, Soundtrack or Theme counts as music.
 - Fixed: the Music lane now shows exactly the music your export will have. A music card on the board that isn't in the cut gets a Use as music key, and Take off in the level popover removes it.
 

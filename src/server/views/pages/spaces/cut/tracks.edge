@@ -31,8 +31,8 @@
     </div>
   </div>
 
-  <div class="cut-tracks__scroll" data-cut-part="scroll">
-    <div class="cut-tracks__span" :style="{ '--cut-span': cutSpan + 'px' }">
+  <div class="cut-tracks__scroll" data-cut-part="scroll" data-control="cut.zoom" @wheel="cutWheel($event)" @scroll.passive="cutOnScroll()">
+    <div class="cut-tracks__span" data-cut-part="span" :style="{ '--cut-span': cutSpan + 'px' }">
       <div class="cut-ruler" aria-hidden="true" @pointerdown="cutScrubStart($event)" :style="{ '--cut-tick-step': cutTickStep > 1 ? cutTickStep + 'px' : '100%' }">
         <template x-for="tick in cutTicks" :key="tick.key">
           <span class="cut-ruler__tick is-major" :style="{ '--x': tick.x + 'px' }"><span class="cut-ruler__label" x-text="tick.label"></span></span>

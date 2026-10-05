@@ -3,12 +3,26 @@
    its shape from --cut-screen-ratio (cut-shape.js) and is a container, so captions scale with the picture exactly as
    the burned-in PNGs scale with the file (public/js/cut/caption-render.js holds the numbers). */
 
-/* ── The screen in a shape ── */
-.cut-preview { --cut-screen-h: 11rem; }
-.cut-screen.ae-player {
-    justify-self: center;
-    width: min(100%, calc(var(--cut-screen-h) * var(--cut-screen-ratio, 1.7778)));
+/* ── The stage and the screen in a shape ── */
+/* The stage spans the column, left to right, on the media ground; it is 16:9 up to the dock's height. The screen
+   inside is the export's shape, as large as the stage holds (cqw/cqh of the stage), centred. Full screen takes the
+   stage, so the same rule fills the monitor. */
+.cut-preview { --cut-screen-h: calc(var(--cut-open) - 8rem); }
+.cut-stage {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 16 / 9;
     max-height: var(--cut-screen-h);
+    background: var(--media-ground);
+    container-type: size;
+    overflow: hidden;
+}
+.cut-stage:fullscreen { max-height: none; aspect-ratio: auto; }
+.cut-screen.ae-player {
+    width: min(100cqw, 100cqh * var(--cut-screen-ratio, 1.7778));
+    height: auto;
+    max-height: 100cqh;
     aspect-ratio: var(--cut-screen-ratio, 16 / 9);
     container-type: inline-size;
 }

@@ -41,6 +41,7 @@ export default function CutPlayer() {
 
         init() {
             Object.assign(this, readVolume());
+            this.watchFull();
             this._cutPlayer = {
                 toggle: () => this.togglePlay(),
                 seek: (ms) => this.cpSeek(ms),
@@ -50,6 +51,7 @@ export default function CutPlayer() {
                 exportTime: () => toExport(this.cutLay(), s.t),
                 seekExport: (ms) => this.cpSeek(toScreen(this.cutLay(), ms)),
                 levels: () => this.cpBeds(true),
+                playhead: () => this.cpUi(true), // a zoom moved the scale (cut-zoom.js)
             };
             this.$nextTick(() => {
                 this.cpRefresh(true);
@@ -64,6 +66,7 @@ export default function CutPlayer() {
             this.cpStop();
             for (const v of [this.cpVid('a'), this.cpVid('b')]) v?.removeAttribute('src');
             this.cpBedsDestroy();
+            this.unwatchFull();
             this._cutPlayer = null;
         },
 
@@ -423,8 +426,10 @@ export default function CutPlayer() {
             this.cpBeds(true);
         },
 
+        /** The stage goes full screen (the picture keeps the export's shape, as big as the screen); again, or Esc, exits. */
         fullscreen() {
-            this.$refs.cutScreen?.requestFullscreen?.().catch(() => {});
+            if (this.fullOn) document.exitFullscreen?.().catch(() => {});
+            else this.$refs.cutStage?.requestFullscreen?.().catch(() => {});
         },
 
         /** The bed sync reads the clock through these. */

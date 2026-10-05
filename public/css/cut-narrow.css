@@ -36,7 +36,7 @@
 
     /* One column that scrolls: a smaller screen, then the lanes (the body is the only scroller). */
     .cut-dock__body { grid-auto-rows: max-content; padding: var(--space-2) var(--space-3); }
-    .cut-screen.ae-player { max-height: 26dvh; }
+    .cut-stage { max-height: 26dvh; }
     .cut-tracks__scroll { scroll-snap-type: x proximity; }
     .cut-item { scroll-snap-align: start; }
 

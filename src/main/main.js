@@ -52,15 +52,16 @@ async function boot() {
         mainWindow.show();
     });
 
-    // F11 toggles true full screen (no window controls); the choice is remembered for the next launch.
+    // F11 toggles true full screen (no window controls); the choice is remembered for the next launch. Only F11 is
+    // remembered: a video's own full screen (the Cut preview, the viewer) also fills the window, and leaves it as it was.
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.type === 'keyDown' && input.key === 'F11') {
             event.preventDefault();
-            mainWindow.setFullScreen(!mainWindow.isFullScreen());
+            const full = !mainWindow.isFullScreen();
+            mainWindow.setFullScreen(full);
+            settings.update({ windowMode: full ? 'fullscreen' : 'maximized' });
         }
     });
-    mainWindow.on('enter-full-screen', () => settings.update({ windowMode: 'fullscreen' }));
-    mainWindow.on('leave-full-screen', () => settings.update({ windowMode: 'maximized' }));
 
     // Only our own server may load in the window; anything else opens in the real browser.
     mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {

@@ -18,6 +18,9 @@ export const KEYS = Object.freeze({
     redo: 'Ctrl+Shift+Z',
     nudge: 'Shift+Arrow',
     move: 'Alt+Arrow',
+    zoom: 'Ctrl+scroll',
+    zoomIn: 'Ctrl+=',
+    zoomOut: 'Ctrl+-',
 });
 
 const c = (id, surface, label, where, does, phase, keys = null) => Object.freeze({ id, surface, label, where, does, phase, keys });
@@ -45,7 +48,8 @@ export const CONTROLS = Object.freeze([
     c('cut.remove', 'dock', 'Remove from cut', 'a selected clip', 'takes the clip out of the cut, never off the board', 'P2', KEYS.remove),
     c('cut.undo', 'dock', 'Undo', 'the rail', 'undoes the last edit in the dock', 'P2', KEYS.undo),
     c('cut.redo', 'dock', 'Redo', 'the rail', 'redoes it', 'P2', KEYS.redo),
-    c('cut.fit', 'dock', 'Fit', 'the rail', 'fits the cut to the lane', 'P2'),
+    c('cut.fit', 'dock', 'Fit', 'the rail', 'fits the cut to the lane (and undoes any zoom)', 'P2'),
+    c('cut.zoom', 'dock', 'Zoom', 'the lanes', 'zooms the lanes around the pointer (Ctrl+scroll or a pinch), or around the playhead (Ctrl+= and Ctrl+-); Ctrl+0 fits', 'P2', KEYS.zoom),
     c('cut.level', 'dock', 'Level', 'the Music and Voice lanes', 'sets the bed\'s level', 'P2'),
     c('cut.useNewer', 'dock', 'Use the newer version', 'the banner after a change in another window', 'takes the saved cut', 'P2'),
     c('cut.keepMine', 'dock', 'Keep mine', 'the same banner', 'keeps the cut on screen and saves it', 'P2'),

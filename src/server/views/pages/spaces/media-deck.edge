@@ -26,6 +26,8 @@
         <div class="ae-player__vol-track"><div class="ae-player__vol-fill" :style="{ width: Math.round(shownVolume() * 100) + '%' }"></div></div>
       </div>
     </div>
-    <button type="button" class="ae-player__key" @click.stop="fullscreen()" aria-label="Fullscreen (f)">{{{ icon('expand') }}}</button>
+    <button type="button" class="ae-player__key" @click.stop="fullscreen()" :aria-label="fullOn ? 'Exit full screen (f)' : 'Full screen (f)'">
+      <span x-show="!fullOn">{{{ icon('expand') }}}</span><span x-show="fullOn">{{{ icon('shrink') }}}</span>
+    </button>
   </div>
 </div>
