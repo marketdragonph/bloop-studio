@@ -5,6 +5,7 @@
 // they default off and the sheet says why. Read only.
 import { captionCues, scriptLines } from '../../shared/cut-captions.js';
 import { speechInCut } from '../../shared/cut-ducks.js';
+import { heardCache } from '../../shared/steady-sound.js';
 
 const OWN_SOUND = (tag) => `${tag}: this clip makes its own sound; its words may not match the script.`;
 const NO_LINES = 'No spoken line in the cut is measured yet, so there is nothing to caption.';
@@ -33,9 +34,9 @@ function wiresInto(db, nodeIds) {
  */
 export function captionPlan({ db, analysis = null }, spaceId, cut) {
     const items = cut.items ?? [];
-    const cache = analysis?.cached(items.map((i) => i.media_path)) ?? new Map();
-    const speech = speechInCut(items, (path) => cache.get(path)?.speech ?? null);
     const scripts = scriptsOf(db, spaceId);
+    const cache = heardCache(analysis?.cached(items.map((i) => i.media_path)) ?? new Map(), items, scripts);
+    const speech = speechInCut(items, (path) => cache.get(path)?.speech ?? null);
     const fixes = cut.settings?.outputs?.caption_text ?? {};
     const scriptFor = (item) => scripts.get(String(item.beat_tag ?? '').toLowerCase()) ?? null;
     const textOf = (item) => {

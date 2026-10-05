@@ -62,7 +62,7 @@ test('the upload route: the body is the file, a clip is a measured take, plain r
     const res = await f.upload(space.id, card.id, { name: 'C:\\fakepath\\Beach day.mp4' });
     assert.equal(res.status, 200);
     const body = await res.json();
-    assert.equal(body.label, 'Beach day.mp4');
+    assert.equal(body.label, 'Beach day', 'the file name without its extension');
     assert.equal(body.duration_ms, 4500);
     assert.equal(body.bytes, 2048);
     const take = f.jobs.takes(card.id)[0];
@@ -92,14 +92,30 @@ test('dropped clips and one song: the cut is the clips in drop order at their me
     }
     const read = f.boardCut.read(space.id);
     assert.equal(read.guessed, true);
-    assert.deepEqual(read.slots.map((s) => [s.beat_tag, s.seconds]), [['b.mp4', 4.5], ['a.webm', 4.5]], 'drop order, measured');
+    assert.deepEqual(read.slots.map((s) => [s.beat_tag, s.seconds]), [['b', 4.5], ['a', 4.5]], 'drop order, measured, no extensions');
     assert.deepEqual(read.beds.map((b) => [b.kind, b.seconds]), [['music', 52]]);
 
     // Fill runs because the cut is empty and the person dropped the files.
     const res = await f.send('POST', `/spaces/${space.id}/cut/draft`, { mode: 'fill', revision: 0 });
     const { cut } = await res.json();
-    assert.deepEqual(cut.items.map((i) => [i.beat_tag, i.out_ms]), [['b.mp4', 4500], ['a.webm', 4500]]);
+    assert.deepEqual(cut.items.map((i) => [i.beat_tag, i.out_ms]), [['b', 4500], ['a', 4500]]);
     assert.equal(cut.sound.music.node_id, read.beds[0].node_id);
+});
+
+test('upload labels: no extension; a label the person typed stays; a label from an earlier file is replaced', async (t) => {
+    const f = await uploadFixture(t);
+    const space = f.spaces.create({ name: 'labels' });
+    const card = f.spaces.createNode(space.id, { type: 'upload' });
+    const label = async (name) => (await (await f.upload(space.id, card.id, { name })).json()).label;
+    assert.equal(await label('try-h3-t2va-int8-1791060544778.mp4'), 'try-h3-t2va-int8-1791060544778');
+    assert.equal(await label('open-lanterns.mp4'), 'open-lanterns', 'the earlier file label was not typed, so it follows the new file');
+    f.spaces.updateNode(space.id, card.id, { label: 'The lantern walk' });
+    assert.equal(await label('other.mp4'), 'The lantern walk', 'a typed label stays');
+    const typed = f.spaces.createNode(space.id, { type: 'upload', label: 'hero shot' });
+    assert.equal((await (await f.upload(space.id, typed.id, { name: 'x.mp4' })).json()).label, 'hero shot');
+    const { uploadLabel } = await import('../src/server/routes/uploads.js');
+    assert.equal(uploadLabel('a.mp4', 'b.webm', ['a.mp4']), 'b', 'an old label with its extension still counts as the file name');
+    assert.equal(uploadLabel('', 'notes.v2'), 'notes.v2', 'only media extensions come off');
 });
 
 test('bringOrder and bringRow: clips in drop order then the song, one row below the board', () => {

@@ -48,11 +48,22 @@ function firstBalanced(text) {
     return null;
 }
 
+/**
+ * The cut's closing words, from the same applied list as the tool result and the strip (applied-edits.js): the count
+ * and what each edit did, never more. A turn that only put the clips in says that.
+ */
+export function cutWords(cutEdits) {
+    const edits = cutEdits.reduce((sum, e) => sum + (e.edits || 0), 0);
+    if (cutEdits.every((e) => e.drafted)) return 'I put the clips into the cut in beat order.';
+    const lines = cutEdits.flatMap((e) => e.lines ?? []);
+    const head = edits === 1 ? 'I made one edit to the cut' : `I made ${edits || 'no'} edits to the cut`;
+    return lines.length ? `${head}: ${lines.join('; ')}.` : `${head}.`;
+}
+
 /** The ledger's own words when the board changed and the model said nothing. */
 export function ledgerWords(ledger) {
     if (ledger.touchedCut?.() && !ledger.nodeIds.length && !ledger.wires) {
-        const edits = ledger.cutEdits.reduce((sum, e) => sum + (e.edits || 0), 0);
-        return ledger.drafted && !edits ? 'I put the clips into the cut in beat order.' : edits === 1 ? 'I made one edit to the cut.' : `I made ${edits || 'some'} edits to the cut.`;
+        return cutWords(ledger.cutEdits);
     }
     const cards = ledger.actions.filter((a) => a.kind === 'card').length;
     if (!cards) return 'I wired that up on the board.';

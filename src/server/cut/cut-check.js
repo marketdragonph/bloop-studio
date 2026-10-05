@@ -6,6 +6,8 @@ import { cutClock } from '../../shared/cut-clock.js';
 import { beatsInCut, cutDucks, speechInCut } from '../../shared/cut-ducks.js';
 import { mediaOfCut } from '../analysis/analyze-media.js';
 import { mergeFindings, timedFindings } from './findings.js';
+import { heardCache } from '../../shared/steady-sound.js';
+import { scriptsOf } from './captions-plan.js';
 
 /**
  * @param {{ boardCut: object, plans: object, analysis?: { cached: Function, measuring?: Function, toolsMissing?: boolean } }} deps
@@ -17,7 +19,9 @@ export function checkCut({ boardCut, plans, analysis = null }, spaceId, cut) {
     const plan = plans.latest(spaceId);
     const beats = plan ? plans.beats(plan.id) : [];
     const media = mediaOfCut(cut);
-    const cache = analysis?.cached(media.map((m) => m.path)) ?? new Map();
+    // Steady sound is a line only on a clip whose beat has a script card (steady-sound.js).
+    const scripted = boardCut.db ? scriptsOf(boardCut.db, spaceId) : new Map();
+    const cache = heardCache(analysis?.cached(media.map((m) => m.path)) ?? new Map(), cut.items, scripted);
     const analysisOf = (path) => cache.get(path) ?? null;
     const timed = timedFindings({ cut, slots: read.slots, plan, briefs: new Map(beats.map((b) => [b.tag, b.brief])), analysisOf });
     return {

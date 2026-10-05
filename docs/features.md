@@ -227,7 +227,9 @@ A port of bloop's Spaces Director (docs/plans/director-port.md), adapted to loca
   undo_turn) checks the whole list first and saves it in one write through `CutEdits`, all or nothing, with every
   refusal back to the model as text; `why` is required on trims, moves and joins and kept (the why ledger); an
   out point within 80 ms of a downbeat lands on it; clips the person placed or changed are locked unless the
-  person's own words this turn name the beat, "beat N" or the whole cut. One `cut_turns` row per turn holds the
+  person's own words this turn name the beat, "beat N" or the whole cut. The tool result lists exactly what
+  changed, read from the cut before and after the save (`director/cut/applied-edits.js`), and the Director describes
+  only those edits; the same list gives the turn's one edit count. One `cut_turns` row per turn holds the
   cut as it was: Undo turn (`POST /spaces/:id/cut/undo-turn`) or "undo that" puts it back with every stamp, only
   while nothing was saved after it; "keep the trims, undo the dissolves" takes back only some kinds. The cut
   critic runs once per turn as "CHECK YOUR CUT" (GAP, LINE_CUT_OFF, DEAD_AIR, LOUDNESS_OFF, MUSIC_ENDS_EARLY,
@@ -241,7 +243,9 @@ A port of bloop's Spaces Director (docs/plans/director-port.md), adapted to loca
   behind every export and pack, with the bundled ffmpeg (`silencedetect`, voice-band `silencedetect` for spoken
   lines, `ebur128`, `freezedetect` and `scdet` on a 10 fps 64×36 grey scale-down, an 11 kHz PCM decode for the
   bed's onsets, tempo, downbeats and waveform bars; a grid counts only when at least half its beats land on an onset,
-  so a beatless bed shows no ticks). Only what a cut holds, its beds, or what `inspect_cut` asks
+  so a beatless bed shows no ticks). A "line" covering ≥ 85 % of a clip is kept apart as steady sound
+  (`src/shared/steady-sound.js`): with no `· script` card on its beat it blocks no trim, raises no LINE_CUT_OFF and
+  ducks no music; with one it is a line as before. Only what a cut holds, its beds, or what `inspect_cut` asks
   for is measured (`CutAnalysis` listens to `cut` events and tells the dock "measuring" / "done"). Cached in
   `media_analysis` by path, size, mtime and analyzer version. `GET /spaces/:id/cut` returns the duck windows
   (under the voice bed and every measured line, J/L aware, `src/shared/cut-ducks.js`), beat ticks, spoken lines,

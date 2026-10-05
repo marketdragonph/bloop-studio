@@ -176,3 +176,26 @@ test('ZIP64 records and Windows-unsafe names still open in Windows tar', async (
         await z.close();
     }
 });
+
+test('an upload labelled with its file name packs as clips/open-lanterns-take1.mp4, not open-lanterns.mp4-take1.mp4', async () => {
+    const { mkdtemp, writeFile } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { collect } = await import('../src/server/cut/pack/collect.js');
+    const { withoutExtension } = await import('../src/shared/safe-name.js');
+    const root = await mkdtemp(join(tmpdir(), 'pack-names-'));
+    try {
+        await writeFile(join(root, 'a.mp4'), 'x');
+        await writeFile(join(root, 'b.mp4'), 'x');
+        const board = {
+            nodes: [{ id: 1, type: 'upload', label: 'open-lanterns.mp4', media_mime: 'video/mp4' }, { id: 2, type: 'upload', label: 'night.v2', media_mime: 'video/mp4' }],
+            takes: [{ id: 1, node_id: 1, media_path: 'a.mp4', media_mime: 'video/mp4', preset: 'upload', seed: null }, { id: 2, node_id: 2, media_path: 'b.mp4', media_mime: 'video/mp4', preset: 'upload', seed: null }],
+            beats: [], lastExport: null, plan: null, space: { id: 1, name: 'x' }, wires: [], cut: { items: [] },
+        };
+        const { files } = await collect(board, { media: { resolve: (p) => join(root, p) } });
+        assert.deepEqual(files.map((x) => x.zip).slice(0, 2), ['clips/open-lanterns-take1.mp4', 'clips/night.v2-take2.mp4']);
+        assert.equal(withoutExtension('try-h3-t2va-int8-1791060544778.MP4'), 'try-h3-t2va-int8-1791060544778');
+        assert.equal(withoutExtension('.mp4'), '.mp4', 'never an empty name');
+    } finally {
+        await rm(root, { recursive: true, force: true });
+    }
+});

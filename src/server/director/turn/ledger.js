@@ -24,10 +24,11 @@ export class TurnLedger {
     refused() { this.proposals += 1; this.refusals += 1; }
 
     /** A cut write that landed: propose_cut_ops, a draft, an undo. */
-    recordCut({ edits = 0, changed = [], drafted = false, undo = false } = {}) {
+    /** `lines`: what the write changed, in the strip's words (applied-edits.js personLines), for the closing words. */
+    recordCut({ edits = 0, changed = [], drafted = false, undo = false, lines = [] } = {}) {
         this.proposals += 1;
         this.cutProposals += 1;
-        this.cutEdits.push({ edits, changed, undo });
+        this.cutEdits.push({ edits, changed, undo, drafted, lines });
         if (drafted) this.drafted = true;
     }
 

@@ -20,7 +20,7 @@ test('"make this ready for TikTok": preset, shapes, captions set up; the soft-cr
     const t = f.turn(b.space.id, 'make this ready for TikTok with captions');
     const r = f.run('propose_cut_ops', { ops: [{ op: 'outputs', preset: 'tiktok', shapes: ['9:16'], captions: 'burned' }] }, t);
     assert.equal(r.ok, true, r.content);
-    assert.match(r.content, /^Done — 1 export setup; the cut is now 0:12 \(was 0:12\), revision 2\./);
+    assert.match(r.content, /^Done — 1 edit; the cut is now 0:12 \(was 0:12\), revision 2\./);
     assert.match(r.content, /The clips are 16:9, so 9:16 crops into each one from the middle and the picture gets softer: say that in one sentence\. The person moves the crop boxes; you never do\./);
     assert.match(r.content, /Nothing was rendered or exported\./);
     clean(r.content);

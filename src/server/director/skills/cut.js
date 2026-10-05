@@ -8,7 +8,6 @@ import { mediaOfCut } from '../../analysis/analyze-media.js';
 import { checkCut } from '../../cut/cut-check.js';
 import { CutOpsRejected, CUT_OPS, MAX_CUT_OPS, TRACKS, UNDO_KINDS } from '../cut/validate.js';
 import { PRESET_IDS, SHAPE_LIST } from '../../../shared/export-presets.js';
-import { countWords } from '../cut/cut-ops.js';
 import { cutCheckText } from '../cut/audit-cut.js';
 import { inspectText } from '../cut/inspect-text.js';
 
@@ -46,6 +45,7 @@ export const stitchCut = {
         if (!c) return { ok: false, content: NO_CUT };
         if (!['fill', 'add_new'].includes(mode)) return { ok: false, content: '`mode` is "fill" (an empty cut) or "add_new" (rendered beats not in the cut yet).' };
         c.turns.begin(t.spaceId, t.ledger);
+        const prior = new Set(c.cuts.current(t.spaceId).items.map((i) => i.id));
         const result = c.drafts.draft(t.spaceId, { mode, by: 'director', turn: t.ledger.cutTurnId });
         const gaps = result.missing.length ? `${result.missing.length} ${result.missing.length === 1 ? 'beat has' : 'beats have'} no video: ${result.missing.join(', ')}.` : 'Every beat is in.';
         if (!result.drafted) {
@@ -56,13 +56,19 @@ export const stitchCut = {
             return { ok: true, content: `There are no rendered clips on this board yet, so the cut stays empty. ${gaps} NOTHING WAS RENDERED. Say that in one sentence; do not say anything is rendering, and do not name any buttons.` };
         }
         const changed = result.cut.items.map((i) => i.node_id);
+        const placed = result.cut.items.filter((i) => !prior.has(i.id));
+        const text = `${mode === 'fill' ? 'Put' : 'Added'} ${result.added} ${result.added === 1 ? 'clip' : 'clips'} in beat order`;
+        // A fill goes into an empty cut, whose dock lane showed these very clips as the draft: the turn starts from
+        // that length, not from 0:00, so the strip reads the length the person saw (bug 2026-10-05).
+        const shown = mode === 'fill' && !c.turns.repo.find(t.ledger.cutTurnId)?.before?.items?.length ? cutClock(result.cut.items).total_ms : null;
+        // One write is one edit, the same count the strip, the reveal text and Undo turn read (applied-edits.js).
         c.turns.record(t.ledger.cutTurnId, result.cut, {
-            rows: [{ kind: 'stitch', beat_tag: null, node_id: null, item_id: null, text: `${mode === 'fill' ? 'Put' : 'Added'} ${result.added} clips in beat order`, why: null }],
-            changed, edits: result.added,
+            rows: [{ kind: 'stitch', beat_tag: null, node_id: null, item_id: null, text, why: null }], changed, edits: 1, beforeTotalMs: shown,
         });
-        t.ledger.recordCut({ edits: result.added, changed, drafted: true });
+        t.ledger.recordCut({ edits: 1, changed, drafted: true, lines: [text] });
         const capped = result.capped ? ' The cut stopped at its limit (50 clips or 10 minutes).' : '';
-        return { ok: true, content: `Added ${result.added} clips in beat order; the cut is ${clockText(cutClock(result.cut.items).total_ms)}, revision ${result.cut.revision}.${capped} ${gaps} NOTHING WAS RENDERED. Say which beats are missing in one sentence. Do not say they are rendering, and do not name any buttons.${critic(t, changed)}` };
+        const list = `\nExactly what changed: ${placed.map((i) => i.beat_tag).join(', ')} placed whole, in beat order; nothing was trimmed, moved or taken out.`;
+        return { ok: true, content: `Added ${result.added} clips in beat order; the cut is ${clockText(cutClock(result.cut.items).total_ms)}, revision ${result.cut.revision}.${capped} ${gaps} NOTHING WAS RENDERED. Say which beats are missing in one sentence. Do not say they are rendering, and do not name any buttons.${list}${critic(t, changed)}` };
     },
 };
 
@@ -121,10 +127,21 @@ export const proposeCutOps = {
         }
         const notes = [...done.snapped, ...(done.hints ?? [])]; // P6: the outputs op's "the crop will be soft"
         const snaps = notes.length ? `\n${notes.join('\n')}` : '';
-        const what = countWords(done.counts) || `${done.rows.length} edits`;
-        return { ok: true, content: `Done — ${what}; the cut is now ${clockText(done.after_ms)} (was ${clockText(done.before_ms)}), revision ${done.saved.revision}. It is in the Cut already: say what you changed and why in two sentences, in editing words. Nothing was rendered or exported.${snaps}${critic(t, done.changed)}` };
+        return { ok: true, content: `${appliedText(done)}${snaps}${critic(t, done.changed)}` };
     },
 };
+
+/**
+ * The exact account of a write (bug 2026-10-05: a reply claimed trims that never landed): the count and one line per
+ * change, read from the cut before and after the save (applied-edits.js). The model describes these and no more.
+ */
+export function appliedText(done) {
+    const head = `the cut is now ${clockText(done.after_ms)} (was ${clockText(done.before_ms)}), revision ${done.saved.revision}.`;
+    if (!done.edits) return `Done, but nothing in the cut actually changed: ${head} Say that in one sentence; describe no edit. Nothing was rendered or exported.`;
+    const n = done.edits === 1 ? '1 edit' : `${done.edits} edits`;
+    return `Done — ${n}; ${head} Exactly what this call changed (nothing else changed):\n${done.lines.join('\n')}\n`
+        + 'It is in the Cut already: say what you changed and why in two sentences, in editing words, naming ONLY the edits in this list. Nothing was rendered or exported.';
+}
 
 export const inspectCut = {
     name: 'inspect_cut',

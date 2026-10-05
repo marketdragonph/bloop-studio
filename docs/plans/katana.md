@@ -288,6 +288,10 @@ shader and JSON content and ~1.2 MB of fonts.
 6. **Build order: A** (owner: follow the recommendations). P2b after P2, P6 after P5, both before K1.
 7. **Render missing beats on bloop cloud: A** (owner: follow the recommendations). The sheet always shows the credit
    estimate and balance first and refuses plainly when short. The press is the person's; the Director never starts it.
+8. **Steady sound, owner 2026-10-05.** In clip analysis a detected speech span covering ≥ 85 % of a clip whose beat has
+   no `· script` card is steady background sound, not a spoken line: it does not block trims, does not trigger
+   `LINE_CUT_OFF` and does not duck the music under the whole clip. A clip with a script card keeps today's behaviour.
+   `ANALYZER_VERSION` 3 re-measures cached results ([katana/03-director.md](katana/03-director.md) §11, live-turn fixes).
 
 **Critic pass (2026-10-05):** GPL filter list, preview/export parity, 2 h segment and mix sizes, key clashes with
 Electron's default menu, contrast and file splits fixed in 04 and 06; two owner questions in 06-full-capcut.md §10.

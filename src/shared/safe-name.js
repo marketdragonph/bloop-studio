@@ -50,3 +50,11 @@ function cut(text, max) {
     const chars = [...text];
     return chars.length > max ? chars.slice(0, max).join('') : text;
 }
+
+const MEDIA_EXT = /\.(mp4|webm|mov|m4v|mkv|png|jpe?g|webp|gif|mp3|wav|ogg|oga|flac|m4a|aac)$/i;
+
+/** "open-lanterns.mp4" → "open-lanterns": a media file's name without its extension (a card label, a Pack name). */
+export function withoutExtension(name) {
+    const text = String(name ?? '').trim();
+    return text.replace(MEDIA_EXT, '').trim() || text;
+}

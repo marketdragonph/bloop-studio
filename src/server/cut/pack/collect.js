@@ -10,7 +10,7 @@ import { stat } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { DirectorPlans } from '../../repositories/director-plans.js';
 import { EXPORT_PRESETS as OWN_EXPORTS } from '../board-cut.js';
-import { safeName, safePath } from '../../../shared/safe-name.js';
+import { safeName, safePath, withoutExtension } from '../../../shared/safe-name.js';
 
 const json = (text, fallback) => {
     try {
@@ -78,7 +78,8 @@ export async function collect(board, { media, includePrompts = true }) {
     for (const t of board.takes) takesByNode.set(t.node_id, [...(takesByNode.get(t.node_id) ?? []), t]);
 
     for (const node of board.nodes) {
-        const card = safeName(node.label?.trim() || `${node.type}-${node.id}`, { max: 40 });
+        // A label that is a file name ("open-lanterns.mp4") loses its extension: the take's own goes on the end.
+        const card = safeName(withoutExtension(node.label) || `${node.type}-${node.id}`, { max: 40 });
         const beat = beatOf(node, board.beats);
         const own = (takesByNode.get(node.id) ?? []).filter((t) => !OWN_EXPORTS.has(t.preset));
         const folderFor = (kind) => {

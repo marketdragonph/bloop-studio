@@ -28,6 +28,9 @@ that heading into the version number and uses the section as the release notes.
 - New: Settings › Video tools shows the ffmpeg the app uses, with Check again and Choose ffmpeg.exe… if it goes missing.
 - New: on a narrow window or a phone-sized screen the Cut dock opens as a sheet at the bottom, and only one of the dock and the Director is open at a time. Export stays in sight on the dock's top line. Tap a clip to open its sheet: Trim has a slider for each end and −0.1 s / +0.1 s keys, and Done closes it. On touch screens every key in the dock is big enough for a finger.
 - Changed: orange and blue text is a shade deeper in the light theme, so it is easier to read.
+- Fixed: the Director's reply about a cut edit now says only what it actually changed, and the strip under the Cut dock shows one edit count and the cut's real length before the turn.
+- Fixed: clips you bring in or upload are named without the file extension (a name you typed stays), so the cut and Pack files no longer read like "clip.mp4-take1.mp4".
+- Changed: steady background sound that runs under a whole clip (rain, an engine, a soundtrack) no longer counts as a spoken line when the beat has no script card, so the Director can trim it and the music is not lowered under it.
 - Fixed: undoing a card you deleted brings back its earlier takes too.
 - Fixed: the Director panel could keep saying it was working after a quick reply had already arrived.
 

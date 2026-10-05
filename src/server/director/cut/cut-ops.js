@@ -11,13 +11,13 @@ import { CutInvalidError } from '../../cut/validate-cut.js';
 import { CutOpsRejected, TIMED, shapeProblems } from './validate.js';
 import { applyOp } from './op-handlers.js';
 import { isLocked, namedItems } from './lock.js';
+import { appliedEdits, editLines, personLines } from './applied-edits.js';
+import { heardCache } from '../../../shared/steady-sound.js';
+import { scriptsOf } from '../../cut/captions-plan.js';
 
 const clone = (value) => (value == null ? value : JSON.parse(JSON.stringify(value)));
 const NOT_MEASURED_TOOLS = 'is not measured, so no time can be set. Say the cut could not be measured on this PC in one sentence.';
 const NOT_MEASURED_YET = 'is not measured yet, so no time can be set. Leave its times as they are and say it is still being measured.';
-const KIND_WORDS = { trim: ['trim', 'trims'], move: ['move', 'moves'], remove: ['removal', 'removals'], join: ['join', 'joins'], sound: ['sound change', 'sound changes'],
-    duck: ['duck', 'ducks'], level: ['level', 'levels'], snap: ['beat cut', 'beat cuts'], poster: ['poster frame', 'poster frames'], place: ['placed clip', 'placed clips'],
-    outputs: ['export setup', 'export setups'] };
 
 /** The working copy one op list edits, with the checks the handlers share. */
 export class WorkingCut {
@@ -94,7 +94,7 @@ export class CutOps {
      * @param {number} spaceId
      * @param {object[]} ops
      * @param {{ request: string, ledger: object }} turn
-     * @returns {{ saved: object, before_ms: number, after_ms: number, counts: object, snapped: string[], rows: object[], summary: object[], changed: number[], turn: number }}
+     * @returns {{ saved: object, before_ms: number, after_ms: number, edits: number, lines: string[], snapped: string[], rows: object[], summary: object[], changed: number[], turn: number }}
      * @throws {CutOpsRejected}
      */
     apply(spaceId, ops, { request, ledger }) {
@@ -110,7 +110,8 @@ export class CutOps {
         const read = boardCut.read(spaceId, { cut });
         const plan = plans.latest(spaceId);
         const beats = plan ? plans.beats(plan.id).map((b) => b.tag) : [];
-        const cache = analysis.cached([...cut.items.map((i) => i.media_path), cut.sound?.music?.media_path, cut.sound?.voice?.media_path]);
+        const cached = analysis.cached([...cut.items.map((i) => i.media_path), cut.sound?.music?.media_path, cut.sound?.voice?.media_path]);
+        const cache = heardCache(cached, cut.items, scriptsOf(this.deps.db, spaceId)); // steady sound: steady-sound.js
         const measuredNodes = new Set(read.slots.filter((s) => s.measured).map((s) => s.node_id));
         const w = new WorkingCut({
             cut, beats, slots: read.slots,
@@ -146,16 +147,16 @@ export class CutOps {
         const before = new Map(cut.items.map((i) => [i.id, i]));
         const changed = saved.items.filter((i) => !before.has(i.id) || JSON.stringify(before.get(i.id)) !== JSON.stringify(i)).map((i) => i.node_id);
         const removed = cut.items.filter((i) => !saved.items.some((s) => s.id === i.id)).map((i) => i.node_id);
-        const edits_n = Object.values(w.counts).reduce((s, n) => s + n, 0);
-        // Where each changed clip now starts in the cut (Go to edit moves the playhead there).
-        const starts = new Map(cutClock(saved.items).items.map((at, i) => [saved.items[i].id, at.start_ms]));
-        w.rows = w.rows.map((r) => ({ ...r, at_ms: starts.get(r.item_id) ?? null }));
-        const reasons = w.rows.filter((r) => r.why).map((r) => ({ beat_tag: r.beat_tag, item_id: r.item_id, op: r.kind, why: r.why, text: r.text }));
-        turns.record(ledger.cutTurnId, saved, { rows: w.rows, summary: w.summary, reasons, changed: [...changed, ...removed], edits: edits_n });
-        ledger.recordCut({ edits: edits_n, changed: [...changed, ...removed] });
+        // What landed, read from the cut before and after the save (applied-edits.js): the one list and the one
+        // count for the strip, the reveal text, Undo turn, the model's tool result and the ledger's closing words.
+        const applied = appliedEdits({ before: cut, after: saved, rows: w.rows, summary: w.summary });
+        const rows = applied.rows.map(({ detail: _detail, ...r }) => r); // at_ms: Go to edit moves the playhead there
+        const reasons = rows.filter((r) => r.why).map((r) => ({ beat_tag: r.beat_tag, item_id: r.item_id, op: r.kind, why: r.why, text: r.text }));
+        turns.record(ledger.cutTurnId, saved, { rows, summary: applied.summary, reasons, changed: [...changed, ...removed], edits: applied.count });
+        ledger.recordCut({ edits: applied.count, changed: [...changed, ...removed], lines: personLines(applied) });
         return {
-            saved, before_ms: cutClock(cut.items).total_ms, after_ms: cutClock(saved.items).total_ms, counts: w.counts, snapped: w.snapped,
-            rows: w.rows, summary: w.summary, changed: [...new Set([...changed, ...removed])], turn: ledger.cutTurnId, hints: w.hints ?? [],
+            saved, before_ms: cutClock(cut.items).total_ms, after_ms: cutClock(saved.items).total_ms, edits: applied.count, lines: editLines(applied),
+            snapped: w.snapped, rows, summary: applied.summary, changed: [...new Set([...changed, ...removed])], turn: ledger.cutTurnId, hints: w.hints ?? [],
         };
     }
 
@@ -167,26 +168,23 @@ export class CutOps {
         try {
             if (!op.kinds) {
                 const saved = turns.undo(spaceId, { by: 'director' });
-                ledger.recordCut({ edits: 1, changed: saved.items.map((i) => i.node_id), undo: true });
-                return { saved, before_ms: beforeMs, after_ms: cutClock(saved.items).total_ms, counts: { undo: 1 }, snapped: [], rows: [], summary: [], changed: [], turn: null, undone: 'all' };
+                ledger.recordCut({ edits: 1, changed: saved.items.map((i) => i.node_id), undo: true, lines: ['Took back the last turn'] });
+                return { saved, before_ms: beforeMs, after_ms: cutClock(saved.items).total_ms, edits: 1, lines: [], snapped: [], rows: [], summary: [], changed: [], turn: null, undone: 'all' };
             }
             const back = turns.partial(spaceId, op.kinds);
             const plan = plans.latest(spaceId);
             const opened = namedItems(request, cut.items, plan ? plans.beats(plan.id).map((b) => b.tag) : []);
             const locked = cut.items.filter((i) => back.touched.includes(i.id) && isLocked(i) && opened !== 'all' && !opened.has(i.id));
             if (locked.length) throw new CutOpsRejected([`${locked.map((i) => i.beat_tag).join(', ')} changed by the person since that turn, so it is theirs. Leave it, or ask them in one sentence.`]);
-            const w = { counts: { undo: back.touched.length || 1 }, snapped: [], rows: back.touched.map((id) => ({ kind: 'undo', item_id: id, text: `Took back: ${op.kinds.join(', ')}` })), summary: [] };
+            const took = `Took back: ${op.kinds.join(', ')}`;
+            const whole = op.kinds.filter((k) => ['duck', 'level', 'outputs'].includes(k));
+            const w = { snapped: [], rows: back.touched.map((id) => ({ kind: 'undo', item_id: id, text: took })), summary: whole.length ? [{ kind: 'undo', track: null, text: `Took back: ${whole.join(', ')}`, why: null }] : [] };
             return this.#save(spaceId, cut, { items: back.items, sound: back.sound, settings: back.settings }, w, ledger);
         } catch (error) {
             if (error instanceof CutInvalidError) throw new CutOpsRejected([`${error.message} Say so in one sentence.`]);
             throw error;
         }
     }
-}
-
-/** "6 trims, 1 move, 2 joins". */
-export function countWords(counts) {
-    return Object.entries(counts).filter(([k]) => KIND_WORDS[k]).map(([k, n]) => `${n} ${KIND_WORDS[k][n === 1 ? 0 : 1]}`).join(', ');
 }
 
 export { TIMED };

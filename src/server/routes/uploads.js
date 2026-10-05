@@ -5,6 +5,7 @@
 import { rm } from 'node:fs/promises';
 import { Hono } from 'hono';
 import { UPLOADABLE, MAX_UPLOAD_BYTES, UploadTooLargeError } from '../generation/media-store.js';
+import { withoutExtension } from '../../shared/safe-name.js';
 
 const int = (value) => Number.parseInt(value, 10);
 const KINDS = 'Use a PNG, JPEG or WebP picture, an MP4 or WebM clip, or an MP3, WAV, OGG, FLAC or M4A voice.';
@@ -19,6 +20,17 @@ export function fileName(header) {
         name = String(header ?? '');
     }
     return name.split(/[\\/]/).pop().replace(/[\x00-\x1f]+/g, ' ').trim().slice(0, 120);
+}
+
+/**
+ * The card's label after a file came in: the file's name without its extension (it flows into cut tags, the dock and
+ * Pack names). A label the person typed stays; only an empty one, "Upload", or the name of a file that came in
+ * before (with or without its extension) is replaced.
+ */
+export function uploadLabel(current, name, previousNames = []) {
+    const label = String(current ?? '').trim();
+    const auto = !label || /^upload$/i.test(label) || previousNames.some((n) => n && (label === n || label === withoutExtension(n)));
+    return auto ? withoutExtension(name) || 'Upload' : label;
 }
 
 export function uploadRoutes({ spaces, jobs, events, media, cuts, measurer = null, maxBytes = MAX_UPLOAD_BYTES }) {
@@ -47,7 +59,8 @@ export function uploadRoutes({ spaces, jobs, events, media, cuts, measurer = nul
         }
         const name = fileName(c.req.header('x-file-name')) || 'Upload';
         spaces.setNodeResult(node.id, { status: 'done', media_path: saved.mediaPath, media_mime: type });
-        spaces.updateNode(node.space_id, node.id, { label: name });
+        const before = jobs.takes?.(node.id).map((t) => { try { return JSON.parse(t.params ?? '{}').name; } catch { return null; } }) ?? [];
+        spaces.updateNode(node.space_id, node.id, { label: uploadLabel(node.label, name, before) });
 
         // A clip or a sound is something the Cut can hold: a take with a measured length (NULL when not measured).
         let durationMs = null;

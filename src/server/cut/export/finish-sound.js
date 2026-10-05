@@ -10,6 +10,8 @@ import { cutDucks } from '../../../shared/cut-ducks.js';
 import { DUCK, FADE_OUT, MUSIC_LEVEL, VOICE_LEVEL } from '../../../shared/cut-rules.js';
 import { TRUE_PEAK_CEILING } from '../../../shared/export-presets.js';
 import { finishArgs, loudnessGain, measureArgs, mixArgs, parseLoudness } from './recipe.js';
+import { heardCache } from '../../../shared/steady-sound.js';
+import { scriptsOf } from '../captions-plan.js';
 
 const level = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
 export const NOT_MEASURED = 'Loudness not set: the mix was not measured.';
@@ -27,7 +29,9 @@ export async function mixSound(ctx, next) {
         const playMs = Math.min(music.ms, total);
         const fadeMs = Math.min(playMs, level(music.fade_out_ms, FADE_OUT.default));
         // Under the voice bed and every measured spoken line (P4), the same windows the dock draws.
-        const speech = ctx.deps.analysis?.cached(ctx.snapshot.items.map((i) => i.media_path)) ?? new Map();
+        // Steady sound on a clip with no script card is not a line, so the music does not duck under it.
+        const cached = ctx.deps.analysis?.cached(ctx.snapshot.items.map((i) => i.media_path)) ?? new Map();
+        const speech = heardCache(cached, ctx.snapshot.items, ctx.deps.db ? scriptsOf(ctx.deps.db, ctx.spaceId) : new Map());
         const windows = cutDucks(ctx.snapshot, (path) => speech.get(path)?.speech ?? null, { voiceMs: voice?.ms ?? 0 })
             .map((w) => ({ from_ms: w.from_ms, to_ms: Math.min(w.to_ms, total) })).filter((w) => w.to_ms > w.from_ms);
         musicInput = {

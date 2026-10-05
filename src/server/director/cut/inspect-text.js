@@ -23,6 +23,7 @@ export function clipLine(item, a, { words = null, lose = 0, index = 0, start = 0
     if (a.still_head) parts.push(`still head ${span(a.still_head)}`);
     if (a.still_tail && a.still_tail !== a.still_head) parts.push(`still tail ${span(a.still_tail)}`);
     for (const [i, s] of (a.speech ?? []).entries()) parts.push(`speech ${span(s)}${i === 0 ? quote(words) : ''}`);
+    for (const s of a.steady ?? []) parts.push(`steady sound ${span(s)} (background, not a line: a trim may cut it)`);
     if (a.has_audio === false) parts.push('no sound in the file');
     else for (const s of (a.silence ?? []).slice(0, 3)) parts.push(`silence ${span(s)}`);
     if (a.loudness) parts.push(`${a.loudness.i.toFixed(1)} LUFS${a.loudness.tp != null ? `, peak ${a.loudness.tp.toFixed(1)} dBTP` : ''}`);

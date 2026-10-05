@@ -8,8 +8,10 @@ import { durationMs } from '../generation/measure-take.js';
 import { makeJobDir, removeDir } from '../cut/tools-jobs.js';
 import { headTail, motionArgs, parseLoudnessSummary, parseMotion, parseSilence, parseSpeech, pcmArgs, soundArgs, speechArgs, PCM_RATE } from './parse.js';
 import { analyzeBeats, peaksOf, samplesOf } from './onsets.js';
+import { splitSteady } from '../../shared/steady-sound.js';
 
-export const ANALYZER_VERSION = 2; // 2: no beats unless at least half land on an onset
+// 2: no beats unless at least half land on an onset. 3: steady sound (a span over 85 % of a clip) kept apart from lines.
+export const ANALYZER_VERSION = 3;
 export const MAX_MEDIA_MS = 600_000; // beds (and clips) are measured up to 10 minutes
 
 const timeoutFor = (lengthMs) => Math.max(30_000, 2 * lengthMs);
@@ -55,7 +57,8 @@ export async function speech(ctx, next) {
     if (ctx.data.has_audio && ctx.role !== 'music') {
         await measure(ctx, 'speech', async () => {
             const { stderr } = await run(ctx, speechArgs(ctx.full, ctx.lengthMs));
-            ctx.data.speech = parseSpeech(stderr, ctx.lengthMs);
+            // A span over 85 % of the clip is steady sound, not a line, unless its beat has a script card (steady-sound.js).
+            Object.assign(ctx.data, splitSteady(parseSpeech(stderr, ctx.lengthMs), ctx.lengthMs));
         });
     }
     await next();

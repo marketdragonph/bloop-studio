@@ -63,7 +63,9 @@ test('propose_cut_ops trims with the measured numbers: a note, a stored reason, 
     const t = f.turn(b.space.id, 'trim the dead bits');
     const r = run('propose_cut_ops', { ops: [{ op: 'trim', beat: 's2-cup', in_s: 0.6, out_s: 3.4, why: 'Still at 0.0–0.6 and frozen from 3.4.' }] }, t);
     assert.equal(r.ok, true);
-    assert.match(r.content, /^Done — 1 trim; the cut is now 0:11 \(was 0:12\), revision 2\. It is in the Cut already: say what you changed and why in two sentences, in editing words\. Nothing was rendered or exported\./);
+    assert.equal(r.content.split('\n').slice(0, 3).join('\n'), 'Done — 1 edit; the cut is now 0:11 (was 0:12), revision 2. Exactly what this call changed (nothing else changed):\n'
+        + '- s2-cup: in 0.0→0.6 s, out 4.0→3.4 s, now 2.8 s long (Still at 0.0–0.6 and frozen from 3.4.)\n'
+        + 'It is in the Cut already: say what you changed and why in two sentences, in editing words, naming ONLY the edits in this list. Nothing was rendered or exported.');
     const item = f.cuts.current(b.space.id).items[1];
     assert.deepEqual([item.in_ms, item.out_ms, item.note, item.placed_by, item.person_rev], [600, 3400, 'Trimmed −1.2 s', 'director', null]);
     assert.deepEqual(f.turns.repo.reasonsFor(b.space.id, 's2-cup').map((x) => x.why), ['Still at 0.0–0.6 and frozen from 3.4.']);

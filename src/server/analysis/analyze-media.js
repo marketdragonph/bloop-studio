@@ -31,10 +31,13 @@ export class AnalyzeMedia {
         this.toolsMissing = false;
     }
 
-    /** The cached measures for these paths (no freshness check, no job): Map(path → data). */
+    /**
+     * The cached measures for these paths (no file check, no job): Map(path → data). A row from an older analyzer is
+     * left out — it is measured again on the next cut change (ensure) — so its old reading is never used meanwhile.
+     */
     cached(paths) {
         const out = new Map();
-        for (const [path, row] of this.deps.repo.many(paths)) out.set(path, row.data);
+        for (const [path, row] of this.deps.repo.many(paths)) if (row.version === ANALYZER_VERSION) out.set(path, row.data);
         return out;
     }
 

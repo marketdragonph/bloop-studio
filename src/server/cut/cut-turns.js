@@ -36,8 +36,13 @@ export class CutTurns {
         if (!this.repo.find(ledger.cutTurnId)) ledger.cutTurnId = null;
     }
 
-    /** After a write of this turn: its revision and what it changed, added to the rows already there. */
-    record(turnId, saved, { rows = [], summary = [], reasons = [], changed = [], edits = 0 }) {
+    /**
+     * After a write of this turn: its revision and what it changed, added to the rows already there. `edits` is the
+     * count of rows + summary rows this write added (applied-edits.js), so the strip's number is what Show edits lists.
+     * `beforeTotalMs`: the length the dock showed before the turn when that was not the stored cut (a fill into an
+     * empty cut, whose lane showed the same clips as the draft).
+     */
+    record(turnId, saved, { rows = [], summary = [], reasons = [], changed = [], edits = 0, beforeTotalMs = null }) {
         const row = this.repo.find(turnId);
         if (!row) return null;
         return this.repo.update(turnId, {
@@ -48,6 +53,7 @@ export class CutTurns {
             ops_summary: [...row.ops_summary, ...summary],
             reasons: [...row.reasons, ...reasons.map((r) => ({ ...r, revision: saved.revision }))],
             changed: [...new Set([...row.changed, ...changed])],
+            ...(beforeTotalMs != null ? { before_total_ms: beforeTotalMs } : {}),
         });
     }
 

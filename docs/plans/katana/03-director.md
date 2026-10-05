@@ -326,3 +326,20 @@ SAY IT IN EDITING WORDS. "Tightened the open, cut on the swing, let her line run
   covering ≥ 85 % of a clip whose beat has no script card is "steady sound", not a line (owner call). 05 §3.7 ("hold it
   longer" sets the card's length through `propose_board_ops`) relies on the existing board op and the doctrine's
   words; no new tool.
+- [x] **Live-turn fixes (2026-10-05).** A live turn on real clips (space 5 on the dev app) found four bugs:
+  1. *Over-claiming* ("trimmed the silent head and tails", one clip untouched): `director/cut/applied-edits.js` reads
+     what changed from the cut before and after the save (never from the ops); `propose_cut_ops` returns that exact
+     list, one line per change ("- s4-end: out 6.0→3.0 s, now 3.0 s long (dead tail)"), an op that changed nothing
+     is not an edit, `stitch_cut` names the clips it placed whole, EditCraft adds SAY ONLY WHAT LANDED, and the
+     ledger's closing words (`turn/closing.js` `cutWords`) list the same edits.
+  2. *Strip numbers* ("8 edits · 0:00 → 0:29" over a 0:40 cut, "made 5 edits" under it): one count, rows + sound
+     rows of the applied list (a stitch write is one row), stored as `cut_turns.edits` and read by the strip, Show
+     edits, the reveal text and Undo turn; the dock says the line again when the same turn grows. A fill into an empty
+     cut (the dock's lane showed those clips as the draft) records the filled length as the turn's before-length.
+  3. *Upload names*: an Upload card is labelled with the file name without its extension (`uploadLabel`; a typed
+     label stays, a label from an earlier file follows the new one), and Pack drops a file extension from a label.
+  4. *Steady sound* (katana.md §8 item 8): `src/shared/steady-sound.js` (`splitSteady` at measure time,
+     `heardCache` where the cut is read: cut-check, CutOps, captions, the export's ducks), `ANALYZER_VERSION` 3, and
+     `AnalyzeMedia.cached` leaves out rows from an older analyzer until they are measured again.
+  Tests: `tests/director-cut-account.test.js`, `tests/cut-steady-sound.test.js`, `tests/bring-clips.test.js`
+  (labels), `tests/cut-pack.test.js` (Pack names).

@@ -79,8 +79,11 @@ export const cutTurnMethods = {
         const turn = readTurn(raw, this.cutModel);
         this.cutTurn = turn;
         if (!turn) { this.cutTurnOpen = false; return; }
-        if (turn.id !== this._cutTurnSeen && this.cutTurnShown()) {
-            this._cutTurnSeen = turn.id;
+        // A turn writes the cut more than once (stitch, then edits): the dock reloads after each write, so the line is
+        // said again whenever the turn's count changes — it always reads the strip's number, never a stale one.
+        const seen = `${turn.id}:${turn.edits}`;
+        if (seen !== this._cutTurnSeen && this.cutTurnShown()) {
+            this._cutTurnSeen = seen;
             this.cutTurnOpen = false;
             this.cutAnnounce = turn.edits === 1 ? copy('turnArrivedOne') : copy('turnArrived', { n: turn.edits });
         }
