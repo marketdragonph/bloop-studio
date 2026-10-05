@@ -11,6 +11,7 @@
          @board:cut.window="onCutEvent($event.detail)" @board:node.window="onCutNode($event.detail)"
          @board:nodes.window="cutRefetchSoon()" @board:cut-export.window="onCutExport($event.detail)"
          @cut:render-open.window="cutRenderOpen()" @cut:bring-pick.window="cutBringPick()" @cut:bring.window="cutBring($event.detail.files)"
+         @director:open.window="cutNarrowYield()"
          @dragover.prevent @drop.prevent="cutBringDrop($event)">
   <input type="file" class="visually-hidden" data-cut-part="bring-input" multiple tabindex="-1" aria-hidden="true"
          accept="video/mp4,video/webm,audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/flac,audio/mp4" @change="cutBringPicked($event)">

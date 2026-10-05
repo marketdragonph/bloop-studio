@@ -148,7 +148,7 @@ export const cutPersistenceMethods = {
     /** The saved copy replaces ours in place (no undo step, no save); the lanes redraw only if the person would see a change. */
     cutTakeSaved(cut) {
         // A trim drag or a level slider moves the model before its one commit: leave it be; the next save adopts.
-        if (this.cutDrag || this._cutLevelBefore || this._cutDuckBefore) return;
+        if (this.cutDrag || this._cutLevelBefore || this._cutDuckBefore || this._cutTrimBefore) return;
         const copy = { items: cut.items ?? [], sound: cut.sound ?? null };
         const visible = !same(this.cutSnapshot(), copy);
         this.cutModel = copy.items;

@@ -38,6 +38,7 @@ that heading into the version number and uses the section as the release notes.
 - Fixed: the name over the Cut preview now follows the clip that is playing, not only the one you selected.
 - Fixed: an error in the developer console on every board ("Applying inline style violates the Content Security Policy").
 - Changed: the Cut dock is easier to read in both themes. The playhead, trim handles, clip edges, hatched gaps, ruler ticks and waveform now stand out clearly in the light theme, the words on a missing beat no longer sit on the stripes, and labels on clip pictures stay readable over bright frames. Orange and blue text is a shade deeper in the light theme.
+- New: on a narrow window or a phone-sized screen the Cut dock opens as a sheet at the bottom, and only one of the dock and the Director is open at a time. Tap a clip to open its sheet: Trim has a slider for each end and −0.1 s / +0.1 s keys, and Done closes it. On touch screens every key in the dock is big enough for a finger.
 
 ## 2026.1005.1232
 

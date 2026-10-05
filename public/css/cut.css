@@ -129,8 +129,4 @@
     .cut-skeleton__item { animation: none; }
 }
 
-/* Narrow: the Director is a bottom sheet (director.css), so the dock spans the width. */
-@media (max-width: 40rem) {
-    .cut-dock.is-beside-director { margin-right: 0; }
-    .cut-dock.is-open { height: 60vh; }
-}
+/* Narrow windows and touch: cut-narrow.css. */

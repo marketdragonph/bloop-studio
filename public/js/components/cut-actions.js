@@ -17,8 +17,10 @@ const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.conte
 export const cutActionMethods = {
     // ── Selection ───────────────────────────────────────────────────────
 
+    /** A click or tap on a clip: selects it, and on a narrow window opens its item sheet (cut-narrow.js). */
     cutSelect(item) {
         this.cutSelectedKey = item.key;
+        this.cutItemOpen = true;
     },
 
     /** The selected clip when it can be edited (a stored cut, not the read-only draft lane). */

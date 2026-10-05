@@ -25,6 +25,7 @@ import { cutMeasureMethods } from './cut-measure.js';
 import { cutCheckMethods } from './cut-check.js';
 import { cutShapeMethods } from './cut-shape.js';
 import { cutOutputMethods } from './cut-outputs.js';
+import { cutNarrowMethods } from './cut-narrow.js';
 
 const REFETCH_MS = 300;
 const CALL_MS = 1600; // how long a card Go to card lands on stays lit
@@ -272,6 +273,7 @@ export default function CutDock() {
                 this._cutResize?.disconnect();
                 this._cutResize = null;
             }
+            this.cutNarrowOpened(); // a narrow window: the Director's sheet folds (cut-narrow.js)
         },
 
         /** The first draft that lands opens the dock once, unless the person already chose open or folded. */
@@ -473,5 +475,6 @@ export default function CutDock() {
         ...cutCheckMethods,
         ...cutShapeMethods,
         ...cutOutputMethods,
+        ...cutNarrowMethods,
     };
 }

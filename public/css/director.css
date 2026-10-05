@@ -75,6 +75,6 @@
 
 .director__compose { display: grid; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--ae-seam); }
 
-@media (max-width: 40rem) {
+@media (max-width: 47.999rem) { /* P5: the same width the Cut dock turns into a sheet (cut-narrow.css) */
     .director { top: auto; left: var(--space-2); right: var(--space-2); width: auto; height: 60vh; }
 }

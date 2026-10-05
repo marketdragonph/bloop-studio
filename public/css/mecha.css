@@ -187,4 +187,5 @@
 @media (prefers-reduced-motion: reduce) {
     .ae-sensor-dot { animation: none; }
     .ae-key, .ae-key::before { transition: none; }
+    .ae-level__fill { transition: none; }
 }

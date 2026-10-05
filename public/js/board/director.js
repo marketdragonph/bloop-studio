@@ -7,6 +7,8 @@ import { renderMarkdown } from './markdown.js';
 export const directorMethods = {
     async toggleDirector() {
         this.directorOpen = !this.directorOpen;
+        // On a narrow window the Cut dock folds, so only one bottom sheet is open (cut-narrow.js).
+        if (this.directorOpen) window.dispatchEvent(new CustomEvent('director:open'));
         if (this.directorOpen && !this.directorLoaded) await this.loadDirector();
         if (this.directorOpen) this.$nextTick(() => this.$refs.directorInput?.focus());
     },

@@ -100,9 +100,7 @@
 }
 
 /* Narrow: the sheet spans the window above the rail. */
-@media (max-width: 40rem) {
-    .cut-sheet { right: var(--space-2); left: var(--space-2); width: auto; }
-    .cut-dock.is-open .cut-sheet { max-height: calc(40vh - var(--topbar-height) - 2 * var(--space-4)); }
+@media (max-width: 47.999rem) { /* the sheet's narrow size is in cut-narrow.css */
     .cut-rail__job .ae-readout { display: none; }
 }
 

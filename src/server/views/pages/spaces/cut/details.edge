@@ -1,6 +1,9 @@
 {{-- The selected clip's details under the preview: what it is, its in and out, and every edit as a key, so
-     touch and keyboard reach the same actions as the mouse (Move left / Move right instead of a drag). --}}
-<div class="cut-details" x-show="cutSelected()" x-cloak>
+     touch and keyboard reach the same actions as the mouse (Move left / Move right instead of a drag).
+     P5: on a narrow window this is the item sheet (cut-narrow.css): Trim has a slider for each end over the whole
+     clip and −0.1 s / +0.1 s keys, so a trim never needs the small handles; Done closes it. --}}
+<div class="cut-details" x-show="cutSelected()" x-cloak :class="{ 'is-item-open': cutItemOpen }" role="group" aria-label="Selected clip">
+  <button type="button" class="ae-key ae-key--sm cut-details__done" @click="cutCloseItem()" data-control="cut.closeItem">{{ controlLabel('cut.closeItem') }}</button>
   <dl class="cut-preview__meta">
     <div class="cut-preview__row"><dt>Selected</dt><dd x-text="cutSelected()?.title"></dd></div>
     <div class="cut-preview__row"><dt>Length</dt><dd x-text="cutSelected() ? cutLength(cutSelected()) + (cutSelected().measured === false ? ' · not measured' : '') : ''"></dd></div>
@@ -15,7 +18,22 @@
     <button type="button" class="ae-key ae-key--sm" x-show="cutSelected() && cutCanGo(cutSelected())" @click="cutGoToCard(cutSelected())"
             data-control="cut.goToCard">{{ controlLabel('cut.goToCard') }}</button>
   </p>
-  <div class="cut-details__keys" role="group" aria-label="Selected clip" x-show="cutEditable()">
+  <div class="cut-trim" role="group" aria-label="{{ controlLabel('cut.trimSheet') }}" x-show="cutEditable()" data-control="cut.trimSheet">
+    <template x-for="edge in ['in', 'out']" :key="edge">
+      <div class="cut-trim__row">
+        <span class="ae-readout cut-trim__label" x-text="cutTrimText(edge)"></span>
+        <button type="button" class="ae-key ae-key--sm" @click="cutTrimStep(edge, -1)" data-control="cut.nudgeBack"
+                :aria-label="(edge === 'in' ? 'In' : 'Out') + ' {{ controlLabel('cut.nudgeBack') }}'">{{ controlLabel('cut.nudgeBack') }}</button>
+        <input type="range" class="cut-trim__range" min="0" step="100" :max="cutTrimBounds().max"
+               :value="edge === 'in' ? cutTrimBounds().in_ms : cutTrimBounds().out_ms"
+               :aria-label="'{{ controlLabel('cut.trimSheet') }} ' + (edge === 'in' ? 'in' : 'out')" :aria-valuetext="cutTrimText(edge)"
+               @input="cutTrimRange(edge, $event.target.value)" @change="cutTrimRange(edge, $event.target.value, { commit: true })">
+        <button type="button" class="ae-key ae-key--sm" @click="cutTrimStep(edge, 1)" data-control="cut.nudgeOn"
+                :aria-label="(edge === 'in' ? 'In' : 'Out') + ' {{ controlLabel('cut.nudgeOn') }}'">{{ controlLabel('cut.nudgeOn') }}</button>
+      </div>
+    </template>
+  </div>
+  <div class="cut-details__keys" role="group" aria-label="Edits" x-show="cutEditable()">
     <button type="button" class="ae-key ae-key--sm" @click="cutMove(-1)" :disabled="!cutCanMove(-1)"
             data-control="cut.moveLeft" aria-keyshortcuts="Alt+ArrowLeft">{{ controlLabel('cut.moveLeft') }}</button>
     <button type="button" class="ae-key ae-key--sm" @click="cutMove(1)" :disabled="!cutCanMove(1)"

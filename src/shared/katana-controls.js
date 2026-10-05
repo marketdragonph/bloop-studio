@@ -72,6 +72,10 @@ export const CONTROLS = Object.freeze([
     // ── P5: polish ──
     c('cut.pickSong', 'dock', 'Use as music', 'the dock, when several songs came in with Bring my clips', 'puts that song under the clips', 'P5'),
     c('cut.noSong', 'dock', 'No song', 'the same line', 'leaves the cut without music', 'P5'),
+    c('cut.trimSheet', 'dock', 'Trim', 'a selected clip\'s details (the item sheet on a narrow window)', 'a slider for each end sets where the clip starts and ends', 'P5', KEYS.nudge),
+    c('cut.nudgeBack', 'dock', '−0.1 s', 'beside each Trim slider', 'moves that end 0.1 s earlier', 'P5'),
+    c('cut.nudgeOn', 'dock', '+0.1 s', 'beside each Trim slider', 'moves that end 0.1 s later', 'P5'),
+    c('cut.closeItem', 'dock', 'Done', 'a selected clip\'s details', 'closes the details; the clip stays as it is', 'P5'),
     // ── P3: export and Pack ──
     c('cut.export', 'dock', 'Export', 'the rail and the export sheet', 'makes the cut into one video file on this PC', 'P3'),
     c('cut.preset', 'dock', 'Preset', 'the export sheet', 'picks the file\'s size and quality', 'P3'),

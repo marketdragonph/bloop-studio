@@ -1,0 +1,75 @@
+/* The Cut dock on a narrow window and on touch (Mini Katana P5, 02-dock.md §2, §6, §10). Under 48rem the open dock is
+   a 60 vh bottom sheet under the board, the Director's panel is one too (director.css), and only one is open at a
+   time (cut-narrow.js). The lanes scroll sideways with snap; a tap on a clip opens its item sheet over the bottom of
+   the window, with a slider and −0.1 s / +0.1 s keys for each end, until Done. On touch every key is 44 px.
+   Loaded after the other cut sheets, so these rules win at equal specificity. Tokens only. */
+
+/* ── Trim in the details (every width): In / Out, each a slider with its two keys ── */
+.cut-trim { display: grid; gap: var(--space-1); }
+.cut-trim__row { display: grid; grid-template-columns: 5.5rem auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); }
+.cut-trim__label { font-variant-numeric: tabular-nums; }
+.cut-trim .ae-key { white-space: nowrap; }
+.cut-trim__range { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent); }
+.cut-trim__range:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 2px; }
+.cut-details__done { display: none; }
+
+@media (max-width: 47.999rem) {
+    .cut-dock.is-open { height: 60dvh; }
+    .cut-dock.is-beside-director { margin-right: 0; }
+    .board-page:has(.cut-dock.is-open) .toasts { bottom: calc(60dvh + var(--space-4)); }
+    .cut-dock.is-open .cut-sheet { max-height: calc(40dvh - var(--topbar-height) - 2 * var(--space-4)); }
+    .cut-sheet { right: var(--space-2); left: var(--space-2); width: auto; }
+
+    /* The rail keeps one line: it scrolls sideways instead of wrapping under the board. */
+    .cut-rail { overflow-x: auto; scrollbar-width: none; }
+    .cut-rail > * { flex-shrink: 0; }
+
+    /* One column that scrolls: a smaller screen, then the lanes (the body is the only scroller). */
+    .cut-dock__body { grid-auto-rows: max-content; padding: var(--space-2) var(--space-3); }
+    .cut-screen.ae-player { max-height: 26dvh; }
+    .cut-tracks__scroll { scroll-snap-type: x proximity; }
+    .cut-item { scroll-snap-align: start; }
+
+    .cut-preview { overflow: visible; }
+
+    /* The item sheet: a tap on a clip opens it over the bottom of the window; Done closes it. */
+    .cut-details:not(.is-item-open) { display: none; }
+    .cut-details.is-item-open {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: var(--z-modal);
+        max-height: 50dvh;
+        overflow-y: auto;
+        padding: var(--space-3) var(--space-3) var(--space-4);
+        border-top: 2px solid var(--accent-mark);
+        background: var(--bg-secondary);
+        box-shadow: 0 -0.75rem 2rem color-mix(in srgb, var(--bg-primary) 60%, transparent);
+    }
+    .cut-details__done { display: inline-flex; justify-self: end; }
+    .cut-details .cut-preview__meta { display: none; }
+}
+
+/* ── Touch: 44 px hit areas for every key in the dock and its sheets (02-dock.md §10) ── */
+@media (pointer: coarse) {
+    .cut-dock .ae-key { min-height: var(--touch-min); }
+    .cut-dock .ae-key--square { width: var(--touch-min); }
+    .cut-dock .cut-join { min-width: var(--touch-min); min-height: var(--touch-min); }
+    .cut-trim__range { height: var(--touch-min); }
+    .cut-trim__row { grid-template-columns: 5.5rem var(--touch-min) minmax(0, 1fr) var(--touch-min); }
+    .cut-dock .cut-shape__pick, .cut-dock .cut-outputs__pick, .cut-dock .cut-preset { min-height: var(--touch-min); }
+    .cut-dock .cut-shape__pick, .cut-dock .cut-outputs__pick { min-width: var(--touch-min); }
+    .cut-dock .cut-snap, .cut-dock .cut-sheet__choice { min-height: var(--touch-min); }
+    .cut-dock .cut-level__key { min-width: var(--touch-min); }
+    /* The preview's deck (the shared MediaPlayer markup): its keys, volume and seek bar grow to 44 px in the dock. */
+    .cut-screen .ae-player__key { min-width: var(--touch-min); min-height: var(--touch-min); }
+    .cut-screen .ae-player__vol { min-height: var(--touch-min); }
+    .cut-screen .ae-player__scrub { height: var(--touch-min); }
+}
+
+/* ── Reduced motion: nothing in the dock moves by itself ── */
+@media (prefers-reduced-motion: reduce) {
+    .cut-tracks__scroll, .cut-dock__body, .cut-preview { scroll-behavior: auto; }
+    .cut-dock .ae-level__fill { transition: none; }
+}
