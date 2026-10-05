@@ -46,6 +46,7 @@ export const cutZoomMethods = {
         const fromS = windowed ? Math.max(0, scroll.scrollLeft - view) / pps : 0;
         const toS = windowed ? (scroll.scrollLeft + 2 * view) / pps : Infinity;
         const ruler = rulerScale(this.cutLay().total_ms, pps, { fromS, toS });
+        this.cutStripView?.(scroll, windowed); // the filmstrip tiles follow the same window (cut-filmstrip.js)
         this.cutTicks = patchList(this.cutTicks, ruler.majors);
         this.cutTickStep = ruler.minorPx;
     },

@@ -5,6 +5,7 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: clips on the Cut's timeline show their own frames along their length, like a filmstrip. Zoom in and you see the picture under every moment, so it's easy to find the exact frame to trim on. The frames are made once per clip in the background and never slow down a render or an export.
 - New: zoom the Cut's timeline with Ctrl+scroll or a pinch. It zooms around your pointer, so the moment under it stays put, down to single frames. Ctrl+= and Ctrl+- zoom around the playhead, and Fit or Ctrl+0 shows the whole cut again. The ruler shows tenths of a second, and the music's waveform gets more detailed as you zoom.
 - Fixed: the Cut preview now fills its column from left to right. Its full-screen button now works both ways: the picture fills your screen in the shape you'll export, and the same button (or Esc) brings it back.
 - Fixed: watching a video in full screen no longer makes Bloop Studio open in full screen next time. Only F11 does.

@@ -41,7 +41,7 @@ const body = async (c) => {
 };
 const isRevision = (value) => Number.isInteger(value) && value >= 0;
 
-export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDraft, cutTurns, analysis = null, plans }) {
+export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDraft, cutTurns, analysis = null, strips = null, plans }) {
     const routes = new Hono();
     const edits = cutEdits ?? new CutEdits({ db, cuts, events });
     const drafts = cutDraft ?? new CutDraft({ boardCut, cuts, edits });
@@ -58,7 +58,7 @@ export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDra
         throw error;
     };
 
-    routes.get('/spaces/:id/cut', (c) => {
+    routes.get('/spaces/:id/cut', async (c) => {
         const spaceId = int(c.req.param('id'));
         if (!spaces.find(spaceId)) return c.json({ error: GONE }, 404);
         const cut = cuts.current(spaceId);
@@ -68,6 +68,10 @@ export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDra
         const read = check.read;
         const sound = soundOnCut(cut, check.analysisOf, read.beds, scriptsOf(spaceId));
         const captions = captionPlan({ db: db ?? cuts.db, analysis }, spaceId, cut);
+        // The Video lane's filmstrips: the sheets made so far, and the missing ones queued (a `cut` event when made).
+        const clipPaths = (cut.items.length ? cut.items : read.slots).map((x) => x.media_path).filter(Boolean);
+        const sheets = strips ? await strips.many(clipPaths) : new Map();
+        strips?.ensureAll(spaceId, clipPaths, cut.revision);
         return c.json({
             cut: cutView(cut),
             slots: read.slots,
@@ -87,6 +91,7 @@ export function cutRoutes({ db, spaces, cuts, boardCut, events, cutEdits, cutDra
             turn: turns.view(spaceId, cut.revision), // the newest Director turn (CutTurns.view), for the turn strip
             findings: check.findings,
             guessed: read.guessed,
+            strips: Object.fromEntries(sheets), // media path → {url, every_ms, frames, cols, rows, tile_w, tile_h}
         });
     });
 

@@ -119,3 +119,24 @@ test('full screen: the stage goes full screen, the key exits it again, and the i
     // A video's full screen is never remembered as the window's (only F11 is).
     assert.doesNotMatch(read('src/main/main.js'), /on\('enter-full-screen'/);
 });
+
+test('filmstrips: a clip with a sheet draws its tiles; zoomed, only those near the view', async (t) => {
+    const { dock } = fakeDock(t);
+    const strip = { url: '/media/.bloop-cache/strips/k.jpg', duration_ms: 6000, every_ms: 100, frames: 60, cols: 16, rows: 4, tile_w: 160, tile_h: 90 };
+    dock.cutApply({ ...withItems([11, 12, 13]), strips: { 's/11.mp4': strip } });
+    const scroll = lanes(dock);
+    dock.cutLayout();
+    const [first, second] = dock.cutItems;
+    assert.equal(first.media_path, 's/11.mp4');
+    assert.ok(dock.cutStripTiles(first).length >= 1);
+    assert.deepEqual(dock.cutStripTiles(second), [], 'no sheet yet: the first frame shows, as before');
+    assert.match(dock.cutStripSheet(first)['--cut-strip'], /strips\/k\.jpg/);
+    for (let i = 0; i < 20; i++) {
+        dock.cutWheel(wheel(-120, 100));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    const all = Math.ceil(dock.cutItems[0].w / (82 * 16 / 9));
+    const drawn = dock.cutStripTiles(dock.cutItems[0]);
+    assert.ok(drawn.length < all, `${drawn.length} tiles drawn of ${all}`);
+    assert.ok(drawn.every((tile) => dock.cutItems[0].x + tile.x + tile.w >= scroll.scrollLeft - 600 && dock.cutItems[0].x + tile.x <= scroll.scrollLeft + 1200));
+});

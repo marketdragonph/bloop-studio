@@ -90,6 +90,8 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   the board's newest music card (settings.bed, or labelled music, music bed, song, score, soundtrack, theme, bgm);
   `public/js/components/cut-beds.js` draws only what the export plays, with **Use as music** on an offered card and
   **Take off** in the level popover. Add new clips and the Director's `music` op put music on; a card taken off stays off.
+  **Filmstrips** (2026-10-06): each clip on the Video lane shows its own frames along its length, from one sheet
+  per file made off the GPU path (`src/server/cut/clip-strips.js`, `public/js/components/cut-filmstrip.js`).
   **Zoom and the stage** (2026-10-06): Ctrl+scroll / pinch zooms the lanes around the pointer, Ctrl+= / Ctrl+- around
   the playhead, Fit or Ctrl+0 back (`cut-zoom.js`; ruler in tenths and frames, waveform detail from `cut-wave.js`). The
   preview's stage fills its column; full screen fills the monitor in the export's shape and the same key exits it.

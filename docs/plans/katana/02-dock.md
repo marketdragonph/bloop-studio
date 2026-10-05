@@ -86,6 +86,11 @@ of existing tokens. New layout tokens, no new colours: `--director-width: 26rem`
   time under it holds to the pixel, one anchor per gesture; snapping is off while zoomed), Ctrl+= / Ctrl+- around the
   playhead, Fit and Ctrl+0 back; up to 1200 px/s (40 px a frame). The ruler labels tenths with a tick a frame and
   draws only the labels near the view; the waveform is decoded at 10 ms and drawn at the lane's scale (`cut-wave.js`).
+- [x] **Filmstrips** (2026-10-06): `src/server/cut/clip-strips.js` makes one sheet per clip file on the tools queue
+  (analysis priority, capped ffmpeg: a frame every 100 ms, ≤ 300 frames, 160×90 tiles, 16 a row) into the media
+  folder's `.bloop-cache/strips`, once per file; GET /spaces/:id/cut returns `strips` and queues missing ones (one
+  `cut` event when made). `cut-filmstrip.js` draws each clip's tiles with the frame under each tile's middle
+  (`src/shared/cut-strips.js`), windowed to the view when zoomed; the first frame shows until the sheet exists.
 - [x] **Stage** (2026-10-06): the preview's stage spans the column on the media ground; the screen inside is the
   export's shape as large as fits (`cqw`/`cqh`). Full screen takes the stage and toggles (Exit full screen, Esc); a
   video's full screen is never remembered as the window's (only F11 is).

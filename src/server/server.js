@@ -58,6 +58,7 @@ import { renderPlanRoutes } from './routes/render-plan.js';
 import { starterRoutes } from './routes/starters.js';
 import { MediaAnalysisRepository } from './repositories/media-analysis.js';
 import { AnalyzeMedia, CutAnalysis } from './analysis/analyze-media.js';
+import { ClipStrips } from './cut/clip-strips.js';
 import { CutTurnsRepository } from './repositories/cut-turns.js';
 import { CutTurns } from './cut/cut-turns.js';
 import { CutOps } from './director/cut/cut-ops.js';
@@ -99,6 +100,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     await recoverToolsJobs({ exportsRepo, media });
     // P4: clip analysis on the same queue, behind every export and pack, only for what a cut holds or inspect_cut asks.
     const analysis = new AnalyzeMedia({ ffmpeg, media, repo: new MediaAnalysisRepository(db), queue: toolsQueue });
+    const strips = new ClipStrips({ ffmpeg, media, queue: toolsQueue, events }); // the Video lane's filmstrips, same queue
     const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue: toolsQueue, analysis });
     const packer = new Packer({ db, cuts, exportsRepo, media, events, queue: toolsQueue });
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer });
@@ -124,7 +126,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     new LiveCut({ events, cuts, drafts: cutDraft, plans, spaces, measurer }).start();
     new CutAnalysis({ events, cuts, analysis }).start();
     const sources = cardSources({ engine, account, launcher });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, cutTurns, analysis, sources, ops };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, cutTurns, analysis, strips, sources, ops };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

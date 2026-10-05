@@ -28,6 +28,7 @@ import { cutNarrowMethods } from './cut-narrow.js';
 import { cutBedMethods } from './cut-beds.js';
 import { cutZoomMethods } from './cut-zoom.js';
 import { cutWaveMethods } from './cut-wave.js';
+import { cutFilmstripMethods } from './cut-filmstrip.js';
 import { patchList } from './cut-patch.js';
 
 const REFETCH_MS = 300;
@@ -180,6 +181,7 @@ export default function CutDock() {
             this.cutFindings = Array.isArray(data.findings) ? data.findings : [];
             this.cutGuessed = Boolean(data.guessed);
             this._cutBedCards = Array.isArray(data.beds) ? data.beds : []; // the lanes follow the cut's sound (cut-beds.js)
+            this.cutStrips = data.strips && typeof data.strips === 'object' ? data.strips : {}; // filmstrips (cut-filmstrip.js)
             if (cut.settings) this.cutSettings = cut.settings;
             this.cutAdoptOutputs(); // P6: the last preset of this space (cut-outputs.js)
             this.cutReceive(cut, { by: cut.updated_by }); // adopts, keeps the person's edits, or asks (cut-persistence.js)
@@ -240,6 +242,7 @@ export default function CutDock() {
                 live: slot.state === 'rendering',
                 node_id: item?.node_id ?? slot.node_id ?? null,
                 poster_url: slot.poster_url ?? null,
+                media_path: ready ? item.media_path ?? null : null, // its filmstrip (cut-filmstrip.js)
                 measured: slot.measured,
                 ms: e.ms,
                 board_ms: e.start_ms,
@@ -454,5 +457,6 @@ export default function CutDock() {
         ...cutBedMethods,
         ...cutZoomMethods,
         ...cutWaveMethods,
+        ...cutFilmstripMethods,
     };
 }

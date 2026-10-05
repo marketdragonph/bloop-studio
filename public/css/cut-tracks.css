@@ -120,6 +120,21 @@
 
 .cut-clip__frame { position: absolute; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); object-fit: cover; clip-path: inherit; }
 
+/* The filmstrip (cut-filmstrip.js): tiles cut from one sheet image, each showing its frame; over the first frame. */
+.cut-strip { position: absolute; inset: 1px; overflow: hidden; clip-path: inherit; pointer-events: none; }
+.cut-strip__tile {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--tx);
+    width: var(--tw);
+    background-image: var(--cut-strip);
+    background-size: var(--cut-strip-size);
+    background-position: var(--bx) var(--by);
+    background-repeat: no-repeat;
+}
+.cut-clip:focus-visible .cut-strip { inset: 3px; }
+
 .cut-clip__cap {
     position: absolute;
     inset: 1px 1px auto;

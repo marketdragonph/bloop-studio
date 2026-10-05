@@ -23,6 +23,14 @@
               :aria-label="cutItemLabel(item)" :aria-pressed="item.key === cutSelectedKey ? 'true' : 'false'"
               aria-roledescription="clip" data-control="cut.clip">
         <img class="cut-clip__frame" x-show="item.poster_url" :src="item.poster_url || ''" alt="" loading="lazy" draggable="false">
+        {{-- The filmstrip: the file's frames along the clip at the lane's scale (cut-filmstrip.js), over the first frame. --}}
+        <template x-if="cutStripFor(item)">
+          <span class="cut-strip" :style="cutStripSheet(item)" aria-hidden="true">
+            <template x-for="tile in cutStripTiles(item)" :key="tile.k">
+              <span class="cut-strip__tile" :style="{ '--tx': tile.x + 'px', '--tw': tile.w + 'px', '--bx': tile.bx + 'px', '--by': tile.by + 'px' }"></span>
+            </template>
+          </span>
+        </template>
         <span class="cut-clip__cap">
           <span class="cut-clip__tag" x-text="item.title"></span>
           <span class="cut-clip__len" x-text="cutLength(item)"></span>
