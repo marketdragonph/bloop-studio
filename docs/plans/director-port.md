@@ -62,6 +62,24 @@ Lane = row, stage = column, `x = (stage − 1) × 380`, `y = (lane − 1) × pit
   Wires: brief + still note + the beat's plate look notes + look → image; image → clip (first frame);
   motion + sound + script + the beat's cast look notes → clip.
 
+## Camera: shots, angles, moves
+
+Ported from bloop (CraftRolesPrompt, CinematographyPrompt, ChangeBudget, PlaceStaging, Blocking), adapted to one
+still + one clip per beat (bloop's 2×2 storyboard sheet sentences are dropped):
+- The crew: the writer owns the brief, the art director the still (six steps in order: subject, camera — angle, lens,
+  depth of field — light with source, direction and colour temperature, composition, materials and texture, palette
+  and background), the cinematographer the clip (what moves, the camera move, how the end differs; never the still again).
+- THE SHOT LINE opens every still and clip prompt: `SHOT: size, angle, lens, light, 2–3 colours, the saved spot.
+  Avoid: …`. The sizes, angles and moves vocabularies verbatim; ONE move per clip, set off by the action.
+- How shots join: wide → medium → close for a feeling, never three of one size or angle in a row, screen direction and
+  eyelines kept, cut on the action; neighbours change at most two of size, angle, move, light, pace (ChangeBudget note).
+- Staging per beat (landmark, camera side, distance) chosen in build_board and kept across consecutive beats; blocking
+  (who stands where, facing where; exit right → enter left).
+- Orientation tails: tall boards (9:16, 4:5) put the subject in the upper third, one subject close, depth over width,
+  vertical moves; wide boards use the space beside the subject.
+- BeatWriter answers SHOT as `size | angle | lens | move | light | colour | avoid | cue`; the board writes it on top of
+  the still and the clip, and the clip's move is tied to its first action.
+
 ## Voice: dialogue and VO
 
 Ported from bloop unchanged:
