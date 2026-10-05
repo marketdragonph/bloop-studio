@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.933
+
 - Fixed: you can remove a wire again. Click it (it turns orange) and press Delete; Ctrl+Z puts it back.
 
 ## 2026.1005.916
