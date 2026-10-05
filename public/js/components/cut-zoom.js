@@ -21,6 +21,7 @@ export const zoomedPps = (fitPps, zoom) => Math.min(Math.max(fitPps, ZOOM_MAX_PP
 
 export const cutZoomMethods = {
     cutZoom: 1, // 1 = Fit
+    cutMinors: [], // zoomed: the minor ticks near the view, as elements
     _cutFitPps: 0,
     _cutZoomQueued: null, // { factor, anchorX } waiting for the next frame
 
@@ -48,6 +49,7 @@ export const cutZoomMethods = {
         const ruler = rulerScale(this.cutLay().total_ms, pps, { fromS, toS });
         this.cutStripView?.(scroll, windowed); // the filmstrip tiles follow the same window (cut-filmstrip.js)
         this.cutTicks = patchList(this.cutTicks, ruler.majors);
+        this.cutMinors = patchList(this.cutMinors, ruler.minors); // zoomed: exact minor ticks, no gradient
         this.cutTickStep = ruler.minorPx;
     },
 

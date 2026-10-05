@@ -140,3 +140,16 @@ test('filmstrips: a clip with a sheet draws its tiles; zoomed, only those near t
     assert.ok(drawn.length < all, `${drawn.length} tiles drawn of ${all}`);
     assert.ok(drawn.every((tile) => dock.cutItems[0].x + tile.x + tile.w >= scroll.scrollLeft - 600 && dock.cutItems[0].x + tile.x <= scroll.scrollLeft + 1200));
 });
+
+test('zoomed ruler: the minors are elements exactly on their times (a long gradient drifts), none under a label', () => {
+    const pps = 151.7; // an uneven scale (labels every 0.5 s), deep into a long cut
+    const scale = rulerScale(600_000, pps, { fromS: 75, toS: 82 });
+    const step = 0.5; // labels 0.5 s apart at this scale, a minor every 0.25 s
+    assert.ok(Math.abs(scale.majors[1].x - scale.majors[0].x - step * pps) < 0.02);
+    for (const tick of scale.minors) {
+        assert.ok(Math.abs(tick.x - tick.key * 0.25 * pps) < 0.01, `minor ${tick.key} at ${tick.x}`);
+        assert.ok(tick.key % 2 === 1, 'never where a label tick is');
+    }
+    assert.ok(scale.minors.length > 0 && scale.minors.length < 40);
+    assert.deepEqual(rulerScale(20_000, 20).minors, [], 'at Fit the gradient draws them');
+});

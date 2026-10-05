@@ -52,6 +52,7 @@
     height: 0.375rem;
     background: var(--cut-tick);
 }
+.cut-ruler.has-minors::before { display: none; } /* zoomed: the minors are elements, exactly on time */
 .cut-ruler__tick.is-major { height: 0.625rem; background: var(--text-secondary); }
 
 .cut-ruler__label {

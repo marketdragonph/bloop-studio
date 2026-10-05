@@ -117,8 +117,9 @@ export function rulerTicks(boardMs, pxPerSec, { labelPx = 48, maxTicks = 400 } =
  * every `minorPx` (a 150 s cut has ~150 ticks; drawing them as elements cost a long task on open). The majors are
  * counted by step, not from the tick list, so a deep zoom (a frame a minor) still labels the whole cut; minorPx
  * keeps 4 decimals so the gradient stays on the frames across the whole span. `fromS`/`toS`: only the labels in
- * that window (a zoomed lane draws the ones near the view; keys stay the step index).
- * @returns {{ majors: { key: number, x: number, label: string }[], minorPx: number }}
+ * that window (a zoomed lane draws the ones near the view; keys stay the step index). With a window the minors come
+ * back as elements too (`minors`): a gradient tens of thousands of px wide drifts off the labels as it repeats.
+ * @returns {{ majors: { key: number, x: number, label: string }[], minors: { key: number, x: number }[], minorPx: number }}
  */
 export function rulerScale(boardMs, pxPerSec, { labelPx = 48, fromS = 0, toS = Infinity } = {}) {
     const step = rulerStep(pxPerSec, labelPx);
@@ -126,7 +127,14 @@ export function rulerScale(boardMs, pxPerSec, { labelPx = 48, fromS = 0, toS = I
     const last = Math.floor((Math.min(totalS, toS) + 1e-9) / step);
     const majors = [];
     for (let k = Math.max(0, Math.floor(fromS / step)); k <= last; k++) majors.push({ key: k, x: round(k * step * pxPerSec), label: rulerLabel(Math.round(k * step * 1000), step) });
-    return { majors, minorPx: Math.round((step / minorsPer(step)) * pxPerSec * 10_000) / 10_000 };
+    const per = minorsPer(step);
+    const minor = step / per;
+    const minors = [];
+    if (Number.isFinite(toS)) { // a window: the zoomed lane
+        const end = Math.floor((Math.min(totalS, toS) + 1e-9) / minor);
+        for (let j = Math.max(0, Math.ceil(fromS / minor - 1e-9)); j <= end; j++) if (j % per) minors.push({ key: j, x: round(j * minor * pxPerSec) });
+    }
+    return { majors, minors, minorPx: Math.round(minor * pxPerSec * 10_000) / 10_000 };
 }
 
 /** Board ms for an export-time ms (beat ticks, bed spans). Past the last clip: the board end. */

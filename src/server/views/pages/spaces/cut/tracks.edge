@@ -33,9 +33,12 @@
 
   <div class="cut-tracks__scroll" data-cut-part="scroll" data-control="cut.zoom" @wheel="cutWheel($event)" @scroll.passive="cutOnScroll()">
     <div class="cut-tracks__span" data-cut-part="span" :style="{ '--cut-span': cutSpan + 'px' }">
-      <div class="cut-ruler" aria-hidden="true" @pointerdown="cutScrubStart($event)" :style="{ '--cut-tick-step': cutTickStep > 1 ? cutTickStep + 'px' : '100%' }">
+      <div class="cut-ruler" aria-hidden="true" @pointerdown="cutScrubStart($event)" :class="{ 'has-minors': cutMinors.length > 0 }" :style="{ '--cut-tick-step': cutTickStep > 1 ? cutTickStep + 'px' : '100%' }">
         <template x-for="tick in cutTicks" :key="tick.key">
           <span class="cut-ruler__tick is-major" :style="{ '--x': tick.x + 'px' }"><span class="cut-ruler__label" x-text="tick.label"></span></span>
+        </template>
+        <template x-for="tick in cutMinors" :key="tick.key">
+          <span class="cut-ruler__tick" :style="{ '--x': tick.x + 'px' }"></span>
         </template>
         <template x-for="beat in cutBeats" :key="beat.key">
           <span class="cut-ruler__beat" :class="{ 'is-down': beat.down }" :style="{ '--x': beat.x + 'px' }"></span>

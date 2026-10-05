@@ -5,6 +5,7 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Fixed: when you zoom into the Cut's timeline, the small ruler ticks now line up exactly with the time labels instead of drifting off them further into the cut.
 - Changed: when you're signed in to bloop, cards show their bloop models and video lengths straight away, even right after you start the app. Bloop Studio keeps your last model list on this computer and checks for updates in the background. A busy or offline ComfyUI no longer holds up the lists either.
 
 ## 2026.1006.742
