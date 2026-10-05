@@ -1,0 +1,25 @@
+{{-- The Cut dock (Mini Katana, plan katana/02-dock.md). P1 is read-only: the beats in order, gaps with Go to card.
+     Nested in the SpaceBoard scope (Go to card pans the board), outside .board__world (the board transform never
+     repaints it). Folded it is one rail and holds no media; the body exists only while open (x-if). --}}
+<section class="cut-dock" x-data="CutDock" aria-label="{{ controlLabel('cut.dock') }}" data-control="cut.dock"
+         :class="{ 'is-open': cutOpen, 'is-beside-director': directorOpen }"
+         @board:cut.window="onCutEvent($event.detail)" @board:node.window="onCutNode($event.detail)"
+         @board:nodes.window="cutRefetchSoon()">
+  @include('pages/spaces/cut/rail')
+
+  <template x-if="cutOpen">
+    <div class="cut-dock__body" id="cut-dock-body">
+      @include('pages/spaces/cut/preview')
+      <div class="cut-dock__main">
+        @include('pages/spaces/cut/states')
+        <template x-if="cutStatus === 'ready' && cutItems.length">
+          <div class="cut-tracks-wrap" x-init="$nextTick(() => { cutWatchSize(); cutLayout(); cutLoadWave(); })">
+            @include('pages/spaces/cut/tracks')
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
+
+  <p class="visually-hidden" aria-live="polite" x-text="cutAnnounce"></p>
+</section>

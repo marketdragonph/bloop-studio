@@ -45,6 +45,7 @@ export const directorMethods = {
         const same = board.connections.length === this.connections.length && board.connections.every((c, i) => c.id === this.connections[i]?.id);
         if (!same) this.connections = board.connections;
         if (tidy) this.tidyAfterRender();
+        window.dispatchEvent(new CustomEvent('board:nodes')); // the Cut dock refetches (debounced); it never reads `nodes`
     },
 
     /** While the Director builds: at most two board refreshes a second, the last one after its final change. */

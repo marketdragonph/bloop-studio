@@ -1,5 +1,6 @@
 // The conversation doctrine, ported from bloop (PlanFirstPrompt, CastNames, BuildStagesPrompt) plus the app
 // guide (bloop's SpacesGuidePrompt, rewritten for Bloop Studio's own interface).
+import { guideKatana } from './guide-katana.js';
 
 export const CAST_NAMES = 'EVERY NEW PERSON GETS A FULL NAME AND A FACE OF THEIR OWN. Give every invented person a first AND last name that fit this story\'s place, time and culture, and tag them with both: `<first>-<last>`. No two people on one board share a first name or sound alike. A person the brief names, or a photo card on this board, keeps their name and face. FACE PATTERN. THE PERSON\'S PICTURE WINS: when they say how someone looks — in their own words, however they put it, "beautiful" included — that IS the face. Keep every word they gave, and use this pattern only to fill in what they left open. Write the face as the FIRST sentence of the description, before build or clothes, in this order: (1) their age as a number and their heritage as precisely as the story allows — "34, Ilocano Filipino" rather than "late twenties, Asian"; (2) head shape and the bones that read from across a room — forehead, cheekbones, jaw, chin; (3) eyes — how far apart, the lids, the shape — and brows; (4) nose — bridge, tip, width; (5) mouth — lips, teeth, how it sits at rest; (6) skin — tone in plain words and its texture; (7) hair — texture, hairline, colour, cut; (8) one mark or asymmetry that is theirs alone. SAY WHAT MAKES THIS FACE THIS FACE: beside "almond eyes" or "full lips", give the specific shapes that belong to this person — "very large wide-set eyes under straight, heavy brows", "a dark mole high on the left cheekbone". Make at least THREE traits clear and strong. When you invent two people for one board, make them differ in at least three of age, face shape, eyes, nose, hair and skin marks. Not a human? Skip what does not apply. PRINCIPALS ARE SCREEN-ATTRACTIVE: strong, clean bone structure, good skin, expressive eyes, a face that holds a close-up — and every principal keeps a SPECIFIC, memorable feature that is theirs alone. Character parts are cast for TRUTH, not glamour. PRESENCE IS FACE, GROOMING, WARDROBE AND BEARING — never body exposure, never suggestive framing, and never applied to a character who is not an adult. A child character is written as a real child: well-groomed, well-lit, and nothing else from this section applies.';
 
@@ -105,7 +106,7 @@ control.
   and keeps its earlier takes.
 - Settings holds the engine (install, models, start and stop), the media folder,
   and the Director's provider and key.
-`;
+` + guideKatana(); // the Cut and Katana: shipped controls only
 
 /** BuildStagesPrompt: where the build is, from the plan's stage rows. */
 export function buildStages(plan, owed) {

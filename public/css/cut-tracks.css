@@ -1,0 +1,241 @@
+/* The Cut dock's lanes (02-dock.md §4): ruler, Video / Voice / Music, gaps, waveform, playhead. Positions come
+   in as CSS variables (--x, --w, --cut-span) from cut-lanes.js; colours are tokens and color-mix() of them. */
+
+.cut-tracks { display: grid; grid-template-columns: var(--cut-label) minmax(0, 1fr); min-width: 0; }
+
+.cut-tracks__labels { display: grid; grid-auto-rows: min-content; gap: var(--space-1); border-right: 1px solid var(--ae-seam); }
+.cut-tracks__corner { height: var(--cut-ruler-h); }
+
+.cut-track-label {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1875rem;
+    min-width: 0;
+    padding-right: var(--space-2);
+}
+.cut-track-label .ae-readout { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cut-track-label--video { height: var(--cut-video-h); }
+.cut-track-label--voice { height: var(--cut-voice-h); }
+.cut-track-label--music { height: var(--cut-music-h); }
+
+.cut-tracks__scroll { min-width: 0; overflow-x: auto; overflow-y: hidden; touch-action: pan-x; }
+
+.cut-tracks__span {
+    position: relative;
+    display: grid;
+    grid-auto-rows: min-content;
+    gap: var(--space-1);
+    width: var(--cut-span, 100%);
+    min-width: 100%;
+}
+
+/* ── Ruler ── */
+.cut-ruler { position: relative; height: var(--cut-ruler-h); overflow: hidden; border-bottom: 1px solid var(--ae-seam); }
+
+.cut-ruler__tick {
+    position: absolute;
+    bottom: 0;
+    left: var(--x);
+    width: 1px;
+    height: 0.375rem;
+    background: var(--ae-seam-strong);
+}
+.cut-ruler__tick.is-major { height: 0.625rem; background: var(--ae-seam-control); }
+
+.cut-ruler__label {
+    position: absolute;
+    bottom: 0.5625rem;
+    left: 0.1875rem;
+    color: var(--text-muted);
+    font-size: var(--fs-3xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cut-ruler__beat {
+    position: absolute;
+    bottom: 0;
+    left: var(--x);
+    width: 1px;
+    height: 0.1875rem;
+    background: var(--sensor); /* measured data is sensor blue; orange stays the playhead's */
+}
+
+/* ── Lanes ── */
+.cut-lane { position: relative; margin: 0; padding: 0; list-style: none; }
+.cut-lane--video { height: var(--cut-video-h); }
+.cut-lane--voice { height: var(--cut-voice-h); }
+.cut-lane--music { height: var(--cut-music-h); }
+
+.cut-lane__note { position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; margin: 0; color: var(--text-muted); font-size: var(--fs-xs); }
+
+/* One slot: placed by --x / --w, a hairline apart from the next. */
+.cut-item { position: absolute; top: 0; bottom: 0; left: var(--x); width: calc(var(--w) - 0.1875rem); min-width: 0; }
+
+/* A clip: cut corner, seam edge, first frame, tag and length stamp on a media chip. */
+.cut-clip {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 1px;
+    border: 0;
+    background: var(--ae-seam-strong);
+    color: var(--on-media);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.5625rem), calc(100% - 0.5625rem) 100%, 0 100%);
+}
+.cut-clip::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: var(--media-ground);
+    clip-path: inherit;
+}
+.cut-clip.is-selected { background: var(--accent); }
+.cut-clip:hover { background: var(--ae-seam-lit); }
+.cut-clip.is-selected:hover { background: var(--accent); }
+/* The cut-control focus ring: the edge thickens instead of an outline (clip-path would cut an outline). */
+.cut-clip:focus-visible { background: var(--text-primary); outline: none; }
+.cut-clip:focus-visible::before, .cut-clip:focus-visible .cut-clip__frame { inset: 3px; }
+
+.cut-clip__frame { position: absolute; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); object-fit: cover; clip-path: inherit; }
+
+.cut-clip__cap {
+    position: absolute;
+    inset: 1px 1px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-1);
+    padding: 0.3125rem 0.375rem;
+    background: linear-gradient(180deg, var(--media-chip), transparent);
+}
+
+.cut-clip__tag {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 700 0.5625rem / 1.2 var(--font-stencil);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cut-clip__len {
+    flex: none;
+    padding: 0.125rem 0.25rem;
+    background: var(--media-chip);
+    font-size: var(--fs-3xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cut-clip__live { position: absolute; left: 0.375rem; bottom: 0.3125rem; padding: 0.125rem 0.25rem; background: var(--media-chip); }
+.cut-clip__live .ae-readout { color: var(--on-media); }
+
+/* A beat with no clip: hatched seam grey, says why in words, Go to card. */
+.cut-gap {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.375rem;
+    height: 100%;
+    padding: var(--space-1);
+    overflow: hidden;
+    border: 1px dashed var(--ae-seam-control);
+    background: repeating-linear-gradient(135deg, transparent 0 0.375rem, var(--ae-seam-strong) 0.375rem 0.4375rem);
+    text-align: center;
+}
+
+.cut-gap__text { color: var(--text-secondary); font-size: var(--fs-3xs); font-weight: 600; line-height: 1.25; }
+.cut-gap__state { display: inline-flex; align-items: center; gap: var(--space-1); }
+.cut-gap__state .status-light__dot { background: var(--sensor); }
+.cut-item--busy .cut-gap { border-color: var(--sensor); }
+.cut-item--busy .cut-gap__state { color: var(--sensor-text); }
+.cut-item--failed .cut-gap__state { color: var(--status-alert-text); }
+.cut-item--deleted .cut-gap { border-style: dotted; }
+
+/* ── Beds: voice spans, music waveform windows, the pause under each gap ── */
+.cut-voice {
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--x);
+    width: var(--w);
+    display: flex;
+    align-items: center;
+    padding: 0 0.375rem;
+    overflow: hidden;
+    border-left: 2px solid var(--text-secondary);
+    background: color-mix(in srgb, var(--text-primary) 9%, var(--bg-secondary));
+    color: var(--text-secondary);
+    font-size: var(--fs-3xs);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cut-music { position: absolute; inset: 0; }
+.cut-music__segment { position: absolute; top: var(--space-1); bottom: var(--space-1); left: var(--x); width: var(--w); }
+.cut-wave { display: block; width: 100%; height: 100%; }
+.cut-wave path { fill: color-mix(in srgb, var(--text-primary) 42%, transparent); }
+.cut-music__flat { position: absolute; inset: 45% 0; background: color-mix(in srgb, var(--text-primary) 30%, transparent); }
+
+.cut-pause {
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    left: var(--x);
+    width: calc(var(--w) - 0.1875rem);
+    background: repeating-linear-gradient(135deg, transparent 0 0.375rem, var(--ae-seam) 0.375rem 0.4375rem);
+}
+
+/* ── Playhead: one element; P2 moves it by --cut-x ── */
+.cut-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--cut-x, 0);
+    z-index: 2;
+    width: 2px;
+    background: var(--accent);
+    pointer-events: none;
+}
+
+.cut-playhead__cap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    height: 0.875rem;
+    padding: 0 0.25rem;
+    background: var(--accent);
+    color: var(--ink-on-accent);
+    font-size: var(--fs-3xs);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Go to card: the card it lands on is lit for 1.6 s (static under reduced motion) ── */
+.card.is-cut-called { outline: 2px solid var(--accent); outline-offset: 0.25rem; animation: cut-call 0.8s var(--ease-out) 2; }
+.card.is-cut-called .ae-key--accent::before { background: var(--accent-light); }
+
+@keyframes cut-call {
+    from { outline-offset: 0.125rem; }
+    to { outline-offset: 0.625rem; outline-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+}
+
+@media (pointer: coarse) {
+    .cut-gap .ae-key { min-height: var(--touch-min); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card.is-cut-called { animation: none; }
+    .cut-gap .ae-sensor-dot { animation: none; }
+}

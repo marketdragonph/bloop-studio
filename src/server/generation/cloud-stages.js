@@ -7,6 +7,7 @@ import { composePrompt } from './prompt.js';
 import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
 import { cloudModelKey, cloudParams } from './cloud-models.js';
+import { measureTake } from './measure-take.js';
 
 const POLL_MS = 4000;
 const GIVE_UP_MS = 30 * 60_000; // bloop gives up on a render well before this
@@ -121,4 +122,4 @@ export async function collectCloud(ctx, next) {
     await next();
 }
 
-export const CLOUD_STAGES = [resolveCloudModel, buildCloudPrompt, submitCloud, awaitCloud, collectCloud];
+export const CLOUD_STAGES = [resolveCloudModel, buildCloudPrompt, submitCloud, awaitCloud, collectCloud, measureTake];

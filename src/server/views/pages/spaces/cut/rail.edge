@@ -1,0 +1,16 @@
+{{-- The Cut's rail: always there, 32 px folded (44 px on touch). The stencil, the readout and the fold key.
+     Editing, Export and Pack keys join it in later phases (each from the controls registry). --}}
+<div class="cut-rail">
+  <h2 class="ae-stencil cut-rail__title">{{{ icon('cut') }}}<span>{{ controlLabel('cut.dock') }}</span></h2>
+  <span class="ae-readout cut-rail__readout" :class="{ 'is-alert': cutStatus === 'error' }" x-text="cutReadout()"></span>
+  <span class="status-light status-light--busy cut-rail__busy" x-show="cutItems.some((i) => i.live)" x-cloak>
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Rendering</span>
+  </span>
+  <span class="cut-rail__spacer"></span>
+  <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'error'" x-cloak
+          @click="cutRetry()" data-control="cut.retry">{{{ icon('refresh') }}}<span>{{ controlLabel('cut.retry') }}</span></button>
+  <button type="button" class="ae-key ae-key--sm ae-key--square cut-rail__fold" @click="cutToggle()"
+          data-control="cut.fold" aria-controls="cut-dock-body" :aria-expanded="cutOpen ? 'true' : 'false'"
+          :aria-label="cutOpen ? '{{ controlLabel('cut.fold') }} the cut' : 'Open the cut'"
+          :title="cutOpen ? '{{ controlLabel('cut.fold') }} the cut' : 'Open the cut'">{{{ icon('chevron', 'ae-icon cut-rail__chevron') }}}</button>
+</div>

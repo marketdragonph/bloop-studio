@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: a Cut dock at the bottom of every Space shows your film's beats in order, with each clip's length and a hatched slot for every beat that has no video yet. Go to card takes you to that beat's card. The dock folds to one line and remembers whether you left it open.
+
 ## 2026.1005.1232
 
 - Changed: the Director now works like bloop's. On a new board it plans first: a pitch, the cast, the places and the shots, and at most two questions. After your answer it lays the cast and the places, then writes every shot in the background (you see each lane land), with the camera, the sound, the lines and the music. It checks its own work and never claims a change that didn't land. Its replies are formatted text.

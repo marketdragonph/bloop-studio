@@ -7,6 +7,7 @@ import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
 import { knobInputs } from '../../shared/formats.js';
 import { isTextSocket } from '../../shared/node-types.js';
+import { measureTake } from './measure-take.js';
 
 const MAX_SEED = 2 ** 32 - 1;
 
@@ -196,4 +197,4 @@ export async function collectOutput(ctx, next) {
 
 const pick = (obj, keys) => Object.fromEntries(keys.filter((k) => obj[k] !== undefined && obj[k] !== '').map((k) => [k, obj[k]]));
 
-export const GENERATION_STAGES = [resolvePreset, buildPrompt, uploadInputs, freeOnFamilySwitch, compile, render, collectOutput];
+export const GENERATION_STAGES = [resolvePreset, buildPrompt, uploadInputs, freeOnFamilySwitch, compile, render, collectOutput, measureTake];

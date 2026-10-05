@@ -1,0 +1,17 @@
+{{-- The left of the open dock. P1 shows the selected clip's first frame and what it is; the A/B player
+     (CutPlayer) takes this place in P2. No <video> here, so an open read-only dock plays nothing. --}}
+<div class="cut-preview">
+  <div class="cut-preview__screen">
+    <template x-if="cutSelected()?.poster_url">
+      <img class="cut-preview__frame" :src="cutSelected().poster_url" alt="">
+    </template>
+    <p class="cut-preview__empty" x-show="!cutSelected()?.poster_url" x-text="cutSelected() ? cutSelected().title : 'Pick a clip to see its frame here.'"></p>
+    <div class="cut-preview__tags" x-show="cutSelected()">
+      <span class="cut-chip" x-text="cutSelected()?.title"></span>
+    </div>
+  </div>
+  <dl class="cut-preview__meta" x-show="cutSelected()">
+    <div class="cut-preview__row"><dt>Selected</dt><dd x-text="cutSelected()?.title"></dd></div>
+    <div class="cut-preview__row"><dt>Length</dt><dd x-text="cutSelected() ? cutLength(cutSelected()) + (cutSelected().measured === false ? ' · not measured' : '') : ''"></dd></div>
+  </dl>
+</div>

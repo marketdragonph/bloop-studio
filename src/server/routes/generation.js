@@ -11,7 +11,7 @@ import { cloudFamilies } from '../generation/cloud-models.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, launcher, reveal }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, launcher, reveal, cuts }) {
     const routes = new Hono();
 
     /**
@@ -66,6 +66,8 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
         const mediaPath = await media.saveUpload({ spaceId: node.space_id, nodeId: node.id, bytes, mime: file.type });
         spaces.setNodeResult(node.id, { status: 'done', media_path: mediaPath, media_mime: file.type });
         spaces.updateNode(node.space_id, node.id, { label: file.name.slice(0, 120) });
+        // A clip or a sound on an Upload card is something the Cut can hold.
+        if (/^(video|audio)\//.test(file.type)) events.cut?.({ spaceId: node.space_id, revision: cuts?.revision(node.space_id) ?? 0, by: 'upload', changed: [node.id] });
         return c.json(spaces.findNode(node.space_id, node.id));
     });
 
@@ -88,13 +90,19 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
             const onDirector = (update) => {
                 if (update.spaceId === spaceId) stream.writeSSE({ event: 'director', data: JSON.stringify(update) });
             };
+            // The Cut: what the dock can hold changed (a take landed or was measured, a card was deleted).
+            const onCut = (update) => {
+                if (update.spaceId === spaceId) stream.writeSSE({ event: 'cut', data: JSON.stringify({ space_id: update.spaceId, ...update }) });
+            };
             events.on('node', onNode);
             events.on('queue', onQueue);
             events.on('director', onDirector);
+            events.on('cut', onCut);
             stream.onAbort(() => {
                 events.off('node', onNode);
                 events.off('queue', onQueue);
                 events.off('director', onDirector);
+                events.off('cut', onCut);
             });
             await onQueue(jobs.activeQueue());
             while (!stream.aborted) {

@@ -2,6 +2,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createViews } from './views.js';
 import { csrf } from './middleware/csrf.js';
@@ -35,6 +36,11 @@ import { accountRoutes } from './routes/account.js';
 import { ComfyLauncher } from './services/comfy-launcher.js';
 import { EngineInstaller } from './engine-install/installer.js';
 import { engineInstallRoutes } from './routes/engine-install.js';
+import { CutsRepository } from './repositories/cuts.js';
+import { BoardCut } from './cut/board-cut.js';
+import { CappedFfmpeg } from './media/capped-ffmpeg.js';
+import { TakeMeasurer } from './generation/measure-take.js';
+import { cutRoutes } from './routes/cut.js';
 
 /** Default for browser-only dev: Explorer with the file selected. Electron passes shell.showItemInFolder. */
 const explorerReveal = async (fullPath) => {
@@ -61,7 +67,12 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
     const launcher = new ComfyLauncher({ settings }); // the person's own ComfyUI, started from the top bar
     const installer = new EngineInstaller({ settings, launcher, engine }); // "Install offline engine"
-    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
+    // The Cut (Mini Katana): one cut per space, the one reader of the board, and take lengths measured off the GPU path.
+    const cuts = new CutsRepository(db);
+    const boardCut = new BoardCut({ db, exists: (path) => Boolean(media.resolve(path) && existsSync(media.resolve(path))) });
+    const ffmpeg = new CappedFfmpeg({ getSettingsPath: () => settings.get('ffmpegPath') });
+    const measurer = new TakeMeasurer({ ffmpeg, cuts, media, events });
+    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer });
     const director = new DirectorRepository(db);
     // The Director (a port of bloop's Spaces Director): plans, the board ops, the staged rail, and the beat writers.
     const plans = new DirectorPlans(db);
@@ -73,7 +84,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
     directorRuns.recover();
     runner.resume();
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer };
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));
@@ -88,6 +99,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
     app.route('/', directorRoutes(deps));
+    app.route('/', cutRoutes(deps));
     app.notFound((c) => c.html(views.render('pages/not-found', {}), 404));
     app.onError((error, c) => {
         console.error(error);

@@ -1,0 +1,29 @@
+{{-- One slot on the Video lane: a clip (first frame, tag, length stamp) or a beat with no clip yet (hatched,
+     "04 · Flashback / not rendered", Go to card), rendering (blue light), failed or deleted. Sized by seconds. --}}
+<li class="cut-item" :class="'cut-item--' + cutKind(item)" :style="{ '--x': item.x + 'px', '--w': item.w + 'px' }">
+  <template x-if="item.ready">
+    <button type="button" class="cut-clip" :class="{ 'is-selected': item.key === cutSelectedKey }"
+            @click="cutSelect(item)" :aria-label="cutItemLabel(item)" :aria-pressed="item.key === cutSelectedKey ? 'true' : 'false'"
+            data-control="cut.clip">
+      <img class="cut-clip__frame" x-show="item.poster_url" :src="item.poster_url || ''" alt="" loading="lazy">
+      <span class="cut-clip__cap">
+        <span class="cut-clip__tag" x-text="item.title"></span>
+        <span class="cut-clip__len" x-text="cutLength(item)"></span>
+      </span>
+      <span class="cut-clip__live status-light status-light--busy" x-show="item.live">
+        <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">New take</span>
+      </span>
+    </button>
+  </template>
+  <template x-if="!item.ready">
+    <div class="cut-gap" role="group" :aria-label="cutItemLabel(item)">
+      <span class="cut-gap__text"><span x-text="item.title"></span><br>
+        <span class="cut-gap__state">
+          <span class="status-light__dot ae-sensor-dot" x-show="cutKind(item) === 'busy'" aria-hidden="true"></span><span x-text="cutStateText(item)"></span>
+        </span>
+      </span>
+      <button type="button" class="ae-key ae-key--sm" x-show="cutCanGo(item)" @click="cutGoToCard(item)"
+              data-control="cut.goToCard">{{ controlLabel('cut.goToCard') }}</button>
+    </div>
+  </template>
+</li>

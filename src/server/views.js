@@ -2,6 +2,7 @@
 // Layout components are isolated from page data, so anything the layout needs must be a global.
 import { Edge } from 'edge.js';
 import { icon } from '../shared/icons.js';
+import { controlLabel } from '../shared/katana-controls.js';
 
 export const THEMES = ['dark', 'light', 'system'];
 
@@ -11,6 +12,7 @@ export function createViews({ csrfToken, getTheme = () => 'dark' }) {
     edge.global('csrfToken', csrfToken);
     edge.global('appName', 'Bloop Studio');
     edge.global('icon', icon);
+    edge.global('controlLabel', controlLabel); // Katana controls: the words come from the registry
     edge.global('currentTheme', () => {
         const theme = getTheme();
         return THEMES.includes(theme) ? theme : 'dark';

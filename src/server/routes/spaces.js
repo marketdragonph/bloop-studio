@@ -4,9 +4,16 @@ import { ValidationError } from '../repositories/spaces.js';
 import { NODE_TYPES } from '../../shared/node-types.js';
 
 const id = (c, name = 'id') => Number.parseInt(c.req.param(name), 10);
+const CUT_TYPES = new Set(['video', 'audio', 'upload']);
 
-export function spacesRoutes({ views, spaces }) {
+export function spacesRoutes({ views, spaces, events, cuts }) {
     const routes = new Hono();
+
+    // A clip or sound card leaving (or coming back to) the board changes what the Cut can hold.
+    const cutChanged = (spaceId, node, by) => {
+        if (!node || !CUT_TYPES.has(node.type) || !events?.cut) return;
+        events.cut({ spaceId, revision: cuts?.revision(spaceId) ?? 0, by, changed: [node.id] });
+    };
 
     // Turns a ValidationError into a 422 the board can toast; anything else is a real failure.
     const json = (fn) => async (c) => {
@@ -91,13 +98,17 @@ export function spacesRoutes({ views, spaces }) {
     }));
 
     routes.delete('/:id/nodes/:nodeId', json((c) => {
+        const node = spaces.findNode(id(c), id(c, 'nodeId'));
         spaces.deleteNode(id(c), id(c, 'nodeId'));
+        cutChanged(id(c), node, 'card_deleted');
         return c.body(null, 204);
     }));
 
     routes.post('/:id/nodes/:nodeId/restore', json(async (c) => {
         const { node, connections } = await c.req.json();
-        return c.json(spaces.restoreNode(id(c), { ...node, id: id(c, 'nodeId') }, connections), 201);
+        const restored = spaces.restoreNode(id(c), { ...node, id: id(c, 'nodeId') }, connections);
+        cutChanged(id(c), restored, 'card_restored');
+        return c.json(restored, 201);
     }));
 
     routes.post('/:id/connections', json(async (c) => {

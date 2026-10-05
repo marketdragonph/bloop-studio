@@ -67,6 +67,19 @@
     /* The top bar is also the window's title bar: src/main/window-chrome.js draws Windows' controls at this height. */
     --topbar-height: 3.5rem;
 
+    /* Layout (no colours): the Director panel and the Cut dock (cut.css, cut-tracks.css). */
+    --director-width: 26rem;
+    --cut-rail: 2rem;
+    --cut-rail-coarse: 2.75rem;
+    --cut-open: 22.5rem;
+    --cut-label: 4.5rem;
+    --cut-ruler-h: 1.25rem;
+    --cut-video-h: 5.25rem;
+    --cut-voice-h: 2.125rem;
+    --cut-music-h: 3.5rem;
+    --cut-item-min: 4rem;
+    --touch-min: 2.75rem;
+
     --z-sticky: 40;
     --z-modal: 50;
     --z-toast: 9999;

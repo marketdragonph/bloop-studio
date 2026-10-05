@@ -31,8 +31,8 @@ export function detectVoice(rms) {
     return voice;
 }
 
-/** A decoded track → { peaks (0..1 per bar), barVoice, rms, voice, speechRatio }. */
-export function reduceTrack(data, rate) {
+/** A decoded track → { peaks (0..1 per bar), barVoice, rms, voice, speechRatio }. The Cut dock asks for more `bars`. */
+export function reduceTrack(data, rate, bars = BARS) {
     const frameLen = Math.max(1, Math.round(rate * FRAME_S));
     const frames = Math.ceil(data.length / frameLen);
     const rms = new Float32Array(frames);
@@ -44,11 +44,11 @@ export function reduceTrack(data, rate) {
         rms[f] = Math.sqrt(sum / Math.max(1, end - start));
     }
     const voice = detectVoice(rms);
-    const per = data.length / BARS;
+    const per = data.length / bars;
     const peaks = [];
     const barVoice = [];
     let max = 0;
-    for (let b = 0; b < BARS; b++) {
+    for (let b = 0; b < bars; b++) {
         const start = Math.floor(b * per);
         const end = Math.min(data.length, Math.floor((b + 1) * per));
         let peak = 0;
@@ -65,7 +65,7 @@ export function reduceTrack(data, rate) {
     return { peaks: peaks.map((p) => (max ? p / max : 0)), barVoice, rms, voice, speechRatio: frames ? speech / frames : 0 };
 }
 
-function mono(buffer) {
+export function mono(buffer) {
     if (buffer.numberOfChannels === 1) return buffer.getChannelData(0);
     const out = new Float32Array(buffer.length);
     for (let c = 0; c < buffer.numberOfChannels; c++) {

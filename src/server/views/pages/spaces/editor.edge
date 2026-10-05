@@ -58,6 +58,8 @@
     </div>
   </div>
 
+  @include('pages/spaces/cut/dock')
+
   <div class="toasts" aria-live="polite">
     <template x-for="t in toasts" :key="t.id">
       <div class="ae-signal" :class="'ae-signal--' + t.tone" role="status"><span class="ae-signal__msg" x-text="t.message"></span></div>

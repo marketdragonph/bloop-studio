@@ -1,0 +1,33 @@
+{{-- The dock's states before there are lanes to draw (02-dock.md §5, 05 §2.3): loading skeleton, load error,
+     and the empty dock's ghost lanes. Ghosts are static seam grey; every state is real text. --}}
+<template x-if="cutStatus === 'loading'">
+  <div class="cut-state cut-state--loading" role="status">
+    <p class="visually-hidden">Loading the cut</p>
+    <div class="cut-skeleton" aria-hidden="true">
+      <span class="cut-skeleton__item"></span><span class="cut-skeleton__item"></span><span class="cut-skeleton__item"></span>
+    </div>
+  </div>
+</template>
+
+<template x-if="cutStatus === 'error'">
+  <div class="cut-state" role="alert">
+    <p class="cut-state__text cut-state__text--alert" x-text="cutLoadError"></p>
+  </div>
+</template>
+
+<template x-if="cutEmpty()">
+  <div class="cut-state cut-state--ghost">
+    <div class="cut-ghost" aria-hidden="true">
+      <div class="cut-ghost__lane">
+        <template x-for="tag in cutEmptyText.ghostSlots" :key="tag">
+          <span class="cut-ghost__slot" x-text="tag"></span>
+        </template>
+      </div>
+      <svg class="cut-ghost__wave" viewBox="0 0 72 100" preserveAspectRatio="none" focusable="false"><path :d="cutGhostWave"></path></svg>
+    </div>
+    <div class="cut-state__say">
+      <p class="cut-state__text" x-text="cutEmptyText.dock"></p>
+      <button type="button" class="ae-key ae-key--sm" @click="cutAskDirector()" data-control="cut.askDirector">{{{ icon('chat') }}}<span>{{ controlLabel('cut.askDirector') }}</span></button>
+    </div>
+  </div>
+</template>

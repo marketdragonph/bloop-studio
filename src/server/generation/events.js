@@ -21,4 +21,9 @@ export class BoardEvents extends EventEmitter {
     director(update) {
         this.emit('director', update);
     }
+
+    /** What the Cut can hold changed (a take landed or was measured, a card deleted): { spaceId, revision, by, added?, changed? }. */
+    cut(update) {
+        this.emit('cut', update);
+    }
 }

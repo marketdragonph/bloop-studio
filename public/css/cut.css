@@ -1,0 +1,143 @@
+/* The Cut dock (Mini Katana, plan katana/02-dock.md): the frame, the rail, the preview and the empty states.
+   The lanes are in cut-tracks.css. Row 3 of .board-page (board.css), so the board gets shorter and no card is
+   covered. Tokens only: seam greys, orange for action and the playhead, blue for in progress. */
+
+.cut-dock {
+    grid-row: 3;
+    display: grid;
+    grid-template-rows: auto;
+    min-width: 0;
+    border-top: 1px solid var(--ae-seam-strong);
+    background: var(--bg-secondary);
+}
+
+.cut-dock.is-open { grid-template-rows: auto minmax(0, 1fr); height: var(--cut-open); }
+
+/* The dock ends where the Director panel starts (the panel stays absolute on the right, director.css). */
+.cut-dock.is-beside-director { margin-right: calc(var(--director-width) + 2 * var(--space-3)); }
+
+/* Toasts sit above the dock, never on it. */
+.board-page:has(.cut-dock) .toasts { bottom: calc(var(--cut-rail) + var(--space-4)); }
+.board-page:has(.cut-dock.is-open) .toasts { bottom: calc(var(--cut-open) + var(--space-4)); }
+
+/* ── Rail: 32 px folded, 40 px open, 44 px on touch ── */
+.cut-rail {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+    min-height: var(--cut-rail);
+    padding: 0 var(--space-4);
+}
+.cut-dock.is-open .cut-rail { min-height: 2.5rem; border-bottom: 1px solid var(--ae-seam); }
+
+.cut-rail__title { flex: none; }
+.cut-rail__readout { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cut-rail__readout.is-alert { color: var(--status-alert-text); }
+.cut-rail__spacer { flex: 1; }
+.cut-rail__chevron { transform: rotate(-90deg); transition: transform var(--duration-base) var(--ease-out); }
+.cut-dock.is-open .cut-rail__chevron { transform: rotate(90deg); }
+
+@media (pointer: coarse) {
+    .cut-rail { min-height: var(--cut-rail-coarse); }
+    .cut-rail .ae-key { min-height: var(--touch-min); }
+    .cut-rail .ae-key--square { width: var(--touch-min); }
+    .board-page:has(.cut-dock) .toasts { bottom: calc(var(--cut-rail-coarse) + var(--space-4)); }
+}
+
+/* ── Body: preview left, lanes right ── */
+.cut-dock__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+    overflow-y: auto;
+}
+
+@media (min-width: 48rem) {
+    .cut-dock__body { grid-template-columns: clamp(16rem, 30%, 25rem) minmax(0, 1fr); overflow: hidden; }
+}
+
+.cut-dock__main { display: grid; align-content: start; min-width: 0; min-height: 0; }
+.cut-tracks-wrap { min-width: 0; }
+
+/* ── Preview (P1: the selected clip's first frame) ── */
+.cut-preview { display: grid; align-content: start; gap: var(--space-2); min-width: 0; }
+
+.cut-preview__screen {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--media-ground);
+}
+
+.cut-preview__frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.cut-preview__empty { margin: 0; padding: var(--space-3); color: var(--on-media); font-size: var(--fs-sm); text-align: center; }
+.cut-preview__tags { position: absolute; top: var(--space-2); left: var(--space-2); display: flex; gap: var(--space-2); }
+
+.cut-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.25rem;
+    padding: 0 var(--space-2);
+    background: var(--media-chip);
+    color: var(--on-media);
+    font: 700 var(--fs-3xs) / 1 var(--font-stencil);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cut-preview__meta { display: none; gap: var(--space-1); margin: 0; }
+.cut-preview__row { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--fs-xs); color: var(--text-secondary); }
+.cut-preview__row dt { margin: 0; }
+.cut-preview__row dd { margin: 0; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+@media (min-width: 48rem) {
+    .cut-preview__meta { display: grid; }
+}
+
+/* ── States: loading skeleton, load error, the empty dock's ghost ── */
+.cut-state { display: grid; gap: var(--space-3); align-content: start; }
+.cut-state__text { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); }
+.cut-state__text--alert { color: var(--status-alert-text); }
+.cut-state__say { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+
+.cut-skeleton { display: flex; gap: var(--space-1); height: var(--cut-video-h); margin-left: var(--cut-label); }
+.cut-skeleton__item { flex: 1; background: var(--ae-seam); animation: cut-breathe 1.6s ease-in-out infinite alternate; }
+.cut-skeleton__item:nth-child(2) { flex: 1.4; }
+
+@keyframes cut-breathe {
+    from { opacity: 0.45; }
+    to { opacity: 1; }
+}
+
+.cut-ghost { display: grid; gap: var(--space-2); margin-left: var(--cut-label); }
+.cut-ghost__lane { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: var(--space-1); height: var(--cut-video-h); }
+
+.cut-ghost__slot {
+    display: grid;
+    place-items: center;
+    border: 1px dashed var(--ae-seam-strong);
+    background: repeating-linear-gradient(135deg, transparent 0 0.375rem, var(--ae-seam) 0.375rem 0.4375rem);
+    color: var(--text-muted);
+    font: 700 var(--fs-3xs) / 1 var(--font-stencil);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cut-ghost__wave { display: block; width: 100%; height: var(--cut-music-h); }
+.cut-ghost__wave path { fill: var(--ae-seam-strong); }
+
+@media (prefers-reduced-motion: reduce) {
+    .cut-rail__chevron { transition: none; }
+    .cut-skeleton__item { animation: none; }
+}
+
+/* Narrow: the Director is a bottom sheet (director.css), so the dock spans the width. */
+@media (max-width: 40rem) {
+    .cut-dock.is-beside-director { margin-right: 0; }
+    .cut-dock.is-open { height: 60vh; }
+}

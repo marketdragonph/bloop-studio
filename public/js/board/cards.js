@@ -165,6 +165,8 @@ export const cardMethods = {
     },
 
     async onKeyDown(event) {
+        // Keys inside the Cut dock are the dock's: Delete or Space there must never act on the board.
+        if (event.target.closest?.('.cut-dock')) return;
         const typing = event.target.closest('input, textarea, [contenteditable="true"]');
         if (event.code === 'Space' && !typing) { this.spaceHeld = true; return; }
         if (typing) return;

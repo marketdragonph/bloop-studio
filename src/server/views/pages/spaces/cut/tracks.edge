@@ -1,0 +1,68 @@
+{{-- Ruler, Video / Voice / Music lanes and the playhead (02-dock.md §4). Board time: every slot at its length,
+     gaps included; beds play in export time, so their lanes pause (hatched) under each gap.
+     Positions are CSS variables set from cut-lanes.js; the lanes scroll sideways together past Fit. --}}
+<div class="cut-tracks">
+  <div class="cut-tracks__labels">
+    <span class="cut-tracks__corner" aria-hidden="true"></span>
+    <div class="cut-track-label cut-track-label--video">
+      <span class="ae-stencil" data-control="cut.lane.video">{{ controlLabel('cut.lane.video') }}</span><span class="ae-readout">Beats</span>
+    </div>
+    <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice">
+      <span class="ae-stencil" data-control="cut.lane.voice">{{ controlLabel('cut.lane.voice') }}</span><span class="ae-readout" x-text="cutBeds.voice?.label"></span>
+    </div>
+    <div class="cut-track-label cut-track-label--music">
+      <span class="ae-stencil" data-control="cut.lane.music">{{ controlLabel('cut.lane.music') }}</span><span class="ae-readout" x-text="cutLevel" x-show="cutLevel"></span>
+    </div>
+  </div>
+
+  <div class="cut-tracks__scroll" x-ref="cutScroll">
+    <div class="cut-tracks__span" :style="{ '--cut-span': cutSpan + 'px' }">
+      <div class="cut-ruler" aria-hidden="true">
+        <template x-for="tick in cutTicks" :key="tick.key">
+          <span class="cut-ruler__tick" :class="{ 'is-major': tick.major }" :style="{ '--x': tick.x + 'px' }">
+            <span class="cut-ruler__label" x-show="tick.major" x-text="tick.label"></span>
+          </span>
+        </template>
+        <template x-for="beat in cutBeats" :key="beat.key">
+          <span class="cut-ruler__beat" :style="{ '--x': beat.x + 'px' }"></span>
+        </template>
+      </div>
+
+      <ol class="cut-lane cut-lane--video" aria-label="Video lane">
+        <template x-for="item in cutItems" :key="item.key">
+          @include('pages/spaces/cut/item')
+        </template>
+      </ol>
+
+      <div class="cut-lane cut-lane--voice" x-show="cutBeds.voice" aria-label="Voice lane" role="group">
+        <template x-for="span in cutVoice" :key="span.key">
+          <span class="cut-voice" :style="{ '--x': span.x + 'px', '--w': span.w + 'px' }" x-text="cutBeds.voice?.label"></span>
+        </template>
+        <template x-for="pause in cutPauses" :key="pause.key">
+          <span class="cut-pause" :style="{ '--x': pause.x + 'px', '--w': pause.w + 'px' }"></span>
+        </template>
+      </div>
+
+      <div class="cut-lane cut-lane--music" aria-label="Music lane" role="group">
+        <template x-if="cutBeds.music">
+          <div class="cut-music">
+            <template x-for="segment in cutMusic" :key="segment.key">
+              <span class="cut-music__segment" :style="{ '--x': segment.x + 'px', '--w': segment.w + 'px' }">
+                <svg class="cut-wave" x-show="cutWave" :view-box.camel="cutWaveBox(segment)" preserveAspectRatio="none" focusable="false" aria-hidden="true"><path :d="cutWave"></path></svg>
+                <span class="cut-music__flat" x-show="!cutWave" aria-hidden="true"></span>
+              </span>
+            </template>
+            <template x-for="pause in cutPauses" :key="pause.key">
+              <span class="cut-pause" :style="{ '--x': pause.x + 'px', '--w': pause.w + 'px' }"></span>
+            </template>
+            <span class="visually-hidden" x-text="cutBeds.music.label"></span>
+          </div>
+        </template>
+        <p class="cut-lane__note" x-show="!cutBeds.music" x-text="cutEmptyText.music"></p>
+      </div>
+
+      {{-- Static at 0 in P1; P2's player moves it by one CSS variable (--cut-x). --}}
+      <div class="cut-playhead" aria-hidden="true"><span class="cut-playhead__cap">0:00</span></div>
+    </div>
+  </div>
+</div>
