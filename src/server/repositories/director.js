@@ -23,14 +23,31 @@ export class DirectorRepository {
 
     log(spaceId) {
         return this.db.prepare('SELECT * FROM director_log WHERE space_id = ? ORDER BY id').all(spaceId)
-            .map((row) => ({ ...row, actions: JSON.parse(row.actions) }));
+            .map((row) => ({ ...row, actions: JSON.parse(row.actions), continuable: Boolean(row.continuable) }));
     }
 
-    addLog(spaceId, role, text, actions = []) {
+    addLog(spaceId, role, text, actions = [], { continuable = false } = {}) {
         const { lastInsertRowid } = this.db
-            .prepare('INSERT INTO director_log (space_id, role, text, actions) VALUES (?, ?, ?, ?)')
-            .run(spaceId, role, text, JSON.stringify(actions));
+            .prepare('INSERT INTO director_log (space_id, role, text, actions, continuable) VALUES (?, ?, ?, ?, ?)')
+            .run(spaceId, role, text, JSON.stringify(actions), continuable ? 1 : 0);
         return Number(lastInsertRowid);
+    }
+
+    /** A new background run for a request; its id ties the live events to it. */
+    startRun(spaceId, request) {
+        const { lastInsertRowid } = this.db.prepare('INSERT INTO director_runs (space_id, request) VALUES (?, ?)').run(spaceId, request);
+        return Number(lastInsertRowid);
+    }
+
+    finishRun(runId, status) {
+        this.db.prepare('UPDATE director_runs SET status = ?, finished_at = ? WHERE id = ?').run(status, now(), runId);
+    }
+
+    /** Runs the app was killed in the middle of: marked failed; returns their spaces. */
+    interruptRuns() {
+        const rows = this.db.prepare("SELECT id, space_id FROM director_runs WHERE status = 'working'").all();
+        for (const row of rows) this.finishRun(row.id, 'failed');
+        return [...new Set(rows.map((row) => row.space_id))];
     }
 
     clear(spaceId) {

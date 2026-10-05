@@ -5,7 +5,12 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+<<<<<<< Updated upstream
 ## 2026.1005.933
+=======
+- New: the Director keeps working in the background. Close the panel or switch boards and it carries on; big requests no longer stop halfway, and when it runs out of steps, is stopped or the app closes, press Continue to pick up where it left off.
+- New: the Director checks its own board as it builds: characters and places named in a shot get wired in, and cards with nothing in Words get fixed before it replies. It can also build Audio cards with lyrics and use the Last frame and Voice sockets.
+>>>>>>> Stashed changes
 
 - Fixed: you can remove a wire again. Click it (it turns orange) and press Delete; Ctrl+Z puts it back.
 

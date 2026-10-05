@@ -1,4 +1,4 @@
-// In-process event bus: the job worker publishes card updates, the SSE route streams them.
+// In-process event bus: the job worker publishes card updates (and the Director its runs), the SSE route streams them.
 import { EventEmitter } from 'node:events';
 
 export class BoardEvents extends EventEmitter {
@@ -15,5 +15,10 @@ export class BoardEvents extends EventEmitter {
     /** The render queue changed: [{ id, nodeId, spaceId, status }] in run order, for every board. */
     queue(order) {
         this.emit('queue', order);
+    }
+
+    /** A Director run on a board said something: { spaceId, runId, event, data } (see director/runs.js). */
+    director(update) {
+        this.emit('director', update);
     }
 }

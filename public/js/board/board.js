@@ -39,6 +39,7 @@ export default function SpaceBoard() {
         directorOpen: false,
         directorLoaded: false,
         directorBusy: false,
+        directorRunId: null, // the Director run going on this board (it runs in the background)
         directorInput: '',
         directorLog: [],
         viewer: null,

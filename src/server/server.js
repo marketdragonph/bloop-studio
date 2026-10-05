@@ -24,6 +24,7 @@ import { directorRoutes } from './routes/director.js';
 import { appUpdateRoutes, NO_UPDATES } from './routes/app-update.js';
 import { DirectorRepository } from './repositories/director.js';
 import { DirectorService } from './director/service.js';
+import { DirectorRuns } from './director/runs.js';
 import { BloopAccount } from './services/bloop-account.js';
 import { accountRoutes } from './routes/account.js';
 import { ComfyLauncher } from './services/comfy-launcher.js';
@@ -58,7 +59,9 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account });
     const director = new DirectorRepository(db);
     const directorService = new DirectorService({ settings, spaces, director });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, reveal, updates, onThemeChange, account, launcher, installer };
+    const directorRuns = new DirectorRuns({ director, service: directorService, events }); // the Director as a background job
+    directorRuns.recover();
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, reveal, updates, onThemeChange, account, launcher, installer };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

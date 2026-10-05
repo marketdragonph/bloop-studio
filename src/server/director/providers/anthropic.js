@@ -4,17 +4,21 @@
 // input stop the turn, and server-side refusal fallback is on (fallbacks: "default").
 import Anthropic from '@anthropic-ai/sdk';
 
-const MAX_TOOL_ROUNDS = 8;
+// A whole film board takes dozens of tool calls: the turn runs as a background job, so the budget is
+// generous. The last round may not call tools, so the turn always ends with words.
+export const MAX_TOOL_ROUNDS = 30;
 
-export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, history, userContent, tools, execute, onText, signal }) {
+export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, history, userContent, tools, execute, afterRound, onText, signal, maxRounds = MAX_TOOL_ROUNDS }) {
     const client = new Anthropic({ apiKey });
     const messages = [...history, { role: 'user', content: userContent }];
     const apiTools = tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.schema, eager_input_streaming: true }));
     let jsonRetries = 0;
     let finalText = '';
     let notice = null;
+    let exhausted = false;
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    for (let round = 0; round < maxRounds; round++) {
+        const last = round === maxRounds - 1;
         const stream = client.beta.messages.stream({
             model,
             max_tokens: 64000,
@@ -24,6 +28,7 @@ export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, 
             fallbacks: 'default',
             system,
             tools: apiTools,
+            ...(last ? { tool_choice: { type: 'none' } } : {}),
             messages,
         }, { signal });
         stream.on('text', (delta) => {
@@ -62,10 +67,14 @@ export async function runClaudeTurn({ apiKey, model, effort = 'medium', system, 
             const { ok, content } = execute(use.name, use.input);
             return { type: 'tool_result', tool_use_id: use.id, content, ...(ok ? {} : { is_error: true }) };
         });
+        // The board check for what this round changed rides on the last result, for the model to fix.
+        const check = afterRound?.();
+        if (check) results.at(-1).content += `\n\n${check}`;
         messages.push({ role: 'user', content: results });
+        if (round === maxRounds - 2) exhausted = true; // the next (last) round can only answer
     }
 
-    return { history: messages, text: finalText.trim(), notice };
+    return { history: messages, text: finalText.trim(), notice, exhausted };
 }
 
 /** Typed errors → words for the chat panel. */

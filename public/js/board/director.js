@@ -1,41 +1,29 @@
-// The Director panel: chat log, a streamed turn over fetch (SSE body), live board refresh as
-// actions land, Stop, and one undo step per turn (undo removes what the turn added).
+// The Director panel: chat log, a background run per request (it keeps going when the panel closes
+// or the page reloads; its words and board changes arrive on the board's event stream), Stop,
+// Continue, live board refresh as actions land, and one undo step per turn.
 import { api } from './api.js';
-
-const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-const CONTROLLERS = new WeakMap();
-
-/** Minimal SSE parser over a fetch body: calls onEvent(name, data) per event. */
-async function readSSE(response, onEvent) {
-    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-    let buffer = '';
-    for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += value;
-        let cut;
-        while ((cut = buffer.indexOf('\n\n')) >= 0) {
-            const block = buffer.slice(0, cut);
-            buffer = buffer.slice(cut + 2);
-            const event = block.match(/^event: (.*)$/m)?.[1] ?? 'message';
-            const data = block.split('\n').filter((l) => l.startsWith('data: ')).map((l) => l.slice(6)).join('\n');
-            if (data) onEvent(event, JSON.parse(data));
-        }
-    }
-}
 
 export const directorMethods = {
     async toggleDirector() {
         this.directorOpen = !this.directorOpen;
-        if (this.directorOpen && !this.directorLoaded) {
-            try {
-                this.directorLog = await api('GET', `${this.base}/director`);
-                this.directorLoaded = true;
-            } catch (error) {
-                this.toast(error.message, 'alert');
-            }
-        }
+        if (this.directorOpen && !this.directorLoaded) await this.loadDirector();
         if (this.directorOpen) this.$nextTick(() => this.$refs.directorInput?.focus());
+    },
+
+    /** The log, plus the run still going on this board (opened mid-turn, or after a reload). */
+    async loadDirector() {
+        try {
+            const { log, running } = await api('GET', `${this.base}/director`);
+            this.directorLog = log;
+            this.directorLoaded = true;
+            if (running) {
+                this.directorLog.push({ id: `u${running.runId}`, role: 'user', text: running.request, actions: [] });
+                this.followRun(running.runId, { text: running.text, actions: [...running.actions], info: running.info });
+            }
+            this.scrollDirector();
+        } catch (error) {
+            this.toast(error.message, 'alert');
+        }
     },
 
     async refreshBoard() {
@@ -47,53 +35,72 @@ export const directorMethods = {
         this.tidyAfterRender();
     },
 
-    async sendDirector() {
-        const message = this.directorInput.trim();
+    async sendDirector(message = this.directorInput.trim(), { resume = false } = {}) {
         if (!message || this.directorBusy) return;
-        this.directorInput = '';
+        if (!resume) this.directorInput = '';
         this.directorBusy = true;
-        this.directorLog.push({ id: `u${Date.now()}`, role: 'user', text: message, actions: [] });
-        this.directorLog.push({ id: `a${Date.now()}`, role: 'assistant', text: '', actions: [], streaming: true });
-        // Write through Alpine's reactive copy: mutating the plain object would never repaint the bubble.
-        const reply = this.directorLog[this.directorLog.length - 1];
+        this.directorLog.push({ id: `u${Date.now()}`, role: 'user', text: resume ? 'Continue' : message, actions: [] });
         this.scrollDirector();
-
-        const controller = new AbortController();
-        CONTROLLERS.set(this.$refs.board, controller);
         try {
-            const response = await fetch(`${this.base}/director`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
-                body: JSON.stringify({ message }),
-                signal: controller.signal,
-            });
-            if (!response.ok) throw new Error((await response.json().catch(() => null))?.error ?? `Request failed (${response.status}).`);
-            await readSSE(response, (event, data) => this.onDirectorEvent(reply, event, data));
+            const { runId } = resume
+                ? await api('POST', `${this.base}/director/continue`)
+                : await api('POST', `${this.base}/director`, { message });
+            this.followRun(runId);
         } catch (error) {
-            if (error.name !== 'AbortError') reply.notice = error.message;
-        } finally {
-            reply.streaming = false;
             this.directorBusy = false;
-            await this.refreshBoard().catch(() => {});
-            this.recordDirectorTurn(reply.actions);
+            this.directorLog.push({ id: `n${Date.now()}`, role: 'notice', text: error.message, actions: [] });
             this.scrollDirector();
         }
     },
 
-    onDirectorEvent(reply, event, data) {
-        if (event === 'text') reply.text += data.delta;
-        if (event === 'actions') {
-            reply.actions.push(...data.actions);
-            this.refreshBoard().catch(() => {});
-        }
-        if (event === 'notice') reply.info = data.message;
-        if (event === 'done' && data.notice) reply.notice = data.notice;
-        if (event === 'error') reply.notice = data.message;
+    continueDirector() {
+        this.sendDirector('Continue', { resume: true });
+    },
+
+    /** Shows a run's reply bubble; its events arrive through onDirectorStream. */
+    followRun(runId, partial = {}) {
+        this.directorBusy = true;
+        this.directorRunId = runId;
+        this.directorLog.push({ id: `a${runId}`, runId, role: 'assistant', text: partial.text ?? '', actions: partial.actions ?? [], info: partial.info ?? null, streaming: true });
         this.scrollDirector();
     },
 
-    stopDirector() {
-        CONTROLLERS.get(this.$refs.board)?.abort();
+    /** One event of a Director run on this board, from the board's event stream (generation.js). */
+    onDirectorStream({ runId, event, data }) {
+        if (event === 'actions') this.refreshBoard().catch(() => {});
+        // Write through Alpine's reactive copy: mutating a plain object would never repaint the bubble.
+        let reply = this.directorLog.find((entry) => entry.runId === runId);
+        if (!reply) {
+            if (!this.directorLoaded) return; // the panel loads the whole run when it opens
+            this.followRun(runId);
+            reply = this.directorLog.at(-1);
+        }
+        if (event === 'text') reply.text += data.delta;
+        if (event === 'actions') reply.actions.push(...data.actions);
+        if (event === 'notice') reply.info = data.message;
+        if (event === 'done' || event === 'error') {
+            reply.streaming = false;
+            reply.notice = event === 'error' ? data.message : data.notice;
+            reply.continuable = Boolean(data.continuable);
+            this.directorBusy = false;
+            this.directorRunId = null;
+            this.refreshBoard().catch(() => {});
+            this.recordDirectorTurn(reply.actions);
+        }
+        this.scrollDirector();
+    },
+
+    async stopDirector() {
+        try {
+            await api('POST', `${this.base}/director/stop`);
+        } catch (error) {
+            this.toast(error.message, 'warn');
+        }
+    },
+
+    /** Continue is offered on the newest entry only, once nothing is running. */
+    canContinue(entry) {
+        return !this.directorBusy && entry.continuable && entry === this.directorLog.at(-1);
     },
 
     /** One undo step for the whole turn: removes the cards and wires it added, restores edited text. */
@@ -124,8 +131,12 @@ export const directorMethods = {
 
     async clearDirector() {
         if (!window.confirm('Clear this conversation? The board stays as it is.')) return;
-        await api('DELETE', `${this.base}/director`);
-        this.directorLog = [];
+        try {
+            await api('DELETE', `${this.base}/director`);
+            this.directorLog = [];
+        } catch (error) {
+            this.toast(error.message, 'warn');
+        }
     },
 
     onDirectorKey(event) {

@@ -4,21 +4,24 @@
 // Tool arguments are parsed, then validated by the caller's execute() before anything runs.
 import OpenAI from 'openai';
 
-const MAX_TOOL_ROUNDS = 8;
+import { MAX_TOOL_ROUNDS } from './anthropic.js';
 
-export async function runOpenAITurn({ apiKey, model, system, history, userContent, tools, execute, onText, signal }) {
+export async function runOpenAITurn({ apiKey, model, system, history, userContent, tools, execute, afterRound, onText, signal, maxRounds = MAX_TOOL_ROUNDS }) {
     const client = new OpenAI({ apiKey });
     const input = [...history, { role: 'user', content: userContent }];
     const apiTools = tools.map((t) => ({ type: 'function', name: t.name, description: t.description, parameters: t.schema, strict: false }));
     let finalText = '';
     let notice = null;
+    let exhausted = false;
 
-    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    for (let round = 0; round < maxRounds; round++) {
+        const last = round === maxRounds - 1;
         const stream = await client.responses.create({
             model,
             instructions: system,
             input,
             tools: apiTools,
+            ...(last ? { tool_choice: 'none' } : {}),
             store: false,
             include: ['reasoning.encrypted_content'],
             stream: true,
@@ -61,9 +64,13 @@ export async function runOpenAITurn({ apiKey, model, system, history, userConten
             const { content } = execute(call.name, args);
             input.push({ type: 'function_call_output', call_id: call.call_id, output: content });
         }
+        // The board check for what this round changed rides on the last result, for the model to fix.
+        const check = afterRound?.();
+        if (check) input.at(-1).output += `\n\n${check}`;
+        if (round === maxRounds - 2) exhausted = true; // the next (last) round can only answer
     }
 
-    return { history: input, text: finalText.trim(), notice };
+    return { history: input, text: finalText.trim(), notice, exhausted };
 }
 
 export function describeOpenAIError(error) {

@@ -20,6 +20,8 @@
         <p class="director__text" x-text="entry.text || (entry.streaming ? '…' : '')" x-show="entry.text || entry.streaming"></p>
         <p class="ae-readout director__actions" x-show="entry.actions?.length" x-text="actionSummary(entry.actions || [])"></p>
         <p class="field__error" x-show="entry.notice" x-text="entry.notice"></p>
+        {{-- Out of steps, stopped, or cut off by a closed app: pick up from what is on the board. --}}
+        <button type="button" class="ae-key ae-key--sm" x-show="canContinue(entry)" @click="continueDirector()">{{{ icon('wand') }}}<span>Continue</span></button>
       </div>
     </template>
   </div>

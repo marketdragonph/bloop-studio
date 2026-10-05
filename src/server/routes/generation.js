@@ -80,11 +80,17 @@ export function generationRoutes({ spaces, jobs, worker, events, media, engine, 
             };
             // The queue is shared by every board, so each board sees how many renders are ahead of its own.
             const onQueue = (order) => stream.writeSSE({ event: 'queue', data: JSON.stringify(order) });
+            // The Director's background run on this board: its words and board changes as they happen.
+            const onDirector = (update) => {
+                if (update.spaceId === spaceId) stream.writeSSE({ event: 'director', data: JSON.stringify(update) });
+            };
             events.on('node', onNode);
             events.on('queue', onQueue);
+            events.on('director', onDirector);
             stream.onAbort(() => {
                 events.off('node', onNode);
                 events.off('queue', onQueue);
+                events.off('director', onDirector);
             });
             await onQueue(jobs.activeQueue());
             while (!stream.aborted) {

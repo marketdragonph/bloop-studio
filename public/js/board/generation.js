@@ -1,5 +1,5 @@
 // ⚡ Generate / cancel, the model family picker, seed lock, and live progress from the
-// server's event stream (no polling: one EventSource per open board).
+// server's event stream (no polling: one EventSource per open board; it also carries the Director's runs).
 import { api } from './api.js';
 
 const STREAMS = new WeakMap();
@@ -10,6 +10,7 @@ export const generationMethods = {
         const source = new EventSource(`${this.base}/events`);
         source.addEventListener('node', (event) => this.applyNodeUpdate(JSON.parse(event.data)));
         source.addEventListener('queue', (event) => { this.renderQueue = JSON.parse(event.data); });
+        source.addEventListener('director', (event) => this.onDirectorStream(JSON.parse(event.data)));
         source.addEventListener('error', () => { this.streamDown = source.readyState !== EventSource.OPEN; });
         source.addEventListener('open', () => { this.streamDown = false; });
         STREAMS.set(this.$refs.board, source);
