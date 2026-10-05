@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1005.1112
+
 - New: clips and sound play in Bloop Studio's own players. Clips get a play key, a scrubber, the time, a volume level that every player remembers, and fullscreen. Songs and voices get a waveform you can click to seek, a voice light and a level meter.
 - Fixed: a new Video or Audio card showed "Choose…" for Duration instead of its default (5 s for clips, 30 s for songs).
 
