@@ -231,6 +231,34 @@ ffmpeg <guards> -i joined.mp4 -i <music> -i <voice> -filter_complex
 - Progress: `out_time_us` from `-progress pipe:1`, weighted by each step's seconds, as "Joining clip 4 of 8".
 - **P0 spike:** 8 real local clips (mixed sound, 9:16 + 16:9). Log every command; record time, peak memory, AAC
   drift at the concat seams, size. Bar: total ± 34 ms, one H.264 yuv420p 30 fps stream, one AAC 48 kHz stereo stream.
+- **P3 spike (2026-10-05, done; pinned BtbN n7.1.5 LGPL shared build, through `CappedFfmpeg.run`).** 8 items: 6 real
+  LTX and h3 outputs from ComfyUI (864×480 and 1344×768 / 1280×736, 24 and 25 fps, 32 and 48 kHz) + two 9:16 synths (one
+  with no audio stream, one 24 fps 44.1 kHz mono), one sound off, 3 dissolves (0.5, 0.75 → 0.767, 0.5 s), music bed +
+  voice. Output 1920×1080, 53.367 s. **Wall 9.1 s** (normalize 7.1, junctions 1.6, concat 0.18, mix 0.44), ≈ 5.9×
+  real time. **Peak working set:** normalize 460–620 MB, junction 600–780 MB, concat / mix < 45 MB (h264_mf's software
+  MFT alone is ~430 MB at 1080p; decode-only is 85 MB). **Size** 51.0 MB (video 7.45 Mbit/s, AAC 192 kbit/s).
+  **Seams:** beep-marked clips, 8 cuts: beep ends land within 1–2 ms of the clock at every seam, no accumulation,
+  for `aac_mf` and native `aac`. Total exact (0 ms) with `aac_mf`; native `aac` shifts video start by 21 ms (priming
+  edit list). Plays in Chromium 152 (Electron 44): `canplay` in 13–410 ms, 0 dropped frames, seek fine.
+  **Encoders on this PC:** `h264_mf` (software MFT; `-hw_encoding 1` finds no hardware MFT), `aac_mf`, `aac`.
+  **Recipe fixes found (P3 must use them):**
+  1. `acrossfade` on two parts of exactly `d` writes **no audio** when the graph also runs `xfade` (ffmpeg 7.1:
+     "Could not open encoder before EOF"; with `aac` it wrote 12 ms). Use
+     `[0:a]afade=t=out:d=<d>[a0];[1:a]afade=t=in:d=<d>[a1];[a0][a1]amix=inputs=2:duration=longest:dropout_transition=0:normalize=0,apad=whole_dur=<d>[a]`.
+  2. Part lengths and dissolves snap to the 30 fps grid (0.75 s → 0.7667 s); otherwise parts round to whole frames
+     on their own and the total drifts. `fps=30:start_time=0` (plain `fps=30` started some parts at 0.033 s).
+  3. `aac_mf` drops the last partial 1024-sample frame of every file (parts 5–20 ms short) and its parts are always
+     short of `d`. **Parts carry PCM** (`.mov`, `-c:a pcm_s16le -ar 48000 -ac 2`), concat copies video + PCM, and AAC
+     is encoded **once** in MixSound (or a copy-video "finish" step when there is no bed): exact durations, no AAC
+     seams, +0.2 s. `-af "…,apad=whole_dur=<len>"` keeps short source audio from ending a part early.
+  4. `VENC` stays `-c:v h264_mf -b:v 8M -g 60` (default rate control is CBR; `-g` is honoured). It writes
+     Constrained Baseline (`-profile:v 100` only relabels the header). Quality on a real clip vs a lossless reference:
+     SSIM 0.991, PSNR 40.1 dB. On synthetic full-frame noise it overshoots to 14.7 Mbit/s (still under the 16 Mbit/s
+     per-step `-fs` cap); `-rate_control quality -quality 70` gave 2.7 Mbit/s at SSIM 0.988 on the real clip.
+  **Licence:** BtbN's LGPL builds configure `--enable-version3`, so the bundle is **LGPL-3.0-or-later** (no
+  `--enable-gpl`, no `--enable-nonfree`); `fetch-ffmpeg.mjs` refuses GPL/nonfree and reads the licence from `ffmpeg -L`.
+  It lands in `vendor/ffmpeg/` (git-ignored), 120 MB unpacked (avcodec 63 MB). Owner item: LGPL-3.0 incorporates the
+  GPL-3.0 text by reference; ship `COPYING.GPLv3` beside `LICENSE.txt` before release.
 
 ## 7. Range / 206 on `/media/*` (P0, built)
 
@@ -286,7 +314,9 @@ Recommended plan:
   licences" link in Settings › Video tools point at the exact source tag; the exes stay unmodified, separate
   files the person can replace (the Choose key). Patent questions for H.264/AAC are an owner item (Q4).
 - Notices: `third-party-notices.mjs` gets `nativeComponents()` reading `vendor/ffmpeg/manifest.json` + `LICENSE`,
-  listed as "FFmpeg <version> – LGPL-2.1-or-later, source: <tag URL>, run as a separate program".
+  listed as "FFmpeg <version> – <licence from ffmpeg -L>, source: <tag URL>, run as a separate program" (built in
+  the P3 spike: LGPL-3.0-or-later for the pinned BtbN build). `npm run dist` runs `npm run fetch:ffmpeg` (not
+  `npm run vendor`, so `npm start` never downloads 62 MB); `build-installer.mjs` refuses when vendor/ffmpeg is missing.
   `tests/build-installer.test.js` asserts the block is present.
 - Size: measure both exes in P0 and note the installer growth in ../katana.md.
 

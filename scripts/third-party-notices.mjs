@@ -1,6 +1,7 @@
 // Writes build/THIRD-PARTY-NOTICES.txt (ASCII header, readable in any viewer): every production dependency shipped in the installer with its
 // license text, as MIT / Apache-2.0 / OFL require when redistributing. Electron and Chromium ship their
-// own notices (LICENSE.electron.txt, LICENSES.chromium.html) next to the app.
+// own notices (LICENSE.electron.txt, LICENSES.chromium.html) next to the app. Native programs shipped as separate
+// files (FFmpeg in resources/ffmpeg, from scripts/fetch-ffmpeg.mjs) are listed from their manifest.json.
 // Usage: node scripts/third-party-notices.mjs   (npm run dist runs it)
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -31,7 +32,24 @@ export function productionPackages(root = ROOT) {
     return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function renderNotices(packages) {
+/** Native programs in the installer, each from vendor/<name>/manifest.json + LICENSE.txt; [] when not fetched. */
+export function nativeComponents(root = ROOT) {
+    const dir = join(root, 'vendor', 'ffmpeg');
+    if (!existsSync(join(dir, 'manifest.json'))) return [];
+    const m = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+    const licence = existsSync(join(dir, 'LICENSE.txt')) ? readFileSync(join(dir, 'LICENSE.txt'), 'utf8').trim() : null;
+    const text = [
+        `${m.name} ${m.version} - ${m.license}, source: ${m.source}, run as a separate program (resources/ffmpeg).`,
+        `Build: ${m.url} (sha256 ${m.sha256}); build scripts: ${m.buildScripts}.`,
+        'ffmpeg.exe, ffprobe.exe and the DLLs are unmodified and may be replaced (Settings > Video tools).',
+        `Configuration: ${m.configure}`,
+        '',
+        licence ?? `Licensed under ${m.license}.`,
+    ].join('\n');
+    return [{ name: m.name, version: m.version, license: m.license, text }];
+}
+
+export function renderNotices(packages, natives = []) {
     const rule = '-'.repeat(78);
     const head = [
         'Bloop Studio - third-party notices',
@@ -41,6 +59,8 @@ export function renderNotices(packages) {
         'Electron and Chromium notices: LICENSE.electron.txt and LICENSES.chromium.html in the install folder.',
         '',
         ...packages.map((p) => `  ${p.name}@${p.version} - ${p.license}`),
+        ...(natives.length ? ['', 'Native programs, run as separate processes:'] : []),
+        ...natives.map((n) => `  ${n.name} ${n.version} - ${n.license}`),
     ];
     const bodies = packages.map((p) => [
         rule,
@@ -49,11 +69,13 @@ export function renderNotices(packages) {
         '',
         p.text ?? `Licensed under ${p.license}. The package ships no license file; see its source repository for the full text.`,
     ].filter((line) => line !== null).join('\n'));
-    return `${head.join('\n')}\n\n${bodies.join('\n\n')}\n`;
+    const nativeBodies = natives.map((n) => [rule, `${n.name} ${n.version} - ${n.license}`, '', n.text].join('\n'));
+    return `${head.join('\n')}\n\n${[...bodies, ...nativeBodies].join('\n\n')}\n`;
 }
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
     const packages = productionPackages();
-    writeFileSync(NOTICES_PATH, renderNotices(packages));
-    console.log(`notices: ${packages.length} packages -> ${NOTICES_PATH}`);
+    const natives = nativeComponents();
+    writeFileSync(NOTICES_PATH, renderNotices(packages, natives));
+    console.log(`notices: ${packages.length} packages, ${natives.length} native -> ${NOTICES_PATH}`);
 }

@@ -4,7 +4,7 @@
 // Usage: npm run dist   (installer, blockmap and latest.yml in dist/; the Release workflow uploads them)
 import { writeFileSync } from 'node:fs';
 import { build, Platform } from 'electron-builder';
-import { NOTICES_PATH, productionPackages, renderNotices } from './third-party-notices.mjs';
+import { nativeComponents, NOTICES_PATH, productionPackages, renderNotices } from './third-party-notices.mjs';
 
 /** No leading zeros (semver forbids them): 2 Oct 14:35 -> 2026.1002.1435, 5 Jan 09:05 -> 2027.105.905. */
 export function dateVersion(at = new Date()) {
@@ -15,7 +15,12 @@ export function dateVersion(at = new Date()) {
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
     const version = dateVersion();
-    writeFileSync(NOTICES_PATH, renderNotices(productionPackages()));
+    const natives = nativeComponents();
+    if (!natives.some((n) => n.name === 'FFmpeg')) {
+        console.error('vendor/ffmpeg is missing: run npm run fetch:ffmpeg first (npm run dist does).');
+        process.exit(1);
+    }
+    writeFileSync(NOTICES_PATH, renderNotices(productionPackages(), natives));
     console.log(`Building Bloop Studio ${version}`);
     await build({
         targets: Platform.WINDOWS.createTarget(),
