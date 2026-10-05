@@ -57,7 +57,7 @@ export class BuildStages {
             if (plates.length) {
                 const firstLane = Object.keys(plan.plates).length + 1;
                 try {
-                    const result = this.ops.apply(plan.space_id, railOps(plates, firstLane, { withVoice }), { origin: this.origin(plan), aspect: '16:9' });
+                    const result = this.ops.apply(plan.space_id, railOps(plates, firstLane, { withVoice }), { origin: this.origin(plan), aspect: this.plans.find(plan.id).aspect });
                     plan = this.plans.update(plan.id, { plates: { ...plan.plates, ...railMap(plates, result.refs) } });
                     made += result.nodes.length;
                     actions.push(...result.actions);
@@ -86,7 +86,7 @@ export class BuildStages {
             { op: 'wire', from: 'bed-style', to: 'bed', socket: 'prompt' },
             ...(song ? [{ op: 'wire', from: 'bed-lyrics', to: 'bed', socket: 'lyrics' }] : []),
         ];
-        const result = this.ops.apply(plan.space_id, ops, { origin: this.origin(plan), aspect: '16:9' });
+        const result = this.ops.apply(plan.space_id, ops, { origin: this.origin(plan), aspect: this.plans.find(plan.id).aspect });
         return { made: result.nodes.length, actions: result.actions };
     }
 
@@ -98,7 +98,7 @@ export class BuildStages {
         if (existing) return { id: existing.id, made: 0, actions: [] };
         const body = `${String(look).trim().slice(0, 2000)} Exposed for legibility: faces, hands and the action stay clearly visible. Darkness comes from contrast and falloff, never from crushing the frame.`;
         const lane = Object.keys(plan.plates).length + 2;
-        const result = this.ops.apply(plan.space_id, [{ op: 'note', ref: 'look', title: 'the look', body, lane, stage: 1 }], { origin: this.origin(plan), aspect: '16:9' });
+        const result = this.ops.apply(plan.space_id, [{ op: 'note', ref: 'look', title: 'the look', body, lane, stage: 1 }], { origin: this.origin(plan), aspect: this.plans.find(plan.id).aspect });
         return { id: result.refs.look, made: 1, actions: result.actions };
     }
 

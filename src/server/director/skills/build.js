@@ -127,7 +127,7 @@ export const buildBoard = {
                 return { tag: ref, kind: beats.some((b) => b.staging?.landmark && b.refs[b.refs.length - 1] === ref) ? 'location' : 'cast', description: `${name}. ${said}`.trim() };
             }));
             try {
-                const result = t.ops.apply(plan.space_id, railOps(drafts, Object.keys(plan.plates).length + 1, { withVoice: false }), { origin: t.stages.origin(plan), aspect: '16:9' });
+                const result = t.ops.apply(plan.space_id, railOps(drafts, Object.keys(plan.plates).length + 1, { withVoice: false }), { origin: t.stages.origin(plan), aspect: plan.aspect });
                 plan = t.plans.update(plan.id, { plates: { ...plan.plates, ...railMap(drafts, result.refs) } });
                 actions.push(...result.actions);
                 invented = drafts;
@@ -157,7 +157,11 @@ export const buildBoard = {
         });
 
         // Lanes: a beat already on the board keeps its lane; new beats go after everything else.
-        const taken = Math.max(Object.keys(plan.plates).length + 2, ...[...existing.values()].map((b) => b.lane));
+        // The rail's lanes, then the bed's and the look's only when they went down (no empty rows in the block).
+        const plateLanes = Object.keys(plan.plates).length;
+        const bedLane = bed.made || t.spaces.board(plan.space_id).nodes.some((n) => n.type === 'audio' && /^(music bed|song)$/i.test(n.label ?? '')) ? plateLanes + 1 : 0;
+        const lookLane = look.id ? plateLanes + 2 : 0;
+        const taken = Math.max(plateLanes, bedLane, lookLane, ...[...existing.values()].map((b) => b.lane));
         let next = taken + 1;
         const rows = beats.map((b) => ({ ...b, lane: existing.get(b.tag)?.lane ?? next++ }));
         t.plans.saveBeats(plan.id, rows);
