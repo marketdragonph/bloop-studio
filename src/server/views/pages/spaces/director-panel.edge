@@ -2,6 +2,9 @@
 <aside class="director" id="director-panel" x-show="directorOpen" x-cloak aria-label="Director">
   <header class="director__head">
     <span class="ae-stencil ae-stencil--sensor">{{{ icon('chat') }}} Director</span>
+    <span class="status-light status-light--busy director__state" x-show="directorBusy" role="status">
+      <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span><span class="ae-readout">Working</span>
+    </span>
     <button type="button" class="ae-key ae-key--sm" @click="clearDirector()" :disabled="directorBusy || !directorLog.length" title="Clear conversation">{{{ icon('delete') }}}</button>
     <button type="button" class="ae-key ae-key--sm ae-key--square" @click="directorOpen = false" aria-label="Close Director">{{{ icon('close') }}}</button>
   </header>
@@ -17,8 +20,16 @@
     <template x-for="entry in directorLog" :key="entry.id">
       <div class="director__msg" :class="'director__msg--' + entry.role">
         <p class="ae-readout" x-show="entry.info" x-text="entry.info"></p>
-        <p class="director__text" x-text="entry.text || (entry.streaming ? '…' : '')" x-show="entry.text || entry.streaming"></p>
-        <p class="ae-readout director__actions" x-show="entry.actions?.length" x-text="actionSummary(entry.actions || [])"></p>
+        <p class="director__text" x-text="entry.text" x-show="entry.text"></p>
+        {{-- While it works: what it is doing right now, and what has landed so far. --}}
+        <p class="director__working" x-show="entry.streaming" role="status">
+          <svg class="beat-line director__beat" viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <polyline class="beat-line__track" points="0,10 14,10 17,7 20,10 26,10 28,13 31,2 34,17 36,10 42,10 46,6 50,10 60,10 74,10 77,7 80,10 86,10 88,13 91,2 94,17 96,10 102,10 106,6 110,10 120,10" />
+            <polyline class="beat-line__pulse" pathLength="100" points="0,10 14,10 17,7 20,10 26,10 28,13 31,2 34,17 36,10 42,10 46,6 50,10 60,10 74,10 77,7 80,10 86,10 88,13 91,2 94,17 96,10 102,10 106,6 110,10 120,10" />
+          </svg>
+          <span class="ae-readout" x-text="workingLabel(entry)"></span>
+        </p>
+        <p class="ae-readout director__actions" x-show="entry.actions?.length && !entry.streaming" x-text="actionSummary(entry.actions || [])"></p>
         <p class="field__error" x-show="entry.notice" x-text="entry.notice"></p>
       </div>
     </template>

@@ -37,7 +37,7 @@ export class DirectorRuns {
     /** The run in progress on a board, for a panel opened mid-turn (or null). */
     active(spaceId) {
         const run = this.live.get(spaceId);
-        return run ? { runId: run.runId, request: run.request, text: run.text, actions: run.actions, info: run.info } : null;
+        return run ? { runId: run.runId, request: run.request, text: run.text, actions: run.actions, info: run.info, activity: run.activity ?? null } : null;
     }
 
     /** Starts a run in the background; returns its id. Throws DirectorBusyError while one is going. */
@@ -51,6 +51,7 @@ export class DirectorRuns {
             if (event === 'text') run.text += data.delta;
             if (event === 'actions') run.actions.push(...data.actions);
             if (event === 'notice') run.info = data.message;
+            if (event === 'activity') run.activity = data.label;
             this.events.director({ spaceId, runId, event, data });
         };
         run.done = this.#work(spaceId, request, run, emit, logRequest)

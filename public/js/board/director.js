@@ -17,8 +17,8 @@ export const directorMethods = {
             this.directorLog = log;
             this.directorLoaded = true;
             if (running) {
-                if (running.request) this.directorLog.push({ id: `u${running.runId}`, role: 'user', text: running.request, actions: [] });
-                this.followRun(running.runId, { text: running.text, actions: [...running.actions], info: running.info });
+                // The person's message is already in the saved log: only the reply in progress is added.
+                this.followRun(running.runId, { text: running.text, actions: [...running.actions], info: running.info, activity: running.activity });
             }
             this.scrollDirector();
         } catch (error) {
@@ -75,7 +75,7 @@ export const directorMethods = {
     followRun(runId, partial = {}) {
         this.directorBusy = true;
         this.directorRunId = runId;
-        this.directorLog.push({ id: `a${runId}`, runId, role: 'assistant', text: partial.text ?? '', actions: partial.actions ?? [], info: partial.info ?? null, streaming: true });
+        this.directorLog.push({ id: `a${runId}`, runId, role: 'assistant', text: partial.text ?? '', actions: partial.actions ?? [], info: partial.info ?? null, activity: partial.activity ?? null, streaming: true });
         this.scrollDirector();
     },
 
@@ -92,6 +92,7 @@ export const directorMethods = {
         if (event === 'text') reply.text += data.delta;
         if (event === 'actions') reply.actions.push(...data.actions);
         if (event === 'notice') reply.info = data.message;
+        if (event === 'activity') reply.activity = data.label;
         if (event === 'done' || event === 'error') {
             reply.streaming = false;
             reply.notice = event === 'error' ? data.message : data.notice;
@@ -159,6 +160,12 @@ export const directorMethods = {
             const log = this.$refs.directorLog;
             if (log) log.scrollTop = log.scrollHeight;
         });
+    },
+
+    /** "Adding cards · 12 cards · 8 wires": what the Director is doing, and what has landed so far. */
+    workingLabel(entry) {
+        const done = this.actionSummary(entry.actions || []);
+        return [`${entry.activity || 'Reading the board'}…`, done].filter(Boolean).join(' · ');
     },
 
     actionSummary(actions) {

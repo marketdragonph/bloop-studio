@@ -116,7 +116,7 @@ test('a Director run works in the background, one per board, and streams on the 
 
     const runId = runs.start(space.id, 'Make a short film');
     assert.throws(() => runs.start(space.id, 'again'), DirectorBusyError);
-    assert.deepEqual(runs.active(space.id), { runId, request: 'Make a short film', text: 'Building…', actions: [{ kind: 'card', nodeId: 1 }], info: null });
+    assert.deepEqual(runs.active(space.id), { runId, request: 'Make a short film', text: 'Building…', actions: [{ kind: 'card', nodeId: 1 }], info: null, activity: null });
 
     await service.finishAll(runs, space.id);
     assert.equal(runs.active(space.id), null);

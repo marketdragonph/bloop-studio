@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: you can see the Director working. While it builds, its reply shows what it is doing (adding cards, wiring, checking its work) with a running count of cards and wires, and the panel header lights up.
+- Fixed: reloading the board while the Director was working showed your message twice.
+
 ## 2026.1005.1035
 
 - Fixed: the board no longer lags while the Director builds. It redraws only what changed, at most twice a second, instead of redrawing every card for each card it adds.

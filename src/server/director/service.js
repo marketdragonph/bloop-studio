@@ -5,6 +5,15 @@ import { runOpenAITurn, describeOpenAIError } from './providers/openai.js';
 import { SPACE_DIRECTOR_SYSTEM, turnOrigin, userTurn } from './prompt.js';
 import { BoardActions, TOOL_DEFINITIONS } from './tools.js';
 
+// What the panel says the Director is doing while a tool runs (the reply may not have a word yet).
+const ACTIVITY = {
+    add_card: 'Adding cards',
+    connect: 'Wiring cards',
+    update_card: 'Editing cards',
+    inspect_cards: 'Reading cards',
+    audit_board: 'Checking the board',
+};
+
 const PROVIDERS = {
     anthropic: { run: runClaudeTurn, describe: describeClaudeError, keyName: 'anthropicApiKey', modelName: 'anthropicModel', label: 'Claude' },
     openai: { run: runOpenAITurn, describe: describeOpenAIError, keyName: 'openaiApiKey', modelName: 'openaiModel', label: 'OpenAI' },
@@ -45,6 +54,7 @@ export class DirectorService {
         const planned = board.nodes.length > 0 || history.length > 0;
         const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes), planned });
         if (logRequest) this.director.addLog(spaceId, 'user', request);
+        emit('activity', { label: 'Reading the board' });
 
         try {
             const result = await provider.run({
@@ -55,11 +65,15 @@ export class DirectorService {
                 userContent: userTurn(request, board),
                 tools: TOOL_DEFINITIONS,
                 execute: (name, input) => {
+                    emit('activity', { label: ACTIVITY[name] ?? 'Working' });
                     const outcome = actions.run(name, input);
                     if (outcome.ok) emit('actions', { actions: actions.actions.slice(-1) });
                     return outcome;
                 },
-                afterRound: () => actions.afterRound(),
+                afterRound: () => {
+                    emit('activity', { label: 'Checking its work' });
+                    return actions.afterRound();
+                },
                 onText: (delta) => emit('text', { delta }),
                 signal,
             });
