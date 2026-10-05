@@ -11,7 +11,7 @@
     max-height: calc(100dvh - var(--topbar-height) - var(--cut-rail) - 3 * var(--space-4));
     overflow-y: auto;
     border: 1px solid var(--ae-seam-strong);
-    border-top: 2px solid var(--accent);
+    border-top: 2px solid var(--accent-mark);
     background: var(--bg-secondary);
     box-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--bg-primary) 60%, transparent);
 }
@@ -76,7 +76,7 @@
     border-left: 3px solid var(--ae-seam-strong);
     cursor: pointer;
 }
-.cut-preset.is-on { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+.cut-preset.is-on { border-left-color: var(--accent-mark); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
 .cut-preset:has(:focus-visible) { outline: 2px solid var(--text-primary); outline-offset: 1px; }
 .cut-preset__input { grid-row: 1 / span 2; accent-color: var(--accent); }
 .cut-preset__name { font-weight: 700; font-size: var(--fs-sm); color: var(--text-primary); }

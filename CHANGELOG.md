@@ -37,6 +37,7 @@ that heading into the version number and uses the section as the release notes.
 - Changed: Bring my clips can be undone on the board in one step. A file that fails to copy no longer leaves an empty Upload card behind. When you bring two or more songs, the Cut dock asks which one goes under the clips (or none) instead of leaving the music out without a word.
 - Fixed: the name over the Cut preview now follows the clip that is playing, not only the one you selected.
 - Fixed: an error in the developer console on every board ("Applying inline style violates the Content Security Policy").
+- Changed: the Cut dock is easier to read in both themes. The playhead, trim handles, clip edges, hatched gaps, ruler ticks and waveform now stand out clearly in the light theme, the words on a missing beat no longer sit on the stripes, and labels on clip pictures stay readable over bright frames. Orange and blue text is a shade deeper in the light theme.
 
 ## 2026.1005.1232
 

@@ -15,10 +15,12 @@
     --accent: #F97316;
     --accent-light: #FB923C;
     --accent-dark: #EA580C;
-    --accent-text: light-dark(#C2410C, #F97316);
+    --accent-text: light-dark(#A8380A, #F97316); /* P5: 6.5:1 on white, 4.5:1 on a hovered key */
+    /* Orange marks on a theme ground (playhead, handles, the selected edge): the text shade, so they hold 3:1 in light. */
+    --accent-mark: var(--accent-text);
     --ink-on-accent: #1C1917;
     --sensor: #2563EB;
-    --sensor-text: light-dark(#2563EB, #60A5FA);
+    --sensor-text: light-dark(#1D4ED8, #60A5FA); /* P5: 4.5:1 on the blue-tinted strips in light */
 
     --bg-primary: light-dark(#F9FAFB, #09090b);
     --bg-secondary: light-dark(#FFFFFF, #111113);
@@ -40,7 +42,7 @@
     --media-scrim: rgb(8 10 14 / 0.15);
     --media-scrim-strong: rgb(8 10 14 / 0.45);
     --media-scrim-deck: rgb(8 10 14 / 0.78);
-    --media-chip: rgb(8 10 14 / 0.55);
+    --media-chip: rgb(8 10 14 / 0.6); /* P5: white text holds 4.5:1 even over a white frame */
     --media-ground: #000000;
 
     --fs-3xs: 0.625rem;

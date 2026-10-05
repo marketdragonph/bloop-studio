@@ -10,6 +10,12 @@
     --ae-seam-lit: color-mix(in srgb, var(--accent) 62%, var(--ae-seam-strong));
     --ae-chamfer: 0.6875rem;
     --ae-stencil-ink: color-mix(in srgb, var(--text-muted) 80%, var(--text-primary));
+    /* Cut dock marks (P5, aliases, no new colours): each holds 3:1 on the lane in both themes
+       (scripts/katana-contrast.mjs). */
+    --cut-clip-edge: var(--ae-seam-control);
+    --cut-hatch: var(--ae-seam-control);
+    --cut-tick: var(--ae-seam-control);
+    --cut-wave: var(--ae-seam-control);
 }
 
 /* ── Plate ── */
@@ -104,7 +110,7 @@
 }
 
 .ae-key:hover { color: var(--accent-text); }
-.ae-key:hover::before { background: color-mix(in srgb, var(--accent) 22%, var(--bg-tertiary)); }
+.ae-key:hover::before { background: color-mix(in srgb, var(--accent) 14%, var(--bg-tertiary)); }
 
 .ae-key--accent { --ae-key-edge: var(--accent-dark); --ae-key-fill: var(--accent); color: var(--ink-on-accent); }
 .ae-key--accent:hover { color: var(--ink-on-accent); }

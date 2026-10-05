@@ -60,7 +60,7 @@
 
 /* ── Clips the turn changed: a sensor edge while Show edits is open; the trimmed-off frames as a faint ghost ── */
 .cut-clip.is-turn { background: var(--sensor); }
-.cut-clip.is-turn.is-selected { background: var(--accent); }
+.cut-clip.is-turn.is-selected { background: var(--accent-mark); }
 
 .cut-trimghost {
     position: absolute;

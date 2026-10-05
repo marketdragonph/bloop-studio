@@ -167,12 +167,12 @@
     top: 0;
     bottom: 0;
     width: 0.4375rem;
-    background: var(--accent);
+    background: var(--accent-mark);
 }
 .cut-handle--in::after { right: 0; }
 .cut-handle--out::after { left: 0; }
-.cut-handle:hover::after { background: var(--accent-light); }
-.cut-handle:focus-visible::after { background: var(--text-primary); box-shadow: 0 0 0 2px var(--accent); }
+.cut-handle:hover::after { width: 0.5625rem; } /* wider, not lighter: a light orange drops under 3:1 */
+.cut-handle:focus-visible::after { background: var(--text-primary); box-shadow: 0 0 0 2px var(--accent-mark); }
 
 .cut-handle__time {
     position: absolute;
@@ -211,8 +211,8 @@
     cursor: pointer;
     transform: translate(-50%, -50%);
 }
-.cut-join:hover { color: var(--accent-text); border-color: var(--accent); }
-.cut-join.is-dissolve { border-color: var(--accent); color: var(--accent-text); }
+.cut-join:hover { color: var(--accent-text); border-color: var(--accent-mark); }
+.cut-join.is-dissolve { border-color: var(--accent-mark); color: var(--accent-text); }
 .cut-join:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 1px; }
 
 @media (pointer: coarse) {

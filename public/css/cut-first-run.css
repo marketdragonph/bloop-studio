@@ -23,7 +23,7 @@
     border: 1px solid var(--ae-seam-strong);
     border-left: 3px solid var(--ae-seam-strong);
 }
-.starter:focus-within { border-left-color: var(--accent); }
+.starter:focus-within { border-left-color: var(--accent-mark); }
 .starter .ae-key { flex: none; white-space: nowrap; }
 .starter__text { display: grid; gap: var(--space-1); min-width: 0; }
 .starter__title { font-weight: 700; font-size: var(--fs-sm); color: var(--text-primary); }
