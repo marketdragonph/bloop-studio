@@ -8,6 +8,9 @@ import { ASPECTS } from '../../shared/formats.js';
 import { auditBoard, auditText } from './audit.js';
 
 const MAX_CARDS_PER_TURN = 60; // a 9-shot film (3 cards each) plus its cast and locations
+// Plan first (as bloop's planFirst gate): on an empty board nobody has talked about yet, a few cards
+// are fine (one shot, one note), a whole board is not: the Director pitches and asks first.
+const UNPLANNED_CARDS = 3;
 const CARD_TYPES = ['text', 'note', 'image', 'video', 'audio'];
 const SOCKETS = ['prompt', 'reference', 'first_frame', 'last_frame', 'audio', 'lyrics'];
 const ASPECT_IDS = ASPECTS.map((a) => a.id);
@@ -115,7 +118,7 @@ const GRID_Y = 580;
 
 /** Applies validated tool calls for one Director turn. Holds the ref → id map and the turn's actions. */
 export class BoardActions {
-    constructor({ spaces, spaceId, origin }) {
+    constructor({ spaces, spaceId, origin, planned = true }) {
         this.spaces = spaces;
         this.spaceId = spaceId;
         this.origin = origin; // board point where the turn's grid starts (right of existing cards)
@@ -123,6 +126,7 @@ export class BoardActions {
         this.actions = []; // [{ kind, ...ids }] for the client and for one-step undo
         this.cardsAdded = 0;
         this.touched = new Set(); // cards changed since the last board check
+        this.planned = planned; // false: a new, empty board with no conversation yet
     }
 
     /** After a round of tool calls: the board check for what that round changed, or null. */
@@ -160,6 +164,9 @@ export class BoardActions {
     }
 
     addCard({ ref, type, text, label, column = 0, row = 0 }) {
+        if (!this.planned && this.cardsAdded >= UNPLANNED_CARDS) {
+            throw new ValidationError('STOP: this is a new board and nothing is agreed yet. Do not add more cards. Reply with your plan (pitch, cast, places, numbered shots with seconds) and at most 2 questions, then wait for the answer.');
+        }
         if (this.cardsAdded >= MAX_CARDS_PER_TURN) throw new ValidationError(`At most ${MAX_CARDS_PER_TURN} cards per turn; ask the person before adding more.`);
         if (this.refs.has(ref)) throw new ValidationError(`The ref "${ref}" is already used in this turn.`);
         const node = this.spaces.createNode(this.spaceId, {

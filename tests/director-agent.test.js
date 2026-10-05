@@ -166,3 +166,13 @@ test('Stop ends a run; a run cut off by a closed app resumes by itself when the 
     assert.equal(after.active(space.id).request, null); // no fake message from the person in the chat
     await restarted.finishAll(after, space.id);
 });
+
+test('plan first: on a new empty board the Director may add a few cards, not a whole board', () => {
+    const { spaces, space } = fresh();
+    const fresher = new BoardActions({ spaces, spaceId: space.id, origin: { x: 0, y: 0 }, planned: false });
+    for (const ref of ['a', 'b', 'c']) assert.ok(fresher.run('add_card', { ref, type: 'note' }).ok);
+    assert.match(fresher.run('add_card', { ref: 'd', type: 'note' }).content, /^STOP: this is a new board/);
+    // Once there is a conversation (or cards), building is free.
+    const agreed = new BoardActions({ spaces, spaceId: space.id, origin: { x: 0, y: 0 } });
+    for (let i = 0; i < 5; i++) assert.ok(agreed.run('add_card', { ref: `s${i}`, type: 'note' }).ok);
+});

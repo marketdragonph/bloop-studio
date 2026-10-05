@@ -89,6 +89,11 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   added stay. 30 model rounds per turn (the last one can only answer); out of steps, the run carries on by
   itself in the same reply, up to 4 turns. A run cut off by a closed app resumes when the app starts.
   No buttons to press: replies say what was built, never which buttons to use; renders stay the person's.
+- **Talks first** (as bloop's PlanFirst): a new project on an empty board gets a plan (pitch, cast, places,
+  numbered shots with seconds, the music) and at most 2 questions; it builds after the answer. Enforced in
+  `tools.js`: an empty board with no conversation takes at most 3 cards. Questions get answers, not cards.
+- **Sound and music:** every shot text ends with a "Sound: …" line (LTX / MiniMax-H3 render it), and a
+  film gets a "Score" audio card (style text card, optional lyrics card) as long as the film (≤ 180 s).
 - **Checks its own work** (ported from bloop's BoardAudit, `director/audit.js`): after every round that
   changes the board the model gets a board check (render cards with nothing in Words, a cast or location
   named in a shot but not wired into it, unused text, a last frame or voice without a first frame, failed

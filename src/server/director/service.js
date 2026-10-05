@@ -40,7 +40,10 @@ export class DirectorService {
         const apiKey = this.settings.get(provider.keyName);
         const model = this.settings.get(provider.modelName);
         const board = this.spaces.board(spaceId);
-        const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes) });
+        const history = this.director.thread(spaceId, providerId, model);
+        // Nothing on the board and nothing said yet: plan and ask before building (tools.js gate).
+        const planned = board.nodes.length > 0 || history.length > 0;
+        const actions = new BoardActions({ spaces: this.spaces, spaceId, origin: turnOrigin(board.nodes), planned });
         if (logRequest) this.director.addLog(spaceId, 'user', request);
 
         try {
@@ -48,7 +51,7 @@ export class DirectorService {
                 apiKey,
                 model,
                 system: SPACE_DIRECTOR_SYSTEM,
-                history: this.director.thread(spaceId, providerId, model),
+                history,
                 userContent: userTurn(request, board),
                 tools: TOOL_DEFINITIONS,
                 execute: (name, input) => {

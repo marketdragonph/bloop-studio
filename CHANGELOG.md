@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the Director talks before it builds. For a new film on an empty board it pitches the story, cast, shots and music and asks up to two questions first, then builds once you answer. Questions get answers instead of cards.
+- New: the Director plans sound. Every shot gets a sound line for the video's own audio, and films get a Score card for the music (with a Lyrics card when it's a song).
+
 ## 2026.1005.1026
 
 - Changed: the Director finishes big builds by itself. No Continue button: when it needs more steps it carries on in the same reply, and a build cut off by closing the app picks up again when you reopen it. Its replies say what it built instead of telling you which buttons to press; what to render stays your choice.
