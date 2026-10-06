@@ -77,7 +77,7 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   Trimmed-off frames show as a blue ghost, the person's own clips as "Yours, untouched"; the strip folds into Ctrl+Z
   at the person's next edit. Clip notes stay sensor blue, the reason is the note's tooltip and a "Why:" line in the
   clip's details. `public/js/components/cut-measure.js`: "Measuring 3 clips…" on the rail; beat ticks only from
-  measured `beats_ms` (downbeats taller, "Beats · estimated", "Not measured" without video tools); **Snap to beats**
+  measured `beats_ms` (downbeats taller, "Beats · estimated", "Not measured" without video tools); **Snap to beats** (the magnet key; lane names are icons with tooltips)
   (track header, remembered per viewer) lands a dragged trim's cut point on a downbeat within 80 ms through
   `snapToBeat` in `src/shared/cut-sound.js`, never on drafts or keyboard nudges; **Duck under lines** in the Music
   level popover (−18..−3 dB, one undo step), duck bands and measured spoken lines from the server's `ducks` and

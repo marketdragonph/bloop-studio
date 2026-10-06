@@ -79,22 +79,19 @@
 .cut-tracks__corner { display: flex; align-items: center; min-width: 0; padding-right: var(--space-1); }
 
 .cut-snap {
-    min-width: 0;
-    max-width: 100%;
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--cut-ruler-h) + 0.5rem);
     height: calc(var(--cut-ruler-h) - 0.125rem);
-    padding: 0 0.25rem;
-    overflow: hidden;
+    padding: 0;
     border: 1px solid var(--ae-seam-strong);
     background: none;
     color: var(--text-secondary);
-    font-family: inherit;
-    font-size: var(--fs-3xs);
-    font-weight: 600;
+    font-size: 0.75rem;
     line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     cursor: pointer;
 }
+.cut-snap:hover:not(:disabled) { color: var(--accent-text); }
 .cut-snap[aria-pressed='true'] { border-color: var(--sensor); background: color-mix(in srgb, var(--sensor) 14%, transparent); color: var(--sensor-text); }
 .cut-snap:disabled { color: var(--text-muted); cursor: default; }
 .cut-snap:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 1px; }

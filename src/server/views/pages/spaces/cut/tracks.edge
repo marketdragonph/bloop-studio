@@ -7,27 +7,32 @@
      its duck bands (dashed top), all from the server's numbers. --}}
 <div class="cut-tracks">
   <div class="cut-tracks__labels">
+    {{-- Icons, not words (owner, 2026-10-06): each lane is its glyph, its name in the tooltip and for screen readers.
+         Snap to beats is the magnet key; "Beats · estimated" / "Not measured" ride on the Music glyph's tooltip, and a
+         sensor dot marks the Music lane while it has not been measured. --}}
     <div class="cut-tracks__corner">
       <button type="button" class="cut-snap" @click="cutSnapToggle()" :aria-pressed="cutSnap ? 'true' : 'false'"
-              :disabled="!cutSnapReady() && !cutSnap" data-control="cut.snap" :title="cutBeatsLabel()"
-              :aria-label="'{{ controlLabel('cut.snap') }}, ' + cutBeatsLabel()">{{ controlLabel('cut.snap') }}</button>
+              :disabled="!cutSnapReady() && !cutSnap" data-control="cut.snap" :title="'{{ controlLabel('cut.snap') }} · ' + cutBeatsLabel()"
+              :aria-label="'{{ controlLabel('cut.snap') }}, ' + cutBeatsLabel()">{{{ icon('magnet') }}}</button>
     </div>
-    <div class="cut-track-label cut-track-label--video">
-      <span class="ae-stencil" data-control="cut.lane.video">{{ controlLabel('cut.lane.video') }}</span><span class="ae-readout">Beats</span>
+    <div class="cut-track-label cut-track-label--video" title="{{ controlLabel('cut.lane.video') }} · one clip per beat">
+      <span class="cut-track-label__icon" data-control="cut.lane.video">{{{ icon('video') }}}<span class="visually-hidden">{{ controlLabel('cut.lane.video') }}</span></span>
     </div>
-    <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice || cutSpeechSpans.length">
-      <span class="ae-stencil" data-control="cut.lane.voice">{{ controlLabel('cut.lane.voice') }}</span>
-      <span class="ae-readout" x-show="!cutBeds.voice">In clips</span>
+    <div class="cut-track-label cut-track-label--voice" x-show="cutBeds.voice || cutSpeechSpans.length"
+         :title="cutBeds.voice ? '{{ controlLabel('cut.lane.voice') }}' : '{{ controlLabel('cut.lane.voice') }} · in the clips'">
+      <span class="cut-track-label__icon" data-control="cut.lane.voice">{{{ icon('voice') }}}<span class="visually-hidden">{{ controlLabel('cut.lane.voice') }}</span></span>
+      <span class="visually-hidden" x-show="!cutBeds.voice">In clips</span>
       <template x-if="cutBeds.voice">
         @!component('pages/spaces/cut/level', { kind: 'voice', name: 'Voice' })
       </template>
     </div>
-    <div class="cut-track-label cut-track-label--music">
-      <span class="ae-stencil" data-control="cut.lane.music">{{ controlLabel('cut.lane.music') }}</span>
+    <div class="cut-track-label cut-track-label--music" :title="'{{ controlLabel('cut.lane.music') }}' + (cutBeatsShort() ? ' · ' + cutBeatsShort() : '')">
+      <span class="cut-track-label__icon" data-control="cut.lane.music">{{{ icon('music') }}}<span class="visually-hidden">{{ controlLabel('cut.lane.music') }}</span>
+        <span class="cut-track-label__dot" x-show="cutToolsMissing()" x-cloak aria-hidden="true"></span></span>
       <template x-if="cutBeds.music">
         @!component('pages/spaces/cut/level', { kind: 'music', name: 'Music' })
       </template>
-      <span class="ae-readout cut-track-label__beats" x-show="cutBeatsShort()" x-text="cutBeatsShort()"></span>
+      <span class="visually-hidden cut-track-label__beats" x-show="cutBeatsShort()" x-text="cutBeatsShort()"></span>
     </div>
   </div>
 

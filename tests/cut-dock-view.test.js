@@ -382,7 +382,9 @@ test('P4 views: the turn strip, Snap to beats, beat ticks, duck bands, Duck unde
     assert.match(dock, /class="cut-check__time ae-readout"/);
     // Tracks: Snap to beats in the corner (a toggle, off without measured beats), downbeats, findings on the ruler.
     assert.match(dock, /class="cut-snap" @click="cutSnapToggle\(\)" :aria-pressed=/);
-    assert.match(dock, /data-control="cut.snap"[^>]*>Snap to beats</);
+    // Icons, not words: the magnet key keeps its name for screen readers and in its tooltip.
+    assert.match(dock, /data-control="cut.snap"[^>]*:aria-label="'Snap to beats, ' \+ cutBeatsLabel\(\)">\s*<svg class="ae-icon"/);
+    assert.match(dock, /class="cut-track-label__icon" data-control="cut.lane.music"><svg class="ae-icon"[\s\S]*?<span class="visually-hidden">Music<\/span>/);
     assert.match(dock, /cut-ruler__beat" :class="\{ 'is-down': beat.down \}"/);
     assert.match(dock, /class="cut-ruler__check"/);
     assert.match(dock, /x-text="cutBeatsShort\(\)"/);

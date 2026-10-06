@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: the Cut's lanes are named by icons (video, voice, music) instead of words, and Snap to beats is a magnet key, so the timeline gets more room. Hover any of them to see its name.
+
 ## 2026.1006.816
 
 - Changed: Bloop Studio now looks for updates every 30 minutes and whenever you open Settings, instead of every 4 hours. While a new version downloads, the top bar shows it with its progress, then Restart to update.
