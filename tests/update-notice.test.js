@@ -31,3 +31,24 @@ test('opening Settings checks again when the last check is old; the updater chec
     const source = readFileSync(new URL('../src/main/updater.js', import.meta.url), 'utf8');
     assert.match(source, /const CHECK_EVERY_MS = 30 \* 60 \* 1000;/);
 });
+
+test('a downloaded update keeps its Restart key through later checks, re-checks and errors', async () => {
+    const { applyUpdateEvent } = await import('../src/main/update-events.js');
+    let s = { version: '1', status: 'idle', available: null, progress: 0, error: null };
+    for (const [event, payload] of [['checking'], ['available', { version: '2' }], ['progress', { percent: 50 }]]) s = applyUpdateEvent(s, event, payload);
+    assert.deepEqual([s.status, s.available, s.progress], ['downloading', '2', 0.5]);
+    s = applyUpdateEvent(s, 'downloaded', { version: '2' });
+    assert.equal(s.status, 'ready');
+    // The 30-minute re-check: checking, the same version again, then GitHub's 500 or no network.
+    for (const [event, payload] of [['checking'], ['available', { version: '2' }], ['progress', { percent: 10 }], ['error', { message: 'HttpError: 500' }], ['current']]) {
+        s = applyUpdateEvent(s, event, payload);
+        assert.equal(s.status, 'ready', `still ready after ${event}`);
+    }
+    assert.equal(s.available, '2');
+    // A newer release than the one downloaded starts a new download.
+    assert.equal(applyUpdateEvent(s, 'available', { version: '3' }).status, 'downloading');
+    // Without a download in hand an error is shown, and a check after it clears it.
+    const failed = applyUpdateEvent({ version: '1', status: 'checking', available: null, progress: 0, error: null }, 'error', { message: 'offline' });
+    assert.equal(failed.status, 'error');
+    assert.equal(applyUpdateEvent(failed, 'checking').error, null);
+});

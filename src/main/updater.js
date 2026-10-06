@@ -3,6 +3,7 @@
 // into the new version from the top bar. The top bar shows the download too, so a release never arrives unseen.
 // Installers carry no secrets; the updater only reads public GitHub Releases.
 import electronUpdater from 'electron-updater';
+import { applyUpdateEvent } from './update-events.js';
 
 const { autoUpdater } = electronUpdater;
 const CHECK_EVERY_MS = 30 * 60 * 1000; // was 4 h: a release made after launch went unseen for hours
@@ -23,17 +24,18 @@ export function createUpdater(app) {
 
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true; // closing the app also installs a downloaded update
-    const set = (values) => Object.assign(state, values);
-    autoUpdater.on('checking-for-update', () => set({ status: 'checking', error: null }));
-    autoUpdater.on('update-available', (info) => set({ status: 'downloading', available: info.version, progress: 0 }));
-    autoUpdater.on('download-progress', (p) => set({ status: 'downloading', progress: p.percent / 100 }));
-    autoUpdater.on('update-downloaded', (info) => set({ status: 'ready', available: info.version, progress: 1 }));
-    autoUpdater.on('update-not-available', () => set({ status: 'current' }));
+    // The rules live in update-events.js: a downloaded update stays "ready" whatever a later check says.
+    const on = (event, payload) => Object.assign(state, applyUpdateEvent(state, event, payload));
+    autoUpdater.on('checking-for-update', () => on('checking'));
+    autoUpdater.on('update-available', (info) => on('available', { version: info.version }));
+    autoUpdater.on('download-progress', (p) => on('progress', { percent: p.percent }));
+    autoUpdater.on('update-downloaded', (info) => on('downloaded', { version: info.version }));
+    autoUpdater.on('update-not-available', () => on('current'));
     let retry = null;
     autoUpdater.on('error', (error) => {
         // Offline, no release yet or a GitHub hiccup: say so in Settings, never interrupt the work.
         console.error('updater:', error.message.split('\n')[0]);
-        set({ status: state.status === 'ready' ? 'ready' : 'error', error: error.message.split('\n')[0] });
+        on('error', { message: error.message.split('\n')[0] });
         if (state.status === 'error' && !retry) {
             retry = setTimeout(() => {
                 retry = null;
@@ -46,7 +48,7 @@ export function createUpdater(app) {
     const check = () => {
         lastCheck = Date.now();
         // Say "checking" at once (the event comes later), but never step back from a download in hand.
-        if (!['downloading', 'ready'].includes(state.status)) set({ status: 'checking', error: null });
+        on('checking');
         return autoUpdater.checkForUpdates().catch(() => {}); // failures land in the 'error' handler
     };
     check();

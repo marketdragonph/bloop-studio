@@ -8,6 +8,7 @@ that heading into the version number and uses the section as the release notes.
 - New: the Spaces list opens on a hangar banner with New space and Start from a starter, and you can search your boards by name or description. Long lists are split into pages of 12.
 - New: every board in the Spaces list shows a cover picture: a card named "thumbnail", else "poster", else the newest picture on the board.
 - Fixed: cards the Director adds in a quick turn now land next to the cards they connect to, on clear board, and the board scrolls to them, instead of far away.
+- Fixed: once an update has downloaded, Restart to update stays in the top bar, even if a later check fails or you are offline.
 - Fixed: big boards no longer freeze. Opening one, drawing a wire, or a Director build adding cards now stays smooth with many cards.
 
 ## 2026.1006.1521
