@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Fixed: the time labels along the top of the Cut's timeline are no longer cut off at the top.
+
 ## 2026.1006.800
 
 - Fixed: when you zoom into the Cut's timeline, the small ruler ticks now line up exactly with the time labels instead of drifting off them further into the cut.

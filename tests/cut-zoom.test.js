@@ -153,3 +153,14 @@ test('zoomed ruler: the minors are elements exactly on their times (a long gradi
     assert.ok(scale.minors.length > 0 && scale.minors.length < 40);
     assert.deepEqual(rulerScale(20_000, 20).minors, [], 'at Fit the gradient draws them');
 });
+
+test('the ruler labels fit inside the ruler (bug 2026-10-06: their tops were cut off)', () => {
+    const css = read('public/css/cut-tracks.css');
+    const rule = /\.cut-ruler__label \{([^}]*)\}/.exec(css)[1];
+    const rem = (name) => Number(new RegExp(`${name}: ([0-9.]+)rem`).exec(rule)?.[1]);
+    assert.match(rule, /line-height: 1;/);
+    // The label's box: bottom offset + one line of the 0.625rem (10 px) font, inside the 1.25rem ruler.
+    assert.ok(rem('bottom') + 0.625 <= 1.25, `${rem('bottom')}rem + 0.625rem`);
+    assert.match(read('public/css/tokens.css'), /--cut-ruler-h: 1\.25rem/);
+    assert.match(read('public/css/tokens.css'), /--fs-3xs: 0\.625rem/);
+});

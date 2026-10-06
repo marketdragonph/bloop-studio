@@ -57,10 +57,11 @@
 
 .cut-ruler__label {
     position: absolute;
-    bottom: 0.5625rem;
+    bottom: 0.5rem;
     left: 0.1875rem;
     color: var(--text-muted);
     font-size: var(--fs-3xs);
+    line-height: 1; /* the ruler is 1.25rem: a normal line box (1.5) pushed the digits' tops out of it */
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
