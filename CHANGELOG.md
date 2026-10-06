@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1006.1133
+
 - Changed: the Cut's lanes are named by icons (video, voice, music) instead of words, and Snap to beats is a magnet key, so the timeline gets more room. Hover any of them to see its name.
 
 ## 2026.1006.816
