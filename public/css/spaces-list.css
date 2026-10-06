@@ -73,3 +73,8 @@
 .pager__pages { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .pager__gap { display: inline-grid; place-items: center; min-width: 2rem; color: var(--text-muted); }
 .pager .is-active { border-color: var(--accent); color: var(--accent-text); }
+
+/* Edit and Delete sit over the cover's top-right corner, always shown (touch, keyboard and AA contrast). */
+.tile-wrap { position: relative; height: 100%; }
+.tile-wrap > .tile { height: 100%; }
+.tile__actions { position: absolute; top: var(--space-2); right: var(--space-2); display: flex; gap: var(--space-1); }

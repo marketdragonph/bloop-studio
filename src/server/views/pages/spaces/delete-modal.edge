@@ -1,0 +1,25 @@
+{{-- Delete a space: says what goes (the board, its cards, wires, takes, the Cut and the Director's notes) and what
+     stays (the rendered files in the media folder). Refused while the Director or a render is still working on it. --}}
+@component('components/modal', { title: 'Delete space' })
+  <div class="stack-sm">
+    <p class="modal__lead">Delete <strong>{{ space.name }}</strong>?</p>
+    <p class="plate-note">
+      @if(cards)
+        Its {{ cards }} {{ cards === 1 ? 'card' : 'cards' }}, their wires and takes, the Cut and the Director's notes are removed. This cannot be undone.
+      @else
+        It has no cards yet. This cannot be undone.
+      @end
+      @if(media)
+        The {{ media }} rendered {{ media === 1 ? 'file stays' : 'files stay' }} in your media folder.
+      @end
+    </p>
+    @if(busy)
+      @!component('components/alert', { tone: 'warn', message: busy })
+    @end
+    <div class="row row--end">
+      <button type="button" class="ae-key" @click="close()">Cancel</button>
+      <button type="button" class="ae-key ae-key--danger" hx-delete="/spaces/{{ space.id }}" hx-target="#modal" hx-swap="innerHTML"
+              {{{ busy ? 'disabled' : 'autofocus' }}}>{{{ icon('delete') }}}<span>Delete space</span></button>
+    </div>
+  </div>
+@end

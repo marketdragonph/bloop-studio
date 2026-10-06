@@ -65,6 +65,12 @@ export const directorMethods = {
         window.dispatchEvent(new CustomEvent('board:nodes')); // the Cut dock refetches (debounced); it never reads `nodes`
     },
 
+    /** The board's name in its header and the window title (a Director rename, or Edit space). */
+    showBoardName(name) {
+        if (this.$refs.boardTitle) this.$refs.boardTitle.textContent = name;
+        document.title = `${name} · Bloop Studio`;
+    },
+
     /** Pans to the first card a turn added, once tidy has settled it (only if it is off screen). */
     showLanded(ids) {
         if (!ids.length) return;
@@ -123,10 +129,7 @@ export const directorMethods = {
             if (!data.building) this.refreshBoard().catch(() => {});
             return;
         }
-        if (event === 'renamed' && this.$refs.boardTitle) {
-            this.$refs.boardTitle.textContent = data.title;
-            document.title = `${data.title} · Bloop Studio`;
-        }
+        if (event === 'renamed') this.showBoardName(data.title);
         if (runId === null) return;
         // Write through Alpine's reactive copy: mutating a plain object would never repaint the bubble.
         let reply = this.directorLog.find((entry) => entry.runId === runId);

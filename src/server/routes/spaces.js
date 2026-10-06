@@ -93,13 +93,6 @@ export function spacesRoutes({ views, spaces, events, cuts, settings = null }) {
         return c.html(await views.render('pages/spaces/editor', { board, boardJson, creatableTypes, directorReady: directorReady() }));
     });
 
-    routes.delete('/:id', (c) => {
-        if (!findOr404(c)) return c.notFound();
-        spaces.delete(id(c));
-        c.header('HX-Redirect', '/spaces');
-        return c.body(null, 204);
-    });
-
     // ── Board API (JSON) ──
 
     routes.get('/:id/board.json', (c) => {

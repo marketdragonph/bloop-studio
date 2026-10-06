@@ -20,6 +20,7 @@ import { homeRoutes } from './routes/home.js';
 import { settingsRoutes } from './routes/settings.js';
 import { engineRoutes } from './routes/engine.js';
 import { spacesRoutes } from './routes/spaces.js';
+import { spaceManageRoutes } from './routes/space-manage.js';
 import { generationRoutes } from './routes/generation.js';
 import { directorRoutes } from './routes/director.js';
 import { appUpdateRoutes, NO_UPDATES } from './routes/app-update.js';
@@ -140,6 +141,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     app.route('/app/update', appUpdateRoutes(deps));
     app.route('/account', accountRoutes(deps));
     app.route('/', starterRoutes(deps)); // before /spaces/:id
+    app.route('/spaces', spaceManageRoutes(deps)); // edit and delete a space (modals)
     app.route('/spaces', spacesRoutes(deps));
     app.route('/', generationRoutes(deps));
     app.route('/', uploadRoutes(deps));

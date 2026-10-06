@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: edit a space's name and notes, or delete it, from its tile on the Spaces list or from the top of its board. Deleting asks first, keeps your rendered files in the media folder, and waits while the Director or a render is still working on it.
+
 ## 2026.1007.615
 
 - New: the Spaces list opens on a hangar banner with New space and Start from a starter, and you can search your boards by name or description. Long lists are split into pages of 12.

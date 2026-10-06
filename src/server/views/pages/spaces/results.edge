@@ -7,7 +7,7 @@
   <ul class="tile-grid" role="list">
     @each(space in spaces)
       <li>
-        @!component('components/space-tile', { space, launch: false })
+        @!component('components/space-tile', { space, launch: false, manage: true })
       </li>
     @end
   </ul>

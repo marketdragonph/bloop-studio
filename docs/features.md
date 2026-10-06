@@ -4,7 +4,10 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 
 ## Spaces (the board)
 
-- **Spaces list**: create, rename and delete boards; the app opens on this list. Each board shows a cover: the
+- **Spaces list**: create boards; the app opens on this list. **Edit** (name, notes) and **Delete** from each tile or
+  the board header (`routes/space-manage.js`, HTMX modals). Delete says what goes and what stays (rendered files stay
+  in the media folder) and is refused while a Director run, a beat build or a render is still on the space. From the
+  list a change reloads it (search and page kept); on the board an edit renames the title in place. Each board shows a cover: the
   rendered image card named "thumbnail", else "poster", else the newest rendered image (`SpacesRepository.list`).
   The list opens on a hangar hero (`public/img/spaces-hero-*.webp`, original key art made with GPT Image 2.5
   Sunburst on kie.ai, 2026-10-07), has a live search (every word in the name or description; `?q=`) and pages

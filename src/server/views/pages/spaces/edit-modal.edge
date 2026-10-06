@@ -1,0 +1,11 @@
+@component('components/modal', { title: 'Edit space' })
+  <form method="POST" action="/spaces/{{ space.id }}" hx-put="/spaces/{{ space.id }}" hx-target="#modal" hx-swap="innerHTML" class="stack-sm">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    @!component('components/field', { name: 'name', label: 'Name', value: old.name, error: errors.name, autofocus: true })
+    @!component('components/field', { name: 'description', label: 'Notes (optional)', value: old.description, hint: 'Search on the Spaces list looks in the notes too.' })
+    <div class="row row--end">
+      <button type="button" class="ae-key" @click="close()">Cancel</button>
+      <button type="submit" class="ae-key ae-key--accent">Save</button>
+    </div>
+  </form>
+@end

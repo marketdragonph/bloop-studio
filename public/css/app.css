@@ -206,6 +206,7 @@ a { color: var(--accent-text); }
 .modal__backdrop { position: absolute; inset: 0; background: var(--overlay-backdrop); }
 .modal__panel { position: relative; width: min(32rem, 100%); }
 .modal__inner { display: grid; gap: var(--space-4); padding: var(--space-6); }
+.modal__lead { margin: 0; }
 
 @media (pointer: coarse) {
     .ae-key { min-height: 2.75rem; }

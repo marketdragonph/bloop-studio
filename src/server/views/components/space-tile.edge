@@ -1,16 +1,27 @@
 {{-- One space in a tile grid. The cover is the board's thumbnail card (else poster, else newest image).
-     `launch` makes opening it also continue past the launch screen. --}}
-<a class="ae-plate tile" href="/spaces/{{ space.id }}"
-  {{{ launch ? `hx-post="/launch/continue" hx-vals='{"to": "/spaces/${Number(space.id)}"}'` : '' }}}>
-  <span class="tile__cover">
-    @if(space.cover_path)
-      <img src="{{ mediaUrl(space.cover_path) }}" alt="" loading="lazy" decoding="async">
-    @else
-      <span class="tile__cover-empty" aria-hidden="true">{{{ icon('image') }}}</span>
-    @end
-  </span>
-  <span class="ae-plate__inner tile__inner">
-    <span class="tile__name">{{ space.name }}</span>
-    <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
-  </span>
-</a>
+     `launch` makes opening it also continue past the launch screen; `manage` adds Edit and Delete keys
+     (beside the link, never inside it: a button may not sit in a link). --}}
+<div class="tile-wrap">
+  <a class="ae-plate tile" href="/spaces/{{ space.id }}"
+    {{{ launch ? `hx-post="/launch/continue" hx-vals='{"to": "/spaces/${Number(space.id)}"}'` : '' }}}>
+    <span class="tile__cover">
+      @if(space.cover_path)
+        <img src="{{ mediaUrl(space.cover_path) }}" alt="" loading="lazy" decoding="async">
+      @else
+        <span class="tile__cover-empty" aria-hidden="true">{{{ icon('image') }}}</span>
+      @end
+    </span>
+    <span class="ae-plate__inner tile__inner">
+      <span class="tile__name">{{ space.name }}</span>
+      <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
+    </span>
+  </a>
+  @if(manage)
+    <div class="tile__actions">
+      <button type="button" class="ae-key ae-key--sm ae-key--square" hx-get="/spaces/{{ space.id }}/edit" hx-target="#modal" hx-swap="innerHTML"
+              aria-label="Edit {{ space.name }}" title="Edit">{{{ icon('edit') }}}</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--danger" hx-get="/spaces/{{ space.id }}/delete" hx-target="#modal" hx-swap="innerHTML"
+              aria-label="Delete {{ space.name }}" title="Delete">{{{ icon('delete') }}}</button>
+    </div>
+  @end
+</div>

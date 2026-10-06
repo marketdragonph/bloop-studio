@@ -73,6 +73,16 @@ export class SpacesRepository {
         return this.find(Number(lastInsertRowid));
     }
 
+    /** Edit from the list or the board: the name (same rules as create) and the notes. */
+    update(id, { name, description = null }) {
+        const clean = String(name ?? '').trim();
+        if (!clean) throw new ValidationError('Give the space a name.');
+        if (clean.length > 120) throw new ValidationError('Keep the name under 120 characters.');
+        const notes = String(description ?? '').trim().slice(0, 1000) || null;
+        this.db.prepare('UPDATE spaces SET name = ?, description = ?, updated_at = ? WHERE id = ?').run(clean, notes, now(), id);
+        return this.find(id);
+    }
+
     rename(id, name) {
         const clean = String(name ?? '').trim();
         if (!clean) throw new ValidationError('Give the space a name.');

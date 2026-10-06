@@ -1,11 +1,16 @@
 @component('layouts/app', { title: board.space.name, bodyClass: 'is-board' })
 <div class="board-page" x-data="SpaceBoard" @keydown.window="onKeyDown($event)" @keyup.window="onKeyUp($event)"
-     data-director-ready="{{ directorReady ? '1' : '0' }}" @cut:missing.window="cutMissing = $event.detail.n">
+     data-director-ready="{{ directorReady ? '1' : '0' }}" @cut:missing.window="cutMissing = $event.detail.n"
+     @space:updated.window="$event.detail.id === spaceId && showBoardName($event.detail.name)">
   <script type="application/json" x-ref="boardData">{{{ boardJson }}}</script>
 
   <div class="board-tools" role="toolbar" aria-label="Board tools">
     <a class="ae-key ae-key--sm" href="/spaces" aria-label="Back to spaces">{{{ icon('chevron', 'ae-icon ae-icon--back') }}}<span>Spaces</span></a>
     <h1 class="board-tools__title" x-ref="boardTitle">{{ board.space.name }}</h1>
+    <div class="board-tools__group" role="group" aria-label="This space">
+      <button type="button" class="ae-key ae-key--sm ae-key--square" hx-get="/spaces/{{ board.space.id }}/edit" hx-target="#modal" hx-swap="innerHTML" aria-label="Edit this space" title="Edit space">{{{ icon('edit') }}}</button>
+      <button type="button" class="ae-key ae-key--sm ae-key--square ae-key--danger" hx-get="/spaces/{{ board.space.id }}/delete" hx-target="#modal" hx-swap="innerHTML" aria-label="Delete this space" title="Delete space">{{{ icon('delete') }}}</button>
+    </div>
 
     <div class="board-tools__group" role="group" aria-label="Add card">
       @each(type in creatableTypes)

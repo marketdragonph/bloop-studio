@@ -115,6 +115,9 @@
 .ae-key--accent { --ae-key-edge: var(--accent-dark); --ae-key-fill: var(--accent); color: var(--ink-on-accent); }
 .ae-key--accent:hover { color: var(--ink-on-accent); }
 .ae-key--accent:hover::before { background: var(--accent-light); }
+/* A key that removes something: an outline in the fault colour, never the orange of a forward action. */
+.ae-key--danger { --ae-key-edge: var(--status-alert); color: var(--status-alert-text); }
+.ae-key--danger:hover { color: var(--status-alert-text); }
 
 .ae-key--sm { min-height: 1.5rem; padding-inline: 0.5rem; font-size: var(--fs-3xs); }
 

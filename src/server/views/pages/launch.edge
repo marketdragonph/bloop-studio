@@ -55,7 +55,7 @@
         @each(space in recent)
           <li>
             {{-- Opening a board also counts as continuing: the launch screen will not show again. --}}
-            @!component('components/space-tile', { space, launch: true })
+            @!component('components/space-tile', { space, launch: true, manage: false })
           </li>
         @end
       </ul>
