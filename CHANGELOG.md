@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- Changed: Bloop Studio now looks for updates every 30 minutes and whenever you open Settings, instead of every 4 hours. While a new version downloads, the top bar shows it with its progress, then Restart to update.
+
 ## 2026.1006.810
 
 - Fixed: the time labels along the top of the Cut's timeline are no longer cut off at the top.

@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 export const NO_UPDATES = {
     state: () => ({ version: 'dev', status: 'dev', available: null, progress: 0, error: null }),
     check: async () => {},
+    checkIfStale: () => {},
     install: () => {},
 };
 
@@ -14,7 +15,11 @@ export function appUpdateRoutes({ views, updates }) {
     const render = async (c, view) => c.html(await views.render(view, { update: updates.state() }));
 
     routes.get('/', (c) => render(c, 'partials/update-key'));
-    routes.get('/about', (c) => render(c, 'partials/update-about'));
+    // Opening Settings checks again when the last check is a few minutes old (the line then polls itself).
+    routes.get('/about', (c) => {
+        updates.checkIfStale?.();
+        return render(c, 'partials/update-about');
+    });
 
     // Answers at once with "Checking…"; the line then polls itself until the check or download settles.
     routes.post('/check', (c) => {

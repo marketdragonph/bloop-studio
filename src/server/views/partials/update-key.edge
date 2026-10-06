@@ -1,5 +1,12 @@
-{{-- Top bar: nothing until a new version has downloaded, then one orange key to restart into it. --}}
-@if(update.status === 'ready')
+{{-- Top bar: a blue readout while a new version downloads (the bar polls every 60 s), then one orange key to
+     restart into it. Nothing while up to date. --}}
+@if(update.status === 'downloading')
+  <span class="status-light status-light--busy update-key__download" title="Version {{ update.available }} is downloading; it installs when you restart">
+    <span class="status-light__dot ae-sensor-dot" aria-hidden="true"></span>
+    <span class="ae-readout">Update {{ update.available }}{{ update.progress > 0 ? ` · ${Math.round(update.progress * 100)}%` : '' }}</span>
+  </span>
+  <span hx-get="/app/update" hx-trigger="load delay:3s" hx-target="#app-update" hx-swap="innerHTML"></span>
+@elseif(update.status === 'ready')
   <button type="button" class="ae-key ae-key--sm ae-key--accent"
           hx-post="/app/update/install" hx-target="#app-update" hx-swap="innerHTML"
           hx-confirm="Restart Bloop Studio now to install version {{ update.available }}? Renders in progress are re-queued after the restart."
