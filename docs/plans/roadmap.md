@@ -15,6 +15,7 @@ setup step or brings a bloop tool to where their renders already are.
 | 3 | **Engine setup wizard**: installs ComfyUI and the right models for the GPU, runs it for you | Bloop Studio | PARTIAL: shipped 2026-10-05; AMD path and a clean-PC run left | [engine-setup.md](engine-setup.md) |
 | 3b | **Director port**: bloop's Spaces Director (plan first, staged rail, beat writers, critic, panel), adapted to local models | Bloop Studio | PLANNED (next) | [director-port.md](director-port.md) |
 | 3c | **Model browser**: search and install LoRAs from Hugging Face for the models we run, a live model catalog, variants of our models | Bloop Studio | PLANNED (after 3b) | [model-browser.md](model-browser.md) |
+| 3d | **First run: Pick a genre + board tour** (ported from bloop's Spaces onboarding), one popup at a time | Bloop Studio | PLANNED (next release) | below |
 | 4 | Katana (video editor): Mini Katana (the Cut dock in a Space, Director stitch + smart editing, capped export, Pack assets), then Full Katana (standalone timeline editor) | Bloop Studio | PLANNED (P0 foundations on a branch) | [katana.md](katana.md) |
 | 5 | Kaiga (canvas editor) in the app: edit a still, send it back to a card | Bloop Studio | PLANNED | survey first |
 | 6 | Forge (filmmaker): storyboard → scenes → renders → finished film, on the app's Director | Bloop Studio | PLANNED | survey first |
@@ -53,6 +54,29 @@ Built from bloop's marketing components (`marketing-hero`, `marketing-section`, 
   FAQ (SmartScreen until the installer is code-signed, automatic updates, NVIDIA/AMD).
 - Links: footer Product column "Bloop Studio (Windows)", top marketing nav "Download", and a small
   "Get the desktop app" link on the Spaces page for signed-in users.
+
+## 3d · First run: Pick a genre + board tour (next release)
+
+Owner's ask, 2026-10-06: Bloop Studio has neither. A new Space should open the way bloop's first board
+does, as one calm sequence, never a pile-up.
+
+- [ ] **Pick a genre** modal on a new Space's first open (and from a "Pick a genre" key in the
+      Director's start screen): genre cards with a picture and a one-line pitch; a pick asks the
+      Director for three story ideas in that genre (chat only, nothing renders); "Skip, I'll type my
+      own" opens the Director. Source to port: bloop `config/genres.php`, `public/images/genres/`,
+      `modules/Spaces/Resources/Views/genre-modal.blade.php`,
+      `modules/Spaces/Resources/Js/space/{genre-picker,onboarding-bridge}.js`,
+      `SpaceGenreController.php`.
+- [ ] **Board tour**: three steps (tell the Director the film you want → review the shots it plans
+      → press Generate on one shot and pick the model). Points, never presses; Skip and Escape; done
+      once per install (saved in settings). Source: bloop `resources/views/onboarding/story-tour.blade.php`,
+      `resources/js/components/onboarding/StoryTour.js`, `design-system/spaces-onboarding.css`.
+- [ ] **One popup at a time** from day one (bloop's lesson, fixed there 2026-10-06 in
+      `resources/js/quiet-moment.js`): the genre modal, then the tour, then anything else (update
+      notice, account prompts) waits for a quiet screen. The tour card never covers the Director's
+      box, its examples, or its close key, at any window width.
+- [ ] Mecha look with Studio tokens; Edge views, one Alpine component per file, ≤ 500 lines;
+      CHANGELOG `New:` lines; tests for the once-only rules.
 
 ## 4–6 · Editor ports — notes
 
