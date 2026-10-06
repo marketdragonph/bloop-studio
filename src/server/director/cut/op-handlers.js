@@ -15,11 +15,25 @@ const tenth = (s) => Math.round(Number(s) * 10) * 100; // seconds in 0.1 steps �
 const lengthOf = (item) => item.out_ms - item.in_ms;
 const same = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
 
-/** Where `beat` is in the working cut: {item, index} or null. `@id` names a card. */
+/**
+ * Where `beat` is in the working cut, or null. `@id` names a card, `#id` one clip (a part of a split card).
+ * A split beat or card matches every part: `item`/`index` are the first, `last` the last part's index (an
+ * `after` anchor follows the whole beat), `ids` every part's clip id.
+ * @returns {{ item: object, index: number, last: number, ids: string[] }|null}
+ */
 export function locate(w, beat) {
     const ref = String(beat ?? '').trim();
-    const index = /^@\d+$/.test(ref) ? w.items.findIndex((i) => i.node_id === Number(ref.slice(1))) : w.items.findIndex((i) => same(i.beat_tag, ref));
-    return index < 0 ? null : { item: w.items[index], index };
+    const match = ref.startsWith('#') ? (i) => same(i.id, ref.slice(1))
+        : /^@\d+$/.test(ref) ? (i) => i.node_id === Number(ref.slice(1)) : (i) => same(i.beat_tag, ref);
+    const at = w.items.flatMap((i, k) => (match(i) ? [k] : []));
+    return at.length ? { item: w.items[at[0]], index: at[0], last: at.at(-1), ids: at.map((k) => w.items[k].id) } : null;
+}
+
+/** True (with a reason) when `ref` names a split beat: an edit of one clip names its part. */
+function splitRef(w, n, ref, found) {
+    if (found.ids.length < 2) return false;
+    w.reason(`op ${n}: ${ref} is split into ${found.ids.length} parts in the cut; name the part: ${found.ids.map((id) => `#${id}`).join(', ')}.`);
+    return true;
 }
 
 /** "The beats are: s1-open, s2-cup … s8-close." */
@@ -39,10 +53,12 @@ function slotOf(w, beat) {
 function target(w, n, op, { timed = false } = {}) {
     const found = locate(w, op.beat);
     if (!found) {
-        if (slotOf(w, op.beat) || w.beats.some((b) => same(b, op.beat))) w.reason(`op ${n}: ${op.beat} is not in the cut. Place it first, or leave it.`);
+        if (String(op.beat ?? '').trim().startsWith('#')) w.reason(`op ${n}: ${op.beat} is not a clip in the cut. Read the clip ids with inspect_cut.`);
+        else if (slotOf(w, op.beat) || w.beats.some((b) => same(b, op.beat))) w.reason(`op ${n}: ${op.beat} is not in the cut. Place it first, or leave it.`);
         else w.reason(`op ${n}: ${op.beat} is not a beat on this board.${beatList(w)}`);
         return null;
     }
+    if (splitRef(w, n, op.beat, found)) return null;
     if (!w.mayEdit(found.item)) {
         w.reason(`op ${n}: ${lockedReason(found.item)}`);
         return null;
@@ -69,6 +85,7 @@ const HANDLERS = {
         if (already >= 0) {
             const item = w.items[already];
             if (item.take_id === fresh.take_id) return w.reason(`op ${n}: ${slot.beat_tag} is already in the cut with that take. Use move to change where it plays.`);
+            if (w.items.filter((i) => i.node_id === slot.node_id).length > 1) return w.reason(`op ${n}: ${slot.beat_tag} is split into parts in the cut, so another take cannot swap in. Say so in one sentence.`);
             if (!w.mayEdit(item)) return w.reason(`op ${n}: ${lockedReason(item)}`);
             w.items[already] = { ...item, take_id: fresh.take_id, media_path: fresh.media_path, seconds_ms: fresh.seconds_ms, in_ms: 0, out_ms: fresh.seconds_ms };
             w.row(op, w.items[already], 'Swapped in another take');
@@ -86,7 +103,7 @@ const HANDLERS = {
         else {
             const after = locate(w, op.after);
             if (!after) return w.reason(`op ${n}: ${op.after} is not in the cut, so nothing can follow it.`);
-            at = after.index + 1;
+            at = after.last + 1;
         }
         w.items.splice(at, 0, fresh);
         w.row(op, fresh, 'Placed');
@@ -135,7 +152,7 @@ const HANDLERS = {
                 w.items.splice(found.index, 0, item);
                 return w.reason(`op ${n}: ${op.after} is not in the cut, so ${item.beat_tag} cannot follow it.`);
             }
-            at = after.index + 1;
+            at = after.last + 1;
         }
         w.items.splice(at, 0, item);
         w.count('move');
@@ -155,6 +172,7 @@ const HANDLERS = {
     join(w, n, op) {
         const found = locate(w, op.beat);
         if (!found) return target(w, n, op);
+        if (splitRef(w, n, op.beat, found)) return;
         const next = w.items[found.index + 1];
         if (!next) return w.reason(`op ${n}: ${found.item.beat_tag} is the last clip, so there is no join after it.`);
         if (!w.mayEdit(next)) return w.reason(`op ${n}: ${lockedReason(next)}`);
@@ -265,6 +283,7 @@ const HANDLERS = {
     poster(w, n, op) {
         const found = locate(w, op.beat);
         if (!found) return target(w, n, op);
+        if (splitRef(w, n, op.beat, found)) return;
         const { item, index } = found;
         const at = op.at_s === undefined ? Math.round((item.in_ms + item.out_ms) / 2) : tenth(op.at_s);
         if (at < item.in_ms || at > item.out_ms) return w.reason(`op ${n}: ${s1(at)} s is outside the part of ${item.beat_tag} that plays (${s1(item.in_ms)}–${s1(item.out_ms)} s).`);

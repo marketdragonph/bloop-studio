@@ -1,5 +1,5 @@
 {{-- The Cut's rail: always there, 32 px folded (44 px on touch). Stencil, Play, the readout, the save chip,
-     the 8 s "Removed … Undo" line, Undo / Redo / Fit while open, and the fold key. Every key is a registry
+     the 8 s "Removed … Undo" line, Undo / Redo / Split / Fit while open, and the fold key. Every key is a registry
      control (katana-controls.js). P3 adds Pack assets, Export (accent) and a running job's line. P4 adds the analysis
      line ("Measuring 3 clips…", sensor blue) and Check your cut with its count (its own sheet). --}}
 <div class="cut-rail">
@@ -43,6 +43,8 @@
             aria-label="{{ controlLabel('cut.undo') }} (Ctrl+Z)" title="{{ controlLabel('cut.undo') }} (Ctrl+Z)">{{{ icon('undo') }}}</button>
     <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutRedo()" :disabled="!cutCanRedo" data-control="cut.redo"
             aria-label="{{ controlLabel('cut.redo') }} (Ctrl+Shift+Z)" title="{{ controlLabel('cut.redo') }} (Ctrl+Shift+Z)">{{{ icon('redo') }}}</button>
+    <button type="button" class="ae-key ae-key--sm ae-key--square" @click="cutSplit()" :aria-disabled="cutSplitPlan().refused ? 'true' : 'false'" data-control="cut.split"
+            aria-label="{{ controlLabel('cut.split') }}" aria-keyshortcuts="Control+B Meta+B S" :title="cutSplitTitle()">{{{ icon('split') }}}</button>
     <button type="button" class="ae-key ae-key--sm" @click="cutFit()" data-control="cut.fit">{{{ icon('expand') }}}<span>{{ controlLabel('cut.fit') }}</span></button>
   </div>
   <button type="button" class="ae-key ae-key--sm" x-show="cutStatus === 'error'" x-cloak

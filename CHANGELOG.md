@@ -5,6 +5,9 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: Split a clip in the Cut at the playhead (Ctrl+B, or S on a clip), then move, trim or remove each part. The Director can edit each part too.
+- Fixed: dragging a clip to a new place in the Cut works again, and a quick drag lands where you let go.
+
 ## 2026.1006.1133
 
 - Changed: the Cut's lanes are named by icons (video, voice, music) instead of words, and Snap to beats is a magnet key, so the timeline gets more room. Hover any of them to see its name.

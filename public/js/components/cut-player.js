@@ -394,6 +394,7 @@ export default function CutPlayer() {
             const cap = this.cutPart('cap');
             if (cap) cap.textContent = fmtClock(s.t);
             this.current = s.t / 1000;
+            if (this.cutPlayheadMs !== s.t) this.cutPlayheadMs = s.t;
             this.duration = lay.total_ms / 1000;
             const scroll = this.cutPart('scroll');
             if (this.playing && scroll && (x > scroll.scrollLeft + scroll.clientWidth - 24 || x < scroll.scrollLeft)) scroll.scrollLeft = Math.max(0, x - 24);

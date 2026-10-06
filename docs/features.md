@@ -27,7 +27,12 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
   Music tracks with an orange playhead. One reader (`src/server/cut/board-cut.js`) puts each beat's newest clip in
   plan order (board order without a plan); beats with no video show as hatched slots with **Go to card**. Takes
   are measured with ffprobe when ffmpeg is present. Editing: **Fill the cut**, reorder (drag, Alt+arrows, Move
-  left/right), trim (handles, `[` `]`, Shift+arrows), remove with an 8 s Undo, cut or dissolve joins (D), clip
+  left/right), trim (handles, `[` `]`, Shift+arrows), **Split** at the playhead (Ctrl/Cmd+B or S, the split key in the
+  rail's Undo/Redo/Fit group and in the clip's details: two items from the same card, each moved, trimmed, removed
+  or dissolved on its own; at least 0.1 s from either edge, the 50-clip cap applies, one undo step, same total
+  length; `splitItem` in `src/shared/cut-edit.js`; the Director names one part as `#<clip id>`, inspect_cut lists
+  the parts, a bare beat tag for a split beat is refused in words; Check your cut sees a split that plays straight on
+  as one shot, and Show me goes to the part a finding is about), remove with an 8 s Undo, cut or dissolve joins (D), clip
   sound (M), newer take swap, music and voice levels, 50-step undo in the dock. Autosave with a local draft and
   "changed in another window" recovery (409). The preview plays the cut on two stacked players with dissolves,
   gap slates, music and voice in sync, and an "As exported" toggle. Nothing in the dock renders.

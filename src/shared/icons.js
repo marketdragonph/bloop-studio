@@ -64,6 +64,7 @@ export const ICONS = {
     'voice': '<path d="M2.5 6.75 V9.25 M5.25 4.25 V11.75 M8 2 V14 M10.75 4.75 V11.25 M13.5 6.75 V9.25" />',
     'music': '<path d="M6.5 11.5 V2.75 H13.25 V10" /><path d="M6.5 5.5 H13.25" /><path d="M2.75 10 H6.5 V13.25 H2.75 Z" fill="currentColor" /><path d="M9.5 8.75 H13.25 V12 H9.5 Z" fill="currentColor" />',
     'magnet': '<path d="M2.75 2.25 H6.25 V8.5 L7.25 9.5 H8.75 L9.75 8.5 V2.25 H13.25 V9.75 L10.25 13.75 H5.75 L2.75 9.75 Z" /><path d="M2.75 5.25 H6.25 M9.75 5.25 H13.25" />',
+    'split': '<path d="M1.75 5.25 H6 V11 H1.75 Z" /><path d="M10 5.25 H14.25 V8.75 L12 11 H10 Z" /><path d="M8 4.75 V14.25" /><path d="M6.25 1.75 H9.75 L8 3.75 Z" fill="currentColor" stroke-width="1" />',
     'wand': '<path d="M2.25 13.75 L8.5 7.5" /><path d="M9.5 4.5 L11.5 6.5 L9.5 8.5 L7.5 6.5 Z" /><path d="M13 1.5 V4.5 M11.5 3 H14.5" /><path d="M4 2 V5 M2.5 3.5 H5.5" />',
     'warning': '<path d="M8 2 L14.5 13.5 H1.5 Z" /><path d="M8 6.5 V9" /><circle cx="8" cy="11.25" r="0.9" fill="currentColor" stroke="none" />',
 };

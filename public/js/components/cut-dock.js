@@ -89,6 +89,7 @@ export default function CutDock() {
         cutGhostWave: GHOST_WAVE,
         cutCanUndo: false,
         cutCanRedo: false,
+        cutPlayheadMs: 0, // the preview's playhead at 10 Hz (cut-player.js cpUi): Split's key reads it
         cutSaveState: 'saved', // saved | unsaved | saving | failed
         cutSaveError: '',
         cutBanner: null, // conflict | director | restore | replace
@@ -415,8 +416,9 @@ export default function CutDock() {
         // ── Rail ────────────────────────────────────────────────────────────
 
         cutCounts() {
-            const all = this.cutLay().entries;
-            return { ready: all.filter((e) => e.kind === 'clip').length, count: all.length };
+            const all = this.cutLay().entries; // a split card is two clips but one beat
+            const beat = (e) => e.item?.node_id ?? e.slot?.node_id ?? `b${e.beat}`;
+            return { ready: new Set(all.filter((e) => e.kind === 'clip').map(beat)).size, count: new Set(all.map(beat)).size };
         },
 
         cutReadout() {

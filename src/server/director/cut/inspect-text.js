@@ -14,8 +14,9 @@ const quote = (text) => {
 };
 
 /** One clip's line. `words`: the beat's script, `lose`: what fitPlan says it can lose. */
-export function clipLine(item, a, { words = null, lose = 0, index = 0, start = 0 } = {}) {
+export function clipLine(item, a, { words = null, lose = 0, index = 0, start = 0, part = null } = {}) {
     const parts = [`${item.beat_tag} @${item.node_id} ${s1(item.seconds_ms)} s, used ${s1(item.in_ms)}–${s1(item.out_ms)}, at ${s1(start)} in the cut`];
+    if (part) parts.push(`part ${part.n} of ${part.of}, name it #${item.id}`);
     if (index > 0 && item.join?.type === 'dissolve') parts.push(`dissolve in ${s1(item.join.ms ?? 500)}`);
     if (item.join?.audio_ms) parts.push(item.join.audio_ms < 0 ? `J cut ${s1(-item.join.audio_ms)}` : `L cut from the clip before ${s1(item.join.audio_ms)}`);
     if (!item.sound) parts.push('own sound off');
@@ -60,12 +61,18 @@ export function inspectText({ cut, analysisOf, wanted = null, scripts = new Map(
     const lose = new Map(fit.can_lose.map((t) => [t.item_id, t.lose_ms]));
     const lines = [`THE CUT: ${cut.items.length} clips, ${s1(clock.total_ms)} s, revision ${cut.revision}. Clip times are seconds into each clip.`];
     const missing = [];
+    const split = new Map();
+    for (const item of cut.items) split.set(item.node_id, [...(split.get(item.node_id) ?? []), item.id]);
+    const partOf = (item) => {
+        const ids = split.get(item.node_id);
+        return ids.length > 1 ? { n: ids.indexOf(item.id) + 1, of: ids.length } : null;
+    };
     cut.items.forEach((item, index) => {
         if (wanted && !wanted.has(item.beat_tag?.toLowerCase())) return;
         const a = analysisOf(item.media_path);
         if (!a) return missing.push(`${item.beat_tag} (${measuring(item.media_path) ? 'queued' : 'not measured'})`);
         if (a.status === 'failed' || a.error) return missing.push(`${item.beat_tag} (could not be read)`);
-        lines.push(clipLine(item, a, { words: scripts.get(item.beat_tag), lose: lose.get(item.id) ?? 0, index, start: clock.items[index].start_ms }));
+        lines.push(clipLine(item, a, { words: scripts.get(item.beat_tag), lose: lose.get(item.id) ?? 0, index, start: clock.items[index].start_ms, part: partOf(item) }));
         if (wanted) for (const r of reasons(item.beat_tag)) lines.push(`  Last edit: ${r.text ?? r.op} — ${r.why}`);
     });
     for (const kind of ['music', 'voice']) {

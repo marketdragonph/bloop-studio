@@ -43,7 +43,7 @@ export function shapeProblems(ops) {
         const n = i + 1;
         if (!op || typeof op !== 'object' || Array.isArray(op)) return reasons.push(`op ${n} is not an object.`);
         if (!CUT_OPS.includes(op.op)) return reasons.push(`op ${n}: there is no \`${op.op ?? ''}\` operation. Use one of: ${CUT_OPS.join(', ')}.`);
-        if (NEEDS_BEAT.has(op.op) && (typeof op.beat !== 'string' || !op.beat.trim())) reasons.push(`op ${n}: \`beat\` names the clip, by its beat tag (s3-door) or @<id> of its card.`);
+        if (NEEDS_BEAT.has(op.op) && (typeof op.beat !== 'string' || !op.beat.trim())) reasons.push(`op ${n}: \`beat\` names the clip, by its beat tag (s3-door), @<id> of its card, or #<clip id> of one part of a split beat.`);
         if (NEEDS_WHY.has(op.op)) {
             if (typeof op.why !== 'string' || !op.why.trim()) reasons.push(`op ${n}: say why, from the measured numbers (\`why\`, one short sentence).`);
             else if (op.why.length > WHY_MAX) reasons.push(`op ${n}: \`why\` is at most ${WHY_MAX} characters.`);

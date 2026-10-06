@@ -86,7 +86,7 @@ export const proposeCutOps = {
                     type: 'object', required: ['op'],
                     properties: {
                         op: { type: 'string', enum: CUT_OPS },
-                        beat: { type: 'string', description: 'The beat tag (s3-door), or @<id> of a clip card on a board with no plan.' },
+                        beat: { type: 'string', description: 'The beat tag (s3-door), or @<id> of a clip card on a board with no plan. A split beat: #<clip id> of one part (inspect_cut lists them).' },
                         after: { type: 'string', description: 'place/move: the beat it follows, or "start".' },
                         take: { type: 'string', description: 'place: @<id> of an older take; default the newest.' },
                         in_s: { type: 'number', description: 'trim: where the clip starts, seconds into the clip, 0.1 steps.' },

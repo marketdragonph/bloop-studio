@@ -1,11 +1,11 @@
 // The Cut dock's edit actions (02-dock.md §6): select, move, trim, remove with an 8 s Undo, joins, clip
-// sound, Use new take, Fill the cut, the bed levels, Fit, As exported, Play, and the dock's keys.
+// sound, Split at the playhead, Use new take, Fill the cut, the bed levels, Fit, As exported, Play, and the dock's keys.
 // Spread into CutDock. Every edit is ONE history command (cut-history.js) and autosaves (cut-persistence.js).
 // Keys only reach here from inside the dock: the board's onKeyDown (cards.js) returns early there.
-import { KEYS, copy } from '/shared/katana-controls.js';
+import { KEYS, controlLabel, copy } from '/shared/katana-controls.js';
 import {
-    NUDGE_MS, itemsRefusal, levelOf, levelRange, mediaPathOf, moveItem, nudgeItem, removeItem, setEdgeAt,
-    toggleJoin, toggleSound, trimItem, useTake, withLevel,
+    MIN_SPLIT_MS, NUDGE_MS, itemsRefusal, levelOf, levelRange, mediaPathOf, moveItem, nudgeItem, removeItem, setEdgeAt,
+    splitItem, toggleJoin, toggleSound, trimItem, useTake, withLevel,
 } from '/shared/cut-edit.js';
 import { levelText } from '/shared/cut-rules.js';
 import { sourceAt } from '/shared/cut-timeline.js';
@@ -97,6 +97,51 @@ export const cutActionMethods = {
         this._cutRemovedTimer = setTimeout(() => { this.cutRemoved = null; }, REMOVED_MS);
         const next = this.cutItems.find((i) => i.ready && i.clip === item.clip) ?? this.cutItems.filter((i) => i.ready).at(-1);
         this.cutSelectedKey = next?.key ?? null;
+    },
+
+    /**
+     * Split at the playhead: the selected clip, the source time under the playhead, and the split items, or why
+     * not. The rail and the details read it for the key's disabled state and tooltip (cutPlayheadMs, 10 Hz).
+     */
+    cutSplitPlan(t = this.cutPlayheadMs, own = false) {
+        const item = this.cutSplitTarget(t, own);
+        if (!item || this.cutDraft) return { refused: copy('splitWhy') };
+        if (!item.ready) return { refused: copy('splitGap') };
+        if (item.gone) return { refused: copy('splitGone') };
+        const entry = this.cutLay().entries[item.lane];
+        if (!entry || t < entry.start_ms + MIN_SPLIT_MS || t > entry.end_ms - MIN_SPLIT_MS) return { refused: copy('splitWhy') };
+        const { items, refused } = splitItem(this.cutModel, item.clip, sourceAt(entry, t));
+        return { item, items, refused: refused ?? itemsRefusal(items) };
+    },
+
+    /**
+     * The clip to split, as bloop's dock does: the selected clip when the playhead is inside it (or `own`, the
+     * details' key, which only ever splits its own clip), else the clip under the playhead (inside a dissolve, the
+     * incoming one), else the selection, so the refusal names why.
+     */
+    cutSplitTarget(t, own = false) {
+        const inside = (i) => {
+            const entry = this.cutLay().entries[i.lane];
+            return Boolean(entry) && t >= entry.start_ms + MIN_SPLIT_MS && t <= entry.end_ms - MIN_SPLIT_MS;
+        };
+        const selected = this.cutSelected();
+        if (selected && (own || inside(selected))) return selected;
+        return this.cutItems.filter((i) => i.ready && !i.gone && inside(i)).at(-1) ?? selected;
+    },
+
+    /** The Split key's tooltip: why it is off, else its name and keys. */
+    cutSplitTitle(own = false) {
+        return this.cutSplitPlan(this.cutPlayheadMs, own).refused ?? `${controlLabel('cut.split')} (${KEYS.split}, ${KEYS.splitAlt})`;
+    },
+
+    /** Ctrl/Cmd+B, S, or the Split key: two parts from the same card, ONE undo step; the second part is selected. */
+    cutSplit(own = false) {
+        const t = this._cutPlayer?.time() ?? this.cutPlayheadMs;
+        const { item, items, refused } = this.cutSplitPlan(t, own);
+        if (refused) { this.cutAnnounce = refused; return; }
+        const second = items[item.clip + 1];
+        if (!this.cutEdit(controlLabel('cut.split'), items, copy('split', { title: item.title, time: this.cutTenths(t) }))) return;
+        this.cutSelectedKey = `c:${second.id}`;
     },
 
     /** The rail's Undo after a remove: undoes the last edit (the remove, unless more came after it). */
@@ -260,6 +305,7 @@ export const cutActionMethods = {
         const key = event.key;
         const mod = event.ctrlKey || event.metaKey;
         if (mod && key.toLowerCase() === 'z') return this.cutKey(event, () => (event.shiftKey ? this.cutRedo() : this.cutUndo()));
+        if (mod && key.toLowerCase() === KEYS.split.slice(-1).toLowerCase()) return this.cutKey(event, () => this.cutSplit());
         if (mod && key.toLowerCase() === 'y') return this.cutKey(event, () => this.cutRedo());
         if (mod && ['=', '+', '-', '0'].includes(key)) return this.cutKey(event, () => this.cutZoomKey(key === '+' ? '=' : key));
         if (mod) return;
@@ -276,6 +322,7 @@ export const cutActionMethods = {
             [KEYS.outPoint]: () => { this._cutEdge = 'out'; this.cutEdgeAtPlayhead('out'); },
             [KEYS.join.toLowerCase()]: () => this.cutToggleJoin(join ? this.cutItems.find((i) => i.key === join.dataset.cutJoin) : this.cutEditable()),
             [KEYS.mute.toLowerCase()]: () => this.cutToggleSound(),
+            [KEYS.splitAlt.toLowerCase()]: () => this.cutSplit(),
             [KEYS.remove]: () => this.cutRemove(),
             Backspace: () => this.cutRemove(),
             Escape: () => { this.cutLevelOpen = null; },

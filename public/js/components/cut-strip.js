@@ -20,6 +20,9 @@ function track(onMove, onEnd) {
     };
     const end = (ev) => {
         cancelAnimationFrame(frame);
+        // A release first applies the move still waiting for its frame, so a quick flick lands where it let go.
+        if (frame && ev.type === 'pointerup') onMove(last);
+        frame = 0;
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', end);
         window.removeEventListener('pointercancel', end);

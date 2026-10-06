@@ -38,6 +38,8 @@
             data-control="cut.moveLeft" aria-keyshortcuts="Alt+ArrowLeft">{{ controlLabel('cut.moveLeft') }}</button>
     <button type="button" class="ae-key ae-key--sm" @click="cutMove(1)" :disabled="!cutCanMove(1)"
             data-control="cut.moveRight" aria-keyshortcuts="Alt+ArrowRight">{{ controlLabel('cut.moveRight') }}</button>
+    <button type="button" class="ae-key ae-key--sm" @click="cutSplit(true)" :aria-disabled="cutSplitPlan(cutPlayheadMs, true).refused ? 'true' : 'false'" :title="cutSplitTitle(true)"
+            data-control="cut.split" aria-keyshortcuts="Control+B Meta+B S">{{{ icon('split') }}}<span>{{ controlLabel('cut.split') }}</span></button>
     <button type="button" class="ae-key ae-key--sm" @click="cutEdgeAtPlayhead('in')" data-control="cut.inPoint" aria-keyshortcuts="[">{{ controlLabel('cut.inPoint') }}</button>
     <button type="button" class="ae-key ae-key--sm" @click="cutEdgeAtPlayhead('out')" data-control="cut.outPoint" aria-keyshortcuts="]">{{ controlLabel('cut.outPoint') }}</button>
     <button type="button" class="ae-key ae-key--sm" @click="cutToggleSound()" :aria-pressed="cutEditable()?.sound ? 'true' : 'false'"

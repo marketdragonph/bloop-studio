@@ -4,8 +4,9 @@
      hatched, "04 · Flashback / not rendered", Go to card (rendering: blue light; failed; deleted). P4, while the
      Director's turn strip shows: the frames a trim took as faint blue ghosts past the clip, a blue mark on changed
      clips while Show edits is open, and "Yours, untouched" on clips the Director left alone because they are the
-     person's (cut-turn.js). The note's tooltip is the stored reason. --}}
-<li class="cut-item" :class="['cut-item--' + cutKind(item), { 'is-lifted': cutDrag?.kind === 'move' && cutDrag.key === item.key }]"
+     person's (cut-turn.js). The note's tooltip is the stored reason. :class is ONE object: Alpine joins an array's
+     items as strings, so an object inside an array printed "[object Object]" and a dragged clip never lifted. --}}
+<li class="cut-item" :class="{ ['cut-item--' + cutKind(item)]: true, 'is-lifted': cutDrag?.kind === 'move' && cutDrag.key === item.key }"
     :style="Object.assign({ '--x': item.x + 'px', '--w': item.w + 'px' }, cutDragStyle(item))" :data-cut-key="item.key">
   <template x-if="item.ready">
     <div class="cut-clipbox" :class="{ 'is-first': item.x < 1 }">

@@ -29,8 +29,12 @@ export const cutCheckMethods = {
         return lines.sort((a, b) => (a.at_ms ?? Infinity) - (b.at_ms ?? Infinity) || a.order - b.order);
     },
 
-    /** The lane item a finding is about: by node id, else by beat tag; null for a whole-cut finding. */
+    /** The lane item a finding is about: by clip id (a split card's part), node id, beat tag; null for a whole-cut finding. */
     cutFindingItem(f) {
+        if (f?.item_id != null) {
+            const byId = this.cutItems.find((i) => i.ready && this.cutModel[i.clip]?.id === f.item_id);
+            if (byId) return byId;
+        }
         if (f?.node_id != null) {
             const byNode = this.cutItems.find((i) => i.node_id === f.node_id);
             if (byNode) return byNode;

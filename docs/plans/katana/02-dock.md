@@ -149,12 +149,26 @@ of existing tokens. New layout tokens, no new colours: `--director-width: 26rem`
 | Select | click | Tab into the strip, then ←/→ | tap |
 | Reorder | drag (6 px threshold, auto-scroll at edges) | Alt+←/→ | long-press 300 ms, drag; or Move in the item sheet |
 | Trim | drag the orange handles; time shows while dragging | `[` / `]` set in/out at the playhead; Shift+←/→ nudge 0.1 s | item sheet range, ±0.1 s keys |
+| Split | Split key (rail, beside Undo/Redo; and the clip's details) | Ctrl/Cmd+B, S | item sheet |
 | Remove from cut | Delete key or item menu | Delete / Backspace | item sheet |
 | Join | click the chip (cut ↔ dissolve) | D on the focused chip | tap the chip |
 | Clip sound | item menu | M | item sheet |
 | Play / pause | deck key | Space | deck key |
 | Undo / redo | rail keys | Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y | rail keys |
 
+- [x] **Split** (2026-10-06): the selected clip splits at the preview playhead into two items from the same card
+  (`splitItem` in `src/shared/cut-edit.js`): the first keeps its id and join and ends at that source time, the second
+  gets a new id (`<id>.2`, unique), starts there with a cut join; sound and crop boxes carry over. Refused in words
+  when the playhead is under 100 ms (3 frames) from an edge ("Move the playhead inside the clip", the key's tooltip,
+  `aria-disabled` so it stays focusable), on a slate or a clip whose card left, past the 50-clip cap, or when it would
+  change a dissolve's length (the total never moves). One undo step, autosaves; announces "Split 03 · The letter at
+  0:09.2" and selects the second part. Export and the server need no change (`tests/cut-split.test.js`).
+- [x] **Split, after review** (2026-10-06): the Director addresses one part by `#<clip id>` (`locate` in
+  `director/cut/op-handlers.js`; inspect_cut says "part 1 of 2, name it #n2"); a beat tag or `@id` that matches
+  several parts is refused for trim, remove, move, sound, snap, join and poster ("name the part: #n2, #n2.2"), and an
+  `after` anchor follows the last part. A new take cannot swap into a split beat. Check your cut skips JUMP between
+  two parts that play straight on, and a finding's `item_id` picks the part Show me goes to. The guide and the
+  registry give both keys (Ctrl+B or S). The draft lane's refusal is tested.
 - Remove never deletes the board card. The rail shows "Removed 04 · Flashback from the cut · **Undo**" for 8 s.
 - A drag updates only local state each frame and pushes **one** history command on pointerup.
 - **Touch:** handles are 44 px hit areas that hang outside the clip, so they never cover the clip's own tap area.

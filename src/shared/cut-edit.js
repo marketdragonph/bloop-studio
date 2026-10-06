@@ -3,7 +3,7 @@
 // dock and its tests; the server validates the same rules again when it saves (01-core.md §2).
 // Item: {id, node_id, take_id, beat_tag, media_path, seconds_ms, in_ms, out_ms, sound, join: {type, ms}, note?}.
 // Limits come from the one rule file (cut-rules.js); dissolve lengths from the one clock (cut-clock.js).
-import { DISSOLVE_DEFAULT_MS, DISSOLVE_MIN_MS, dissolveMs } from './cut-clock.js';
+import { DISSOLVE_DEFAULT_MS, DISSOLVE_MIN_MS, cutClock, dissolveMs } from './cut-clock.js';
 import { CUT_LIMITS, FADE_OUT, MUSIC_LEVEL, VOICE_LEVEL, checkItems, clampLevel } from './cut-rules.js';
 
 export const TRIM_SLACK_MS = CUT_LIMITS.trimSlackMs; // out may sit up to 50 ms past the measured length (01-core.md §2)
@@ -95,6 +95,47 @@ export function nudgeItem(items, index, edge, delta) {
 /** [ and ]: the edge lands at `sourceMs` (the source time under the playhead). */
 export function setEdgeAt(items, index, edge, sourceMs) {
     return edge === 'in' ? trimItem(items, index, { in_ms: sourceMs }) : trimItem(items, index, { out_ms: sourceMs });
+}
+
+/** Split keeps each part at least this long: 100 ms, 3 frames at 30 fps. */
+export const MIN_SPLIT_MS = MIN_CLIP_MS;
+
+/** An id for the second part, unique in the cut and within the rule file's id length. */
+function splitId(items, id) {
+    const taken = new Set(items.map((i) => i.id));
+    const base = String(id ?? 'clip').slice(0, CUT_LIMITS.idMax - 4);
+    for (let n = 2; ; n++) {
+        const next = `${base}.${n}`;
+        if (!taken.has(next) && next.length <= CUT_LIMITS.idMax) return next;
+    }
+}
+
+/** Why the item at `index` cannot be split at `sourceMs` (source time in its clip), or null. */
+export function splitRefusal(items, index, sourceMs) {
+    const item = items[index];
+    if (!item) return 'Select a clip to split.';
+    const at = Math.round(Number(sourceMs));
+    if (!Number.isFinite(at) || at - item.in_ms < MIN_SPLIT_MS || item.out_ms - at < MIN_SPLIT_MS) return 'Move the playhead inside the clip';
+    if (items.length + 1 > CUT_LIMITS.maxItems) return `A cut holds at most ${CUT_LIMITS.maxItems} clips. Remove one to split this clip.`;
+    return null;
+}
+
+/**
+ * Splits the item at `index` at `sourceMs` into two items from the same card: the first keeps the id and the
+ * join and ends there, the second (a new id) starts there with a cut join. Both keep the clip's sound and crop.
+ * The total length never changes; a split that would change a dissolve's length is refused.
+ * @returns {{ items: object[], refused: string|null }}
+ */
+export function splitItem(items, index, sourceMs) {
+    const refused = splitRefusal(items, index, sourceMs);
+    if (refused) return { items, refused };
+    const item = items[index];
+    const at = Math.round(Number(sourceMs));
+    const first = edited(item, { out_ms: at });
+    const second = edited(item, { id: splitId(items, item.id), in_ms: at, join: { ...CUT_JOIN } });
+    const next = [...items.slice(0, index), first, second, ...items.slice(index + 1)];
+    if (cutClock(next).total_ms !== cutClock(items).total_ms) return { items, refused: 'Too close to a dissolve to split here. Move the playhead further in.' };
+    return { items: next, refused: null };
 }
 
 /** Removes an item from the cut (never the card). The next item's join becomes a cut when it lands first. */

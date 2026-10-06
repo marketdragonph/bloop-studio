@@ -111,8 +111,11 @@ export function timedFindings({ cut, slots = [], plan = null, briefs = new Map()
         }
     }
 
-    // JUMP: the same shot size and angle twice in a row (from the briefs' words).
+    // JUMP: the same shot size and angle twice in a row (from the briefs' words). The two parts of a split that
+    // plays straight on (same card and take, the second starting where the first ends) are one shot, not a jump.
     for (let i = 1; i < items.length; i++) {
+        const [prev, cur] = [items[i - 1], items[i]];
+        if (prev.node_id === cur.node_id && (prev.take_id ?? null) === (cur.take_id ?? null) && cur.in_ms === prev.out_ms) continue;
         const [a, b] = [shotWords(briefs.get(items[i - 1].beat_tag)), shotWords(briefs.get(items[i].beat_tag))];
         if (a.size && a.size === b.size && a.angle === b.angle && items[i].join?.type !== 'dissolve') {
             add('JUMP', items[i], `${items[i - 1].beat_tag} → ${items[i].beat_tag}: two ${a.size} shots at the same angle in a row (read from the briefs' words).`, { at_ms: clock.items[i].start_ms });
