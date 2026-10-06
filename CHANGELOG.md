@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1006.810
+
 - Fixed: the time labels along the top of the Cut's timeline are no longer cut off at the top.
 
 ## 2026.1006.800
