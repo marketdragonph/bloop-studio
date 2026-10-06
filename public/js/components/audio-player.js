@@ -31,6 +31,39 @@ export function detectVoice(rms) {
     return voice;
 }
 
+const TRACKS_KEPT = 48;
+const tracks = new Map(); // src -> Promise of a reduced track
+let decoding = Promise.resolve();
+
+const whenIdle = () => new Promise((resolve) => (window.requestIdleCallback ? requestIdleCallback(resolve, { timeout: 1000 }) : setTimeout(resolve, 0)));
+
+async function decodeTrack(src) {
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(`media ${res.status}`);
+    const ctx = new AudioContext();
+    try {
+        const buffer = await ctx.decodeAudioData(await res.arrayBuffer());
+        return reduceTrack(mono(buffer), buffer.sampleRate);
+    } finally {
+        ctx.close().catch(() => {});
+    }
+}
+
+/**
+ * One file's waveform, decoded once per page. A board with many audio cards decodes them one at a time,
+ * when the page is idle, instead of fetching and decoding every song at once (which froze the board).
+ */
+function trackOf(src) {
+    if (!tracks.has(src)) {
+        const track = decoding.then(whenIdle).then(() => decodeTrack(src));
+        decoding = track.catch(() => {});
+        track.catch(() => tracks.delete(src));
+        tracks.set(src, track);
+        if (tracks.size > TRACKS_KEPT) tracks.delete(tracks.keys().next().value);
+    }
+    return tracks.get(src);
+}
+
 /** A decoded track → { peaks (0..1 per bar), barVoice, rms, voice, speechRatio }. The Cut dock asks for more `bars`. */
 export function reduceTrack(data, rate, bars = BARS) {
     const frameLen = Math.max(1, Math.round(rate * FRAME_S));
@@ -118,17 +151,8 @@ export default function AudioPlayer() {
         async analyse(src) {
             const token = ++this._token;
             try {
-                const res = await fetch(src);
-                if (!res.ok) throw new Error(`media ${res.status}`);
-                const ctx = new AudioContext();
-                let buffer;
-                try {
-                    buffer = await ctx.decodeAudioData(await res.arrayBuffer());
-                } finally {
-                    ctx.close().catch(() => {});
-                }
+                const track = await trackOf(src);
                 if (token !== this._token) return;
-                const track = reduceTrack(mono(buffer), buffer.sampleRate);
                 Object.assign(this, { peaks: track.peaks, barVoice: track.barVoice, speechRatio: track.speechRatio, ready: true });
                 this._rms = track.rms;
                 this._voice = track.voice;

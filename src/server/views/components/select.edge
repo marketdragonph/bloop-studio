@@ -22,9 +22,9 @@
   </button>
 
   <template x-teleport="body">
-    <div class="sel-panel" x-show="open" x-cloak :style="panelStyle" @click.outside="$event.target.closest('.sel-trigger') !== $refs.trigger && close()">
+    <div class="sel-panel" x-show="open" x-cloak :style="panelStyle" @click.outside="open && $event.target.closest('.sel-trigger') !== $refs.trigger && close()">
       {{-- A long list gets a search box; the arrows, Enter and Escape keep working from it. --}}
-      <template x-if="searchable">
+      <template x-if="open && searchable">
         <input type="search" class="sel-search" :id="id + '-search'" x-model="query" @input="search()"
                placeholder="Search…" autocomplete="off" spellcheck="false"
                :aria-controls="id + '-panel'" :aria-activedescendant="active >= 0 ? optionId(active) : null"

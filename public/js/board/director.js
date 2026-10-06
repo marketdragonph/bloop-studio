@@ -4,6 +4,21 @@
 import { api } from './api.js';
 import { renderMarkdown } from './markdown.js';
 
+// Live render state (progress, label) is the event stream's, not the saved row's.
+const LIVE = new Set(['progress', 'progressLabel']);
+
+/**
+ * Copies only the fields that changed. Settings arrive as a new object every time; replacing an equal one
+ * re-ran every knob binding on every card (the lag on big boards).
+ */
+function assignChanged(current, row) {
+    for (const [key, value] of Object.entries(row)) {
+        if (LIVE.has(key)) continue;
+        const same = value !== null && typeof value === 'object' ? JSON.stringify(value) === JSON.stringify(current[key]) : value === current[key];
+        if (!same) current[key] = value;
+    }
+}
+
 export const directorMethods = {
     async toggleDirector() {
         this.directorOpen = !this.directorOpen;
@@ -37,17 +52,26 @@ export const directorMethods = {
     async refreshBoard({ tidy = true } = {}) {
         const board = await api('GET', `${this.base}/board.json`);
         const fresh = new Map(board.nodes.map((n) => [n.id, n]));
-        this.nodes = this.nodes.filter((n) => fresh.has(n.id));
+        if (this.nodes.some((n) => !fresh.has(n.id))) this.nodes = this.nodes.filter((n) => fresh.has(n.id));
+        const byId = new Map(this.nodes.map((n) => [n.id, n]));
         for (const n of board.nodes) {
-            const current = this.nodeById(n.id);
-            // Live render state (progress, label) is the event stream's, not the saved row's.
-            if (current) Object.assign(current, { ...n, progress: current.progress, progressLabel: current.progressLabel });
+            const current = byId.get(n.id);
+            if (current) assignChanged(current, n);
             else this.nodes.push(n);
         }
         const same = board.connections.length === this.connections.length && board.connections.every((c, i) => c.id === this.connections[i]?.id);
         if (!same) this.connections = board.connections;
         if (tidy) this.tidyAfterRender();
         window.dispatchEvent(new CustomEvent('board:nodes')); // the Cut dock refetches (debounced); it never reads `nodes`
+    },
+
+    /** Pans to the first card a turn added, once tidy has settled it (only if it is off screen). */
+    showLanded(ids) {
+        if (!ids.length) return;
+        this.$nextTick(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+            const node = ids.map((id) => this.nodeById(id)).find(Boolean);
+            if (node) this.bringIntoView(node);
+        })));
     },
 
     /** While the Director builds: at most two board refreshes a second, the last one after its final change. */
@@ -121,7 +145,8 @@ export const directorMethods = {
             reply.notice = event === 'error' ? data.message : data.notice;
             this.directorBusy = false;
             this.directorRunId = null;
-            this.refreshBoard().catch(() => {});
+            const landed = reply.actions.filter((a) => a.kind === 'card').map((a) => a.nodeId);
+            this.refreshBoard().then(() => this.showLanded(landed)).catch(() => {});
             this.recordDirectorTurn(reply.actions);
         }
         this.scrollDirector();

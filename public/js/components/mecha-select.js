@@ -27,8 +27,10 @@ export default function MechaSelect({ options, value, onChange, placeholder = 'C
             return this.allItems.length >= SEARCH_FROM;
         },
 
-        /** The options shown: all of them, or those matching every word typed. */
+        /** The options shown: all of them, or those matching every word typed. None while closed: a board has six
+         *  selects per card, and rendering every closed list (the long Model one too) slowed big boards down. */
         get items() {
+            if (!this.open) return [];
             const words = this.query.toLowerCase().split(/\s+/).filter(Boolean);
             if (!words.length) return this.allItems;
             return this.allItems.filter((o) => {

@@ -76,6 +76,9 @@ function makeWire(id) {
     return { group, line, hit, d: null, cls: null };
 }
 
+let wireFrame = 0;
+let wirePointer = null;
+
 export const wireMethods = {
     /** Called from an x-effect: reads every position, so it re-runs exactly when a wire could move. */
     syncWires() {
@@ -121,23 +124,33 @@ export const wireMethods = {
 
     previewPath() {
         const p = this.wireDraft;
-        return p ? toPath(routeTrace(p.x1, p.y1, p.x2, p.y2)) : '';
+        const end = this.wireEnd ?? (p && { x: p.x1, y: p.y1 });
+        return p ? toPath(routeTrace(p.x1, p.y1, end.x, end.y)) : '';
     },
 
+    /**
+     * The draft (where the wire starts) is fixed for the whole gesture: every port reads it to light up.
+     * Only the loose end moves, once per frame, so the ports are judged once, not on every mouse move.
+     */
     startWire(event, node) {
         event.stopPropagation();
-        const at = this.toBoard(event.clientX, event.clientY);
-        this.wireDraft = { fromId: node.id, x1: outputX(node), y1: outputY(node), x2: at.x, y2: at.y };
+        this.wireDraft = { fromId: node.id, x1: outputX(node), y1: outputY(node) };
+        this.wireEnd = this.toBoard(event.clientX, event.clientY);
     },
 
     trackWirePreview(event) {
         if (!this.wireDraft) return;
-        const at = this.toBoard(event.clientX, event.clientY);
-        this.wireDraft = { ...this.wireDraft, x2: at.x, y2: at.y };
+        wirePointer = { x: event.clientX, y: event.clientY };
+        if (wireFrame) return;
+        wireFrame = requestAnimationFrame(() => {
+            wireFrame = 0;
+            if (this.wireDraft && wirePointer) this.wireEnd = this.toBoard(wirePointer.x, wirePointer.y);
+        });
     },
 
     cancelWire() {
         this.wireDraft = null;
+        this.wireEnd = null;
     },
 
     /** Dropped on a card body (auto-pick a socket) or on one socket (socketKey). */
@@ -145,7 +158,7 @@ export const wireMethods = {
         if (!this.wireDraft) return;
         event.stopPropagation();
         const from = this.nodeById(this.wireDraft.fromId);
-        this.wireDraft = null;
+        this.cancelWire();
         const verdict = checkConnection({ from, to: toNode, existing: this.connections, socketKey });
         if (!verdict.ok) return this.toast(verdict.reason, 'warn');
         await this.connect(from.id, toNode.id, { socket: verdict.socket });

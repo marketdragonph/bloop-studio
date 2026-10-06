@@ -3,6 +3,7 @@
 import { Edge } from 'edge.js';
 import { icon } from '../shared/icons.js';
 import { controlLabel } from '../shared/katana-controls.js';
+import { mediaUrlOf } from '../shared/cut-edit.js';
 
 export const THEMES = ['dark', 'light', 'system'];
 
@@ -13,6 +14,7 @@ export function createViews({ csrfToken, getTheme = () => 'dark' }) {
     edge.global('appName', 'Bloop Studio');
     edge.global('icon', icon);
     edge.global('controlLabel', controlLabel); // Katana controls: the words come from the registry
+    edge.global('mediaUrl', mediaUrlOf); // `/media/<path>`, each segment encoded
     edge.global('currentTheme', () => {
         const theme = getTheme();
         return THEMES.includes(theme) ? theme : 'dark';

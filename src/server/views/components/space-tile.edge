@@ -1,0 +1,16 @@
+{{-- One space in a tile grid. The cover is the board's thumbnail card (else poster, else newest image).
+     `launch` makes opening it also continue past the launch screen. --}}
+<a class="ae-plate tile" href="/spaces/{{ space.id }}"
+  {{{ launch ? `hx-post="/launch/continue" hx-vals='{"to": "/spaces/${Number(space.id)}"}'` : '' }}}>
+  <span class="tile__cover">
+    @if(space.cover_path)
+      <img src="{{ mediaUrl(space.cover_path) }}" alt="" loading="lazy" decoding="async">
+    @else
+      <span class="tile__cover-empty" aria-hidden="true">{{{ icon('image') }}}</span>
+    @end
+  </span>
+  <span class="ae-plate__inner tile__inner">
+    <span class="tile__name">{{ space.name }}</span>
+    <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
+  </span>
+</a>

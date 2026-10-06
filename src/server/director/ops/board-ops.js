@@ -5,7 +5,7 @@ import { transaction } from '../../db/database.js';
 import { ValidationError } from '../../repositories/spaces.js';
 import { MAX_NODES_PER_SPACE } from '../../../shared/node-types.js';
 import { problemsWith, refusedText } from './validate.js';
-import { lanePitch, originFor, place } from './layout.js';
+import { compactSlots, freeOrigin, lanePitch, place } from './layout.js';
 
 export class BoardOpsRejected extends Error {
     constructor(reasons) {
@@ -44,8 +44,8 @@ export class BoardOps {
         if (board.nodes.length + adding > MAX_NODES_PER_SPACE) {
             throw new BoardOpsRejected([`That would put ${adding} cards on a board that already has ${board.nodes.length}, over the ${MAX_NODES_PER_SPACE} limit. Ask the person what to drop, or plan fewer lanes.`]);
         }
-        const start = origin ?? originFor(board.nodes);
         const pitch = lanePitch(aspect);
+        const { start, slotOf } = this.#layout(board, ops, origin, pitch);
 
         return transaction(this.spaces.db, () => {
             const applied = { nodes: [], connections: [], updated: [], refs: {}, title: null, actions: [] };
@@ -67,7 +67,8 @@ export class BoardOps {
                         applied.title = String(op.text).trim().slice(0, 120);
                     } else if (op.op === 'note' || op.op === 'node') {
                         const type = op.op === 'note' ? 'text' : op.type;
-                        const at = place(start, op.lane, op.stage ?? 1, pitch);
+                        const { lane, stage } = slotOf(op);
+                        const at = place(start, lane, stage, pitch);
                         const worded = type === 'text' || type === 'note';
                         let node = this.spaces.createNode(spaceId, {
                             type,
@@ -114,5 +115,18 @@ export class BoardOps {
             if (problems.length) throw new BoardOpsRejected(problems); // rolls the whole list back
             return applied;
         });
+    }
+
+    /**
+     * A plan pins its origin, so its lanes line up with the rail. A free turn's cards start at lane 1, stage 1,
+     * beside the cards they wire to (else the newest card), on clear board.
+     */
+    #layout(board, ops, origin, pitch) {
+        if (origin) return { start: origin, slotOf: (op) => ({ lane: op.lane, stage: op.stage ?? 1 }) };
+        const cards = ops.filter((o) => o.op === 'note' || o.op === 'node');
+        const slots = compactSlots(cards);
+        const wired = new Set(ops.filter((o) => o.op === 'wire').flatMap((o) => [o.from, o.to]).filter((h) => String(h).startsWith('@')).map((h) => Number(String(h).slice(1))));
+        const anchors = board.nodes.filter((n) => wired.has(n.id));
+        return { start: freeOrigin(board.nodes, anchors, [...slots.values()], pitch), slotOf: (op) => slots.get(op) };
     }
 }

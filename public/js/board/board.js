@@ -31,6 +31,7 @@ export default function SpaceBoard() {
         selectedConnectionId: null,
         marquee: null,
         wireDraft: null,
+        wireEnd: null, // the loose end of the wire being drawn (board coordinates)
         spaceHeld: false,
         saveState: 'saved',
         canUndo: false,

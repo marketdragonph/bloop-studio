@@ -24,9 +24,19 @@ export class SpacesRepository {
 
     // ── Spaces ──
 
+    /**
+     * Every space, newest first, with its card count and a cover: the image card named "thumbnail", else "poster",
+     * else the newest finished image on the board.
+     */
     list() {
         return this.db.prepare(`
-            SELECT s.*, (SELECT COUNT(*) FROM space_nodes n WHERE n.space_id = s.id) AS node_count
+            SELECT s.*,
+                (SELECT COUNT(*) FROM space_nodes n WHERE n.space_id = s.id) AS node_count,
+                (SELECT c.media_path FROM space_nodes c
+                    WHERE c.space_id = s.id AND c.media_path IS NOT NULL AND c.media_mime LIKE 'image/%'
+                    ORDER BY CASE WHEN c.label LIKE '%thumbnail%' THEN 0 WHEN c.label LIKE '%poster%' THEN 1 ELSE 2 END,
+                        c.updated_at DESC, c.id DESC
+                    LIMIT 1) AS cover_path
             FROM spaces s ORDER BY s.updated_at DESC
         `).all().map(hydrateSpace);
     }

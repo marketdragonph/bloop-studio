@@ -12,12 +12,7 @@
     <ul class="tile-grid" role="list">
       @each(space in spaces)
         <li>
-          <a class="ae-plate tile" href="/spaces/{{ space.id }}">
-            <span class="ae-plate__inner tile__inner">
-              <span class="tile__name">{{ space.name }}</span>
-              <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
-            </span>
-          </a>
+          @!component('components/space-tile', { space, launch: false })
         </li>
       @end
     </ul>

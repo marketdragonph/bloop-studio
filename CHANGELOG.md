@@ -5,6 +5,10 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: every board in the Spaces list shows a cover picture: a card named "thumbnail", else "poster", else the newest picture on the board.
+- Fixed: cards the Director adds in a quick turn now land next to the cards they connect to, on clear board, and the board scrolls to them, instead of far away.
+- Fixed: big boards no longer freeze. Opening one, drawing a wire, or a Director build adding cards now stays smooth with many cards.
+
 ## 2026.1006.1521
 
 - New: Split a clip in the Cut at the playhead (Ctrl+B, or S on a clip), then move, trim or remove each part. The Director can edit each part too.

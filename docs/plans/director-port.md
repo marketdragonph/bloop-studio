@@ -109,6 +109,9 @@ Local rendering:
 ### Phase 1 — conversation core (this replaces the current Director) — built on branch `director-port`
 - [x] Tables: `director_plans`, `director_build_stages`, `director_plan_beats` (005); history = `director_log` text rows.
 - [x] `BoardOps` (director/ops/): ops, validator, wire legality from `node-types.js`, one transaction, refs/`@id`, lane/stage layout.
+- [x] Free-turn placement (2026-10-07): a turn without a plan origin starts at lane 1 / stage 1 beside the cards it
+      wires to (else the newest card) and slides down to clear board (`layout.js` compactSlots / freeOrigin); the
+      board pans to the turn's first card. Plans keep their pinned origin so the rail lines up.
 - [x] Skills: plan_board, advance_build (rail), propose_board_ops (+ planFirst gate), inspect_board, audit_board.
 - [x] Turn loop: 5 rounds, tools off on the last, ledger + closing logic + OpsFromProse, echo guard.
 - [x] Prompt composition (director/prompts/): bloop's doctrine in bloop's order, board state last, bloop's snapshot.

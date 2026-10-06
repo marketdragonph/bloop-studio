@@ -25,20 +25,31 @@ function writeSticky(type, key, value) {
     }
 }
 
+const knobCache = new WeakMap(); // node -> { family, chosen, options }
+
 export const knobMethods = {
     familyFor(node) {
         return this.families[node.type]?.find((f) => f.id === this.familyOf(node));
     },
 
+    /**
+     * A card's knob options. About ten bindings per card ask for them, so the answer is kept per card until its
+     * family or resolution changes (both are still read here, so the bindings still follow them).
+     */
     knobsFor(node) {
         const family = this.familyFor(node);
+        const chosen = node.settings?.resolution;
+        const kept = knobCache.get(node);
+        if (kept && kept.family === family && kept.chosen === chosen) return kept.options;
         // A bloop cloud model brings its own options (its params); a local family names a formats table.
         const none = { aspects: [], resolutions: [], durations: [], qualities: [], voices: [] };
         const options = { ...none, ...(family?.options ?? knobOptions(family?.knobs)) };
         // A long clip only at the resolutions tried that long (formats.js `longest`).
-        const resolution = node.settings?.resolution ?? options.resolutions[0]?.value;
+        const resolution = chosen ?? options.resolutions[0]?.value;
         const cap = options.longest?.[resolution];
-        return cap ? { ...options, durations: options.durations.filter((d) => Number(d.value) <= cap) } : options;
+        const result = cap ? { ...options, durations: options.durations.filter((d) => Number(d.value) <= cap) } : options;
+        knobCache.set(node, { family, chosen, options: result });
+        return result;
     },
 
     knobValue(node, key) {

@@ -55,12 +55,7 @@
         @each(space in recent)
           <li>
             {{-- Opening a board also counts as continuing: the launch screen will not show again. --}}
-            <a class="ae-plate tile" href="/spaces/{{ space.id }}" hx-post="/launch/continue" hx-vals='{"to": "/spaces/{{ space.id }}"}'>
-              <span class="ae-plate__inner tile__inner">
-                <span class="tile__name">{{ space.name }}</span>
-                <span class="ae-readout">{{ space.node_count }} {{ space.node_count === 1 ? 'card' : 'cards' }}</span>
-              </span>
-            </a>
+            @!component('components/space-tile', { space, launch: true })
           </li>
         @end
       </ul>

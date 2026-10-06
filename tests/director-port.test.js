@@ -126,3 +126,33 @@ test('the snapshot is bloop\'s: @ids, settings, render state and what feeds each
     assert.match(text, /text="A long brief\.[^"]{100,}…"/);
     assert.equal(boardSnapshot({ space: { name: 'My film', description: 'x' }, nodes: [], connections: [] }), 'THE BOARD IS EMPTY. Nothing has been made yet.\nBoard name: "My film" — description: "x".');
 });
+
+test('a free turn lands beside the cards it wires to, on clear board, not past the far edge', () => {
+    const { spaces, space, ops } = harness();
+    const uno = spaces.createNode(space.id, { type: 'text', label: 'Uno', position_x: 0, position_y: 0 });
+    const roof = spaces.createNode(space.id, { type: 'text', label: 'Rooftop', position_x: 0, position_y: 600 });
+    spaces.createNode(space.id, { type: 'image', label: 'far shot', position_x: 6000, position_y: -3000 });
+    spaces.createNode(space.id, { type: 'image', label: 'beside Uno', position_x: 440, position_y: 0 });
+    const applied = ops.apply(space.id, [
+        { op: 'note', ref: 'brief', title: 'thumbnail brief', body: 'Uno and Pip on the roof.', lane: 4, stage: 5 },
+        { op: 'node', ref: 'thumb', type: 'image', label: 'thumbnail', lane: 4, stage: 7, aspect_ratio: '16:9' },
+        { op: 'wire', from: 'brief', to: 'thumb' },
+        { op: 'wire', from: `@${uno.id}`, to: 'thumb' },
+        { op: 'wire', from: `@${roof.id}`, to: 'thumb' },
+    ]);
+    const brief = spaces.findNode(space.id, applied.refs.brief);
+    const thumb = spaces.findNode(space.id, applied.refs.thumb);
+    assert.equal(brief.position_x, 440, 'starts right of Uno and Rooftop, not right of the far shot');
+    assert.equal(thumb.position_x - brief.position_x, 760, 'the shape of the block is kept');
+    assert.equal(thumb.position_y, brief.position_y);
+    assert.ok(brief.position_y >= 540 && brief.position_y < 1200, `slid just below the card beside Uno (y=${brief.position_y})`);
+});
+
+test('a free turn with no wires lands beside the newest card', () => {
+    const { spaces, space, ops } = harness();
+    spaces.createNode(space.id, { type: 'image', position_x: 5000, position_y: 0 });
+    const newest = spaces.createNode(space.id, { type: 'image', position_x: 0, position_y: 2000 });
+    const applied = ops.apply(space.id, [{ op: 'note', ref: 'n', body: 'words', lane: 3, stage: 2 }]);
+    const note = spaces.findNode(space.id, applied.refs.n);
+    assert.deepEqual([note.position_x, note.position_y], [newest.position_x + 280 + 160, 2000]);
+});

@@ -106,3 +106,21 @@ test('undo of a delete puts the card\'s takes back with their ids and measured l
     repo.restoreNode(space.id, snapshot, [], [{ id: 'x', media_path: 3 }]);
     assert.equal(repo.db.prepare('SELECT COUNT(*) AS n FROM takes').get().n, 0);
 });
+
+test('the space list picks a cover: the thumbnail card, else the poster, else the newest image', () => {
+    const { repo, space } = fresh();
+    const cover = () => repo.list().find((s) => s.id === space.id).cover_path;
+    assert.equal(cover(), null);
+    const shot = repo.createNode(space.id, { type: 'image', label: 'Shot 1' });
+    repo.setNodeResult(shot.id, { status: 'done', media_path: 'b/shot.png', media_mime: 'image/png' });
+    assert.equal(cover(), 'b/shot.png');
+    const poster = repo.createNode(space.id, { type: 'image', label: 'Story poster' });
+    repo.setNodeResult(poster.id, { status: 'done', media_path: 'b/poster.png', media_mime: 'image/png' });
+    const clip = repo.createNode(space.id, { type: 'video', label: 'Thumbnail clip' });
+    repo.setNodeResult(clip.id, { status: 'done', media_path: 'b/clip.mp4', media_mime: 'video/mp4' });
+    assert.equal(cover(), 'b/poster.png', 'a video is never the cover');
+    const thumb = repo.createNode(space.id, { type: 'image', label: 'Rooftop thumbnail' });
+    assert.equal(cover(), 'b/poster.png', 'an unrendered thumbnail card is skipped');
+    repo.setNodeResult(thumb.id, { status: 'done', media_path: 'b/thumb.png', media_mime: 'image/png' });
+    assert.equal(cover(), 'b/thumb.png');
+});
