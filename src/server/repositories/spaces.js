@@ -15,6 +15,17 @@ const parseJson = (text, fallback) => {
 const hydrateNode = (row) => row && { ...row, settings: parseJson(row.settings, {}) };
 const hydrateSpace = (row) => row && { ...row, canvas_state: parseJson(row.canvas_state, { zoom: 1, panX: 0, panY: 0 }) };
 
+/** Every word typed must appear in the name or the description; % and _ are matched as themselves. */
+function searchOf(q) {
+    const words = String(q ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 8);
+    if (!words.length) return { where: '', params: [] };
+    const like = (w) => `%${w.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+    return {
+        where: `WHERE ${words.map(() => "(s.name LIKE ? ESCAPE '\\' OR IFNULL(s.description, '') LIKE ? ESCAPE '\\')").join(' AND ')}`,
+        params: words.flatMap((w) => [like(w), like(w)]),
+    };
+}
+
 export class ValidationError extends Error {}
 
 export class SpacesRepository {
@@ -25,10 +36,11 @@ export class SpacesRepository {
     // ── Spaces ──
 
     /**
-     * Every space, newest first, with its card count and a cover: the image card named "thumbnail", else "poster",
-     * else the newest finished image on the board.
+     * Spaces, newest first, with their card count and a cover: the image card named "thumbnail", else "poster",
+     * else the newest finished image on the board. `q` matches the name or description; `limit`/`offset` page it.
      */
-    list() {
+    list({ q = '', limit = -1, offset = 0 } = {}) {
+        const { where, params } = searchOf(q);
         return this.db.prepare(`
             SELECT s.*,
                 (SELECT COUNT(*) FROM space_nodes n WHERE n.space_id = s.id) AS node_count,
@@ -37,8 +49,14 @@ export class SpacesRepository {
                     ORDER BY CASE WHEN c.label LIKE '%thumbnail%' THEN 0 WHEN c.label LIKE '%poster%' THEN 1 ELSE 2 END,
                         c.updated_at DESC, c.id DESC
                     LIMIT 1) AS cover_path
-            FROM spaces s ORDER BY s.updated_at DESC
-        `).all().map(hydrateSpace);
+            FROM spaces s ${where} ORDER BY s.updated_at DESC, s.id DESC LIMIT ? OFFSET ?
+        `).all(...params, limit, offset).map(hydrateSpace);
+    }
+
+    /** How many spaces match `q` (all of them when it is blank). */
+    count({ q = '' } = {}) {
+        const { where, params } = searchOf(q);
+        return this.db.prepare(`SELECT COUNT(*) AS total FROM spaces s ${where}`).get(...params).total;
     }
 
     find(id) {

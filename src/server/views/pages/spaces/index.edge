@@ -1,27 +1,35 @@
 @component('layouts/app', { title: 'Spaces' })
 <div class="stack">
-  <header class="page-head page-head--row">
-    <div>
-      <p class="ae-stencil ae-stencil--sensor">Bloop Studio</p>
-      <h1 class="page-head__title">Spaces</h1>
+  {{-- The hangar: art on the right, the words and the two ways to start on its dark left side. --}}
+  <header class="spaces-hero">
+    <img class="spaces-hero__art" src="/assets/img/spaces-hero-2400.webp"
+         srcset="/assets/img/spaces-hero-1200.webp 1200w, /assets/img/spaces-hero-2400.webp 2400w" sizes="100vw"
+         alt="" width="2400" height="1029" decoding="async" fetchpriority="high">
+    <div class="spaces-hero__body">
+      <p class="ae-stencil ae-stencil--sensor">Bloop Studio · Hangar</p>
+      <h1 class="spaces-hero__title">Spaces</h1>
+      <p class="spaces-hero__tagline">Every board is a story in the making: cards for the words, the stills, the clips and the sound, wired into one cut.</p>
+      <div class="spaces-hero__actions">
+        <button class="ae-key ae-key--accent" hx-get="/spaces/create" hx-target="#modal" hx-swap="innerHTML">{{{ icon('plus') }}}<span>New space</span></button>
+        <button class="ae-key" hx-get="/spaces/starters" hx-target="#modal" hx-swap="innerHTML" data-control="board.starter">{{{ icon('wand') }}}<span>{{ controlLabel('board.starter') }}</span></button>
+      </div>
     </div>
-    <button class="ae-key ae-key--accent" hx-get="/spaces/create" hx-target="#modal" hx-swap="innerHTML">New space</button>
   </header>
 
-  @if(spaces.length)
-    <ul class="tile-grid" role="list">
-      @each(space in spaces)
-        <li>
-          @!component('components/space-tile', { space, launch: false })
-        </li>
-      @end
-    </ul>
-  @else
-    <div class="empty-bay">
-      <p class="ae-stencil">Empty bay</p>
-      <p class="plate-note">No spaces yet. Create one to start wiring cards, or start from a ready plan.</p>
-      <button class="ae-key" hx-get="/spaces/starters" hx-target="#modal" hx-swap="innerHTML" data-control="board.starter">{{{ icon('wand') }}}<span>{{ controlLabel('board.starter') }}</span></button>
-    </div>
+  @if(any)
+    <form class="spaces-search" role="search" action="/spaces" method="get" hx-boost="false" @submit.prevent>
+      <label class="field__label ae-stencil" for="space-search">Find a space</label>
+      <span class="spaces-search__box">
+        {{{ icon('search') }}}
+        <input class="field__input" id="space-search" type="search" name="q" value="{{ q }}" placeholder="Search by name or description"
+               autocomplete="off" spellcheck="false" aria-controls="space-results"
+               hx-get="/spaces" hx-trigger="input changed delay:250ms, search" hx-target="#space-results" hx-swap="innerHTML" hx-push-url="true">
+      </span>
+    </form>
   @end
+
+  <section id="space-results" class="spaces-results" aria-live="polite">
+    @include('pages/spaces/results')
+  </section>
 </div>
 @end

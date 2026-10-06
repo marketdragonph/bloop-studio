@@ -9,7 +9,7 @@ export function homeRoutes({ views, account, spaces }) {
 
     routes.get('/', async (c) => {
         if (account?.signedIn) return c.redirect('/spaces');
-        return c.html(await views.render('pages/launch', { recent: spaces.list().slice(0, RECENT_BOARDS) }));
+        return c.html(await views.render('pages/launch', { recent: spaces.list({ limit: RECENT_BOARDS }) }));
     });
 
     // "Continue without an account", or "Open Bloop Studio" once signed in.

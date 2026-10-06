@@ -6,6 +6,9 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 
 - **Spaces list**: create, rename and delete boards; the app opens on this list. Each board shows a cover: the
   rendered image card named "thumbnail", else "poster", else the newest rendered image (`SpacesRepository.list`).
+  The list opens on a hangar hero (`public/img/spaces-hero-*.webp`, original key art made with GPT Image 2.5
+  Sunburst on kie.ai, 2026-10-07), has a live search (every word in the name or description; `?q=`) and pages
+  of 12 (`?page=`). The search box and the pager swap only `#space-results`; both push the URL.
 - **Cards**: Upload, Text, Note, Image and Video. Drag to move, drag the board to pan, zoom, undo/redo, Tidy layout.
 - **Wires and sockets** (one source of truth in `src/shared/node-types.js`):
   - Image card: **Words** (any number of text cards) and **Picture** (one reference image).

@@ -1,0 +1,75 @@
+/* The Spaces list: the hangar hero, the search box and the pager. Tiles are in app.css (shared with launch). */
+
+.spaces-hero {
+    --_cut: var(--ae-chamfer);
+    position: relative;
+    display: grid;
+    align-items: end;
+    min-height: clamp(16rem, 34vw, 26rem);
+    overflow: hidden;
+    border: 1px solid var(--ae-seam-strong);
+    background: var(--bg-primary);
+    clip-path: polygon(var(--_cut) 0, 100% 0, 100% calc(100% - var(--_cut)), calc(100% - var(--_cut)) 100%, 0 100%, 0 var(--_cut));
+}
+.spaces-hero__art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 70% 35%;
+}
+/* The art fades into the page on the left and at the foot, so the words always sit on a quiet ground. */
+.spaces-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 78%, transparent) 34%, transparent 66%),
+        linear-gradient(0deg, color-mix(in srgb, var(--bg-primary) 70%, transparent) 0%, transparent 45%);
+}
+.spaces-hero__body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: var(--space-3);
+    max-width: 32rem;
+    padding: var(--space-8) var(--space-6);
+}
+.spaces-hero__title {
+    margin: 0;
+    font-family: var(--font-stencil);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.spaces-hero__tagline { margin: 0; color: var(--text-secondary); max-width: 28rem; }
+.spaces-hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+
+@media (max-width: 40rem) {
+    .spaces-hero { min-height: 0; }
+    .spaces-hero__art { object-position: 78% 30%; }
+    .spaces-hero::after { background: color-mix(in srgb, var(--bg-primary) 74%, transparent); }
+    .spaces-hero__body { padding: var(--space-6) var(--space-4); }
+}
+
+.spaces-search { display: grid; gap: var(--space-2); max-width: 28rem; }
+.spaces-search__box { position: relative; display: block; }
+.spaces-search__box .ae-icon {
+    position: absolute;
+    top: 50%;
+    left: var(--space-3);
+    translate: 0 -50%;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.spaces-search__box .field__input { width: 100%; padding-left: calc(var(--space-3) * 2 + 1em); }
+
+.spaces-results { display: grid; gap: var(--space-4); }
+.spaces-results__count { margin: 0; }
+
+.pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); }
+.pager__pages { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.pager__gap { display: inline-grid; place-items: center; min-width: 2rem; color: var(--text-muted); }
+.pager .is-active { border-color: var(--accent); color: var(--accent-text); }

@@ -1,0 +1,47 @@
+{{-- The space tiles for one page of the list (or of a search), with the pager. Swapped on its own by the
+     search box and the pager (routes/spaces.js). --}}
+@if(spaces.length)
+  <p class="ae-readout spaces-results__count">
+    {{ total }} {{ total === 1 ? 'space' : 'spaces' }}{{ q ? ` match “${q}”` : '' }}{{ pages > 1 ? ` · page ${page} of ${pages}` : '' }}
+  </p>
+  <ul class="tile-grid" role="list">
+    @each(space in spaces)
+      <li>
+        @!component('components/space-tile', { space, launch: false })
+      </li>
+    @end
+  </ul>
+  @if(pages > 1)
+    <nav class="pager" aria-label="Pages">
+      @if(page > 1)
+        <a class="ae-key ae-key--sm" href="{{ pageUrl(page - 1) }}" hx-get="{{ pageUrl(page - 1) }}" hx-target="#space-results" hx-swap="innerHTML show:#space-results:top" hx-push-url="true" rel="prev">{{{ icon('chevron-left') }}}<span>Previous</span></a>
+      @end
+      <ol class="pager__pages" role="list">
+        @each(n in pageNumbers)
+          <li>
+            @if(n === null)
+              <span class="pager__gap" aria-hidden="true">…</span>
+            @elseif(n === page)
+              <span class="ae-key ae-key--sm is-active" aria-current="page">{{ n }}</span>
+            @else
+              <a class="ae-key ae-key--sm" href="{{ pageUrl(n) }}" hx-get="{{ pageUrl(n) }}" hx-target="#space-results" hx-swap="innerHTML show:#space-results:top" hx-push-url="true" aria-label="Page {{ n }}">{{ n }}</a>
+            @end
+          </li>
+        @end
+      </ol>
+      @if(page < pages)
+        <a class="ae-key ae-key--sm" href="{{ pageUrl(page + 1) }}" hx-get="{{ pageUrl(page + 1) }}" hx-target="#space-results" hx-swap="innerHTML show:#space-results:top" hx-push-url="true" rel="next"><span>Next</span>{{{ icon('chevron-right') }}}</a>
+      @end
+    </nav>
+  @end
+@elseif(q)
+  <div class="empty-bay">
+    <p class="ae-stencil">No match</p>
+    <p class="plate-note">No space matches “{{ q }}”. Try fewer words, or part of a name.</p>
+  </div>
+@else
+  <div class="empty-bay">
+    <p class="ae-stencil">Empty bay</p>
+    <p class="plate-note">No spaces yet. Create one to start wiring cards, or start from a ready plan.</p>
+  </div>
+@end

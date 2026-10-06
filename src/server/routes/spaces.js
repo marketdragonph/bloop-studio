@@ -5,6 +5,13 @@ import { NODE_TYPES } from '../../shared/node-types.js';
 
 const id = (c, name = 'id') => Number.parseInt(c.req.param(name), 10);
 const CUT_TYPES = new Set(['video', 'audio', 'upload']);
+export const SPACES_PER_PAGE = 12;
+
+/** The pager's numbers: the first, the last and two either side of this page; null marks a gap. */
+export function pageNumbers(page, pages) {
+    const shown = [...new Set([1, pages, ...[-2, -1, 0, 1, 2].map((d) => page + d)])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+    return shown.flatMap((n, i) => (i && n - shown[i - 1] > 1 ? [null, n] : [n]));
+}
 
 const KEY_NAMES = { anthropic: 'anthropicApiKey', openai: 'openaiApiKey' };
 
@@ -43,7 +50,21 @@ export function spacesRoutes({ views, spaces, events, cuts, settings = null }) {
 
     // ── Pages ──
 
-    routes.get('/', async (c) => c.html(await views.render('pages/spaces/index', { spaces: spaces.list() })));
+    // The list: searchable and paged. A search or page change from the page itself swaps only the results.
+    routes.get('/', async (c) => {
+        const q = String(c.req.query('q') ?? '').trim().slice(0, 120);
+        const total = spaces.count({ q });
+        const pages = Math.max(1, Math.ceil(total / SPACES_PER_PAGE));
+        const page = Math.min(pages, Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1));
+        const list = spaces.list({ q, limit: SPACES_PER_PAGE, offset: (page - 1) * SPACES_PER_PAGE });
+        const pageUrl = (n) => {
+            const query = new URLSearchParams({ ...(q ? { q } : {}), ...(n > 1 ? { page: String(n) } : {}) }).toString();
+            return query ? `/spaces?${query}` : '/spaces';
+        };
+        const data = { spaces: list, q, page, pages, total, pageUrl, pageNumbers: pageNumbers(page, pages), any: q ? spaces.count() > 0 : total > 0 };
+        const partial = c.req.header('HX-Target') === 'space-results' && !c.req.header('HX-History-Restore-Request');
+        return c.html(await views.render(partial ? 'pages/spaces/results' : 'pages/spaces/index', data));
+    });
 
     routes.get('/create', async (c) => c.html(await views.render('pages/spaces/create-modal', { errors: {}, old: {} })));
 

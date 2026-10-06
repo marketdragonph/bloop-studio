@@ -6,7 +6,7 @@ function app({ signedIn = false } = {}) {
     const routes = homeRoutes({
         views: { render: async (name, data) => `${name}:${data.recent.length}` },
         account: { signedIn },
-        spaces: { list: () => [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }] },
+        spaces: { list: ({ limit = -1 } = {}) => [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }].slice(0, limit < 0 ? undefined : limit) },
     });
     return { routes };
 }
