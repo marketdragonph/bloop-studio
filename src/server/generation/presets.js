@@ -67,6 +67,27 @@ export function compileGraph(preset, inputs) {
 }
 
 /**
+ * Adds a card's Style LoRA to a compiled graph: one LoraLoaderModelOnly right after the node titled "@model"
+ * (every image and video workflow has one), and everything that read the model now reads it through the LoRA.
+ * A workflow's own speed LoRA (@turbo, @lightning) then stacks on top, as it would in ComfyUI.
+ */
+export function withStyle(graph, { name, strength = 1 }) {
+    const [modelId] = Object.entries(graph).find(([, node]) => node._meta?.title === '@model') ?? [];
+    if (!modelId) throw new Error('This workflow has no @model node to add a style to.');
+    const styleId = String(Math.max(0, ...Object.keys(graph).map(Number).filter(Number.isFinite)) + 1);
+    const fromModel = (value) => Array.isArray(value) && String(value[0]) === modelId && value[1] === 0;
+    for (const node of Object.values(graph)) {
+        for (const [field, value] of Object.entries(node.inputs)) if (fromModel(value)) node.inputs[field] = [styleId, 0];
+    }
+    graph[styleId] = {
+        class_type: 'LoraLoaderModelOnly',
+        inputs: { model: [modelId, 0], lora_name: name, strength_model: strength },
+        _meta: { title: '@style' },
+    };
+    return graph;
+}
+
+/**
  * The preset a card renders with: the card's chosen family (settings.family, e.g. "h3") when this
  * engine has it, else the type's default, else whatever it has; narrowed by what is wired in
  * (a first frame or reference picture selects the variant that needs it).

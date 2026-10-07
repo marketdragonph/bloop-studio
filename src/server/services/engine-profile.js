@@ -4,7 +4,7 @@
 // still answered at once while a new check runs in the background (a busy ComfyUI can take a minute to answer
 // /object_info, and the cards' Model and Length lists must not wait on it); a failed check is remembered briefly.
 import { firstVariants } from '../generation/presets.js';
-import { pickVariants } from '../generation/engine-check.js';
+import { lorasIn, pickVariants } from '../generation/engine-check.js';
 
 const MAX_AGE_MS = 5 * 60_000;
 const FAILED_AGE_MS = 30_000; // an engine that could not be reached is not asked again for this long
@@ -23,7 +23,7 @@ export class EngineProfile {
     }
 
     /**
-     * { detected, url, hardware, presets: Map<id, preset>, report, error? }.
+     * { detected, url, hardware, presets: Map<id, preset>, report, loras: string[], error? }.
      * Never throws: an engine that cannot be reached keeps its last profile, or, never seen,
      * offers every preset's best variant unchecked (rendering then fails with ComfyUI's reason).
      */
@@ -56,12 +56,12 @@ export class EngineProfile {
             const [hardware, objectInfo] = await Promise.all([client.hardware(), client.objectInfo()]);
             // Only variants this card has the memory for (engine-check.js tooBigFor).
             const { presets, report } = pickVariants(this.catalog, objectInfo, { vramGb: hardware.vramTotalGb });
-            this.#snapshot = { detected: true, url: client.baseUrl, detectedAt: this.now(), hardware, presets, report };
+            this.#snapshot = { detected: true, url: client.baseUrl, detectedAt: this.now(), hardware, presets, report, loras: lorasIn(objectInfo) };
             this.#failed = null;
             return this.#snapshot;
         } catch (error) {
             if (this.#snapshot?.url === client.baseUrl) return this.#snapshot;
-            const result = { detected: false, url: client.baseUrl, error: error.message, hardware: null, presets: firstVariants(this.catalog), report: [] };
+            const result = { detected: false, url: client.baseUrl, error: error.message, hardware: null, presets: firstVariants(this.catalog), report: [], loras: [] };
             this.#failed = { url: client.baseUrl, at: this.now(), result };
             return result;
         }

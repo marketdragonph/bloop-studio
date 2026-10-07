@@ -164,6 +164,14 @@ What the app does today. Update this file with every feature or fix (see CLAUDE.
 - **Seed lock** per card; otherwise every render gets a new seed.
 - **Card knobs**: model family, aspect (16:9, 9:16, 1:1, 4:5, 21:9), resolution, duration and quality.
   The last choices per card type become the defaults for new cards.
+- **Style (LoRA)** on Image and Video cards: the LoRAs in ComfyUI's loras folders (its own and
+  `extra_model_paths.yaml`'s) made for the card's model, and a strength (Subtle 0.5, Medium 0.75, Full 1, Strong 1.25).
+  Each file is matched to its model by its tensor names and widths, never its metadata
+  (`src/server/generation/lora-families.js`): Z-Image, Qwen-Image-Edit, Wan 2.2 5B, LTX-2.x, MiniMax-H3; a ComfyUI on
+  another PC falls back to the file name. The workflows' own speed LoRAs are never offered. At render time one
+  `LoraLoaderModelOnly` (`@style`) goes right after `@model` (`withStyle` in presets.js); a style for another model
+  (a card moved to Qwen-Image-Edit by two references) is left out, a removed one fails with a plain reason. Takes keep
+  `style` and `styleStrength`. Not sticky: a style is the card's own pick.
 - **Families**
 
   | Card | Family | What it makes |

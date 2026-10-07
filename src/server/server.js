@@ -13,6 +13,7 @@ import { SpacesRepository } from './repositories/spaces.js';
 import { JobsRepository } from './repositories/jobs.js';
 import { loadCatalog } from './generation/presets.js';
 import { EngineProfile } from './services/engine-profile.js';
+import { builtInLoras, LoraLibrary } from './services/lora-library.js';
 import { MediaStore } from './generation/media-store.js';
 import { BoardEvents } from './generation/events.js';
 import { GenerationWorker } from './generation/worker.js';
@@ -85,10 +86,13 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const media = new MediaStore(() => settings.get('mediaDir'));
     const events = new BoardEvents();
     const comfy = () => new ComfyClient(settings.get('comfyUrl'));
-    const engine = new EngineProfile({ catalog: loadCatalog(), comfy });
+    const catalog = loadCatalog();
+    const engine = new EngineProfile({ catalog, comfy });
     const account = new BloopAccount({ settings, openExternal, baseUrl: bloopUrl }); // undefined = bloop itself
     const launcher = new ComfyLauncher({ settings }); // the person's own ComfyUI, started from the top bar
     const installer = new EngineInstaller({ settings, launcher, engine }); // "Install offline engine"
+    // The cards' Style knob: LoRAs in ComfyUI's loras folders, matched to the model they were trained for.
+    const loras = new LoraLibrary({ install: () => launcher.install(), builtIn: builtInLoras(catalog) });
     // The Cut (Mini Katana): one cut per space, the one reader of the board, and take lengths measured off the GPU path.
     const cuts = new CutsRepository(db);
     const boardCut = new BoardCut({ db, exists: (path) => Boolean(media.resolve(path) && existsSync(media.resolve(path))) });
@@ -104,7 +108,7 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     const strips = new ClipStrips({ ffmpeg, media, queue: toolsQueue, events }); // the Video lane's filmstrips, same queue
     const exporter = new CutExporter({ db, cuts, exportsRepo, boardCut, spaces, media, ffmpeg, tools: videoTools, events, queue: toolsQueue, analysis });
     const packer = new Packer({ db, cuts, exportsRepo, media, events, queue: toolsQueue });
-    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer });
+    const worker = new GenerationWorker({ jobs, spaces, engine, media, events, comfy, account, cuts, measurer, loras });
     const director = new DirectorRepository(db);
     // One write path for the cut (P2b) and one undo per Director turn (P4), shared by the dock and the Director.
     const cutEdits = new CutEdits({ db, cuts, events });
@@ -126,8 +130,8 @@ export async function createServer({ settings, dataDir, port = 0, dbPath = join(
     // one rule for where an untouched card renders (card-source.js) shared by Generate, Render missing beats, starters.
     new LiveCut({ events, cuts, drafts: cutDraft, plans, spaces, measurer }).start();
     new CutAnalysis({ events, cuts, analysis }).start();
-    const sources = cardSources({ engine, account, launcher });
-    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, cutTurns, analysis, strips, sources, ops };
+    const sources = cardSources({ engine, account, launcher, loras });
+    const deps = { settings, views, comfy, dataDir, db, spaces, jobs, engine, media, events, worker, director, directorService, directorRuns, plans, runner, reveal, updates, onThemeChange, account, launcher, installer, loras, cuts, boardCut, exportsRepo, exporter, packer, videoTools, pickFile, measurer, cutEdits, cutDraft, cutTurns, analysis, strips, sources, ops };
 
     const app = new Hono();
     app.use('*', csrf(csrfToken));

@@ -4,12 +4,15 @@
 import { targetsOf } from './presets.js';
 
 /** The options of a dropdown input spec: legacy [[...options]] or the newer ["COMBO", { options }]. */
-function comboOptions(spec) {
+export function comboOptions(spec) {
     const [type, config] = spec ?? [];
     if (Array.isArray(type)) return type;
     if (type === 'COMBO' && Array.isArray(config?.options)) return config.options;
     return null;
 }
+
+/** The LoRA files this ComfyUI can load (its loras folders), for the cards' Style knob. */
+export const lorasIn = (objectInfo) => comboOptions(objectInfo?.LoraLoaderModelOnly?.input?.required?.lora_name) ?? [];
 
 /** "title.field" keys the app writes at render time (prompt, seed, uploaded picture…): not fixed values. */
 function boundFields(preset) {

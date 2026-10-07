@@ -71,6 +71,23 @@
         })
       </div>
     </template>
+    {{-- A LoRA from ComfyUI's loras folder made for this model, and how hard it pulls. --}}
+    <template x-if="knobsFor(node).styles.length">
+      <div class="card__knob card__knob--wide">
+        @!component('components/select', {
+          label: 'Style', options: 'knobsFor(node).styles', value: "knobValue(node, 'style')",
+          change: "setKnob(node, 'style', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
+    <template x-if="knobsFor(node).styles.length && knobValue(node, 'style') !== 'none'">
+      <div class="card__knob">
+        @!component('components/select', {
+          label: 'Strength', options: 'knobsFor(node).styleStrengths', value: "knobValue(node, 'styleStrength')",
+          change: "setKnob(node, 'styleStrength', v)", disabled: 'isBusy(node)'
+        })
+      </div>
+    </template>
   </div>
 
   <div class="card__controls" x-show="node.type !== 'audio'">

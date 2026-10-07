@@ -76,7 +76,18 @@ function durationLabel(seconds, isClip) {
     return `${Math.floor(seconds / 60)} min${rest ? ` ${rest} s` : ''}`;
 }
 
-export const DEFAULT_KNOBS = { aspect: '16:9', resolution: null, duration: 5, quality: 'final' };
+/** How hard a card's Style LoRA pulls (LoraLoaderModelOnly strength_model). Most LoRAs are made for 0.6–1. */
+export const STYLE_STRENGTHS = [
+    { value: 0.5, label: 'Subtle' },
+    { value: 0.75, label: 'Medium' },
+    { value: 1, label: 'Full' },
+    { value: 1.25, label: 'Strong' },
+];
+
+/** A card's style strength, one of the offered ones (Full when unset or unknown). */
+export const styleStrength = (value) => STYLE_STRENGTHS.find((s) => s.value === Number(value))?.value ?? 1;
+
+export const DEFAULT_KNOBS ={ aspect: '16:9', resolution: null, duration: 5, quality: 'final' };
 
 /** Width × height for an aspect at a megapixel target, both multiples of 32 (every model here needs that). */
 export function sizeFor(aspectId, megapixels) {

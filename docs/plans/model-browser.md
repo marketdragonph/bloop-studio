@@ -1,4 +1,4 @@
-# Model browser: search and install models from Hugging Face — PLANNED
+# Model browser: search and install models from Hugging Face — PARTIAL
 
 Roadmap 3c, after the Director port (3b). Agreed with the owner 2026-10-05.
 
@@ -21,8 +21,9 @@ when a workflow can load it. The browser therefore installs things that slot int
 - [ ] Search Hugging Face for LoRAs per base model we run (Z-Image, Wan 2.2, LTX-2.3; base_model tags and
       file names), with name, preview picture, size, downloads, license.
 - [ ] Install into `models/loras`; a list of installed LoRAs with Remove.
-- [ ] Workflows get a LoRA slot (a LoraLoaderModelOnly bound like the other inputs); Image and Video cards get a
-      **Style** knob (the LoRA) and a strength; the engine check knows which LoRA fits which family.
+- [x] Workflows get a LoRA slot (a LoraLoaderModelOnly added after `@model` at render time); Image and Video cards get a
+      **Style** knob (the LoRA) and a strength; each LoRA is matched to its family by its weights (2026-10-08, the LoRAs
+      already in ComfyUI's loras folders; see features.md "Style (LoRA)").
 - [ ] The Director can read which styles are installed (never installs anything itself).
 
 ### 2. Live model catalog

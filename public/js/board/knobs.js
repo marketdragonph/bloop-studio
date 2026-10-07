@@ -2,7 +2,7 @@
 // the shared formats table the server names for the card's family on this machine (e.g. "h3" on
 // the 24 GB card, "h3-int8" on 12 GB). The last choice per card type is remembered (sticky
 // defaults) and applied to new cards of that type. The seed is never sticky.
-import { knobOptions, aspectCss, DEFAULT_KNOBS } from '/shared/formats.js';
+import { knobOptions, aspectCss, DEFAULT_KNOBS, STYLE_STRENGTHS } from '/shared/formats.js';
 
 const STICKY_KEY = 'bloop-studio:card-defaults';
 const KNOBS = ['family', 'aspect', 'resolution', 'duration', 'quality', 'voice'];
@@ -42,8 +42,10 @@ export const knobMethods = {
         const kept = knobCache.get(node);
         if (kept && kept.family === family && kept.chosen === chosen) return kept.options;
         // A bloop cloud model brings its own options (its params); a local family names a formats table.
-        const none = { aspects: [], resolutions: [], durations: [], qualities: [], voices: [] };
+        const none = { aspects: [], resolutions: [], durations: [], qualities: [], voices: [], styles: [] };
         const options = { ...none, ...(family?.options ?? knobOptions(family?.knobs)) };
+        // The LoRAs in ComfyUI's loras folder made for this model (lora-library.js), None first, and how hard they pull.
+        if (family?.styles?.length) Object.assign(options, { styles: [{ value: 'none', label: 'None' }, ...family.styles], styleStrengths: STYLE_STRENGTHS });
         // A long clip only at the resolutions tried that long (formats.js `longest`).
         const resolution = chosen ?? options.resolutions[0]?.value;
         const cap = options.longest?.[resolution];
@@ -56,7 +58,7 @@ export const knobMethods = {
         const value = node.settings?.[key];
         const options = this.knobsFor(node);
         // A card made on another PC may hold a value this machine's table does not offer.
-        const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities, voice: options.voices }[key];
+        const offered = { aspect: options.aspects, resolution: options.resolutions, duration: options.durations, quality: options.qualities, voice: options.voices, style: options.styles, styleStrength: STYLE_STRENGTHS }[key];
         const match = (v) => offered?.find((o) => String(o.value) === String(v))?.value;
         if (value !== undefined && value !== null && (!offered?.length || match(value) !== undefined)) return offered?.length ? match(value) : value;
         // A cloud model's own default (e.g. 5 s, not its longest and dearest); a song's 30 s.
@@ -68,15 +70,17 @@ export const knobMethods = {
         // 5 s unless the model offers less: a 10 s clip takes minutes and is chosen, never a default.
         if (key === 'duration') return match(5) ?? (options.durations.filter((d) => Number(d.value) <= 5).at(-1) ?? options.durations[0])?.value;
         if (key === 'voice') return options.voices[0]?.value;
+        if (key === 'style') return 'none';
+        if (key === 'styleStrength') return 1;
         return DEFAULT_KNOBS[key];
     },
 
     setKnob(node, key, value) {
         const settings = { ...node.settings, [key]: value };
-        // A new model family may not offer the old resolution/duration/quality/voice: drop them.
-        if (key === 'family') for (const k of ['resolution', 'duration', 'quality', 'voice']) delete settings[k];
+        // A new model family may not offer the old resolution/duration/quality/voice, and a style fits one model: drop them.
+        if (key === 'family') for (const k of ['resolution', 'duration', 'quality', 'voice', 'style']) delete settings[k];
         this.updateCard(node, { settings });
-        writeSticky(node.type, key, value);
+        if (!key.startsWith('style')) writeSticky(node.type, key, value); // a style is this card's own pick
     },
 
     /** Applies remembered knob choices to a freshly created card. */

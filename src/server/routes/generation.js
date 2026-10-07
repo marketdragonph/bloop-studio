@@ -11,11 +11,11 @@ import { queueCard } from '../generation/enqueue.js';
 
 const int = (value) => Number.parseInt(value, 10);
 
-export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, launcher, reveal }) {
+export function generationRoutes({ spaces, jobs, worker, events, media, engine, account, launcher, reveal, loras }) {
     const routes = new Hono();
 
     // A card's Model list, in order (src/shared/card-source.js); the first is what a card with no pick renders on.
-    const sources = cardSources({ engine, account, launcher });
+    const sources = cardSources({ engine, account, launcher, loras });
     const offered = async (type) => (await sources(type)).families;
 
     routes.post('/spaces/:id/nodes/:nodeId/generate', async (c) => {

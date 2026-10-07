@@ -1,11 +1,11 @@
 // The stages one generation job passes through. ctx carries { job, node, deps, ... }.
 import { randomInt } from 'node:crypto';
 import { basename } from 'node:path';
-import { choosePreset, compileGraph, familyOf, knobsOf } from './presets.js';
+import { choosePreset, compileGraph, familyOf, knobsOf, withStyle } from './presets.js';
 import { composePrompt, LyricsPrompt } from './prompt.js';
 import { mimeFromName } from './media-store.js';
 import { StageError } from './pipeline.js';
-import { knobInputs } from '../../shared/formats.js';
+import { knobInputs, styleStrength } from '../../shared/formats.js';
 import { isTextSocket } from '../../shared/node-types.js';
 import { measureTake } from './measure-take.js';
 
@@ -96,7 +96,26 @@ export async function compile(ctx, next) {
         seed: ctx.seed,
     };
     ctx.graph = compileGraph(ctx.preset, ctx.params);
+    const style = await styleOf(ctx);
+    if (style) {
+        withStyle(ctx.graph, style);
+        Object.assign(ctx.params, { style: style.name, styleStrength: style.strength });
+    }
     await next();
+}
+
+/**
+ * The card's Style LoRA when it fits the model this render runs on, else null: a card whose wires moved it to
+ * another model (two reference pictures → Qwen-Image-Edit) renders without it rather than with a LoRA that does nothing.
+ * One the person picked that is no longer in ComfyUI's loras folder is said plainly.
+ */
+async function styleOf(ctx) {
+    const { style, styleStrength: strength } = ctx.node.settings ?? {};
+    if (!style || style === 'none' || ctx.preset.card === 'audio' || !ctx.deps.loras) return null;
+    const { loras = [] } = await ctx.deps.engine.current();
+    if (!loras.includes(style)) throw new StageError(`The style "${style}" is not in ComfyUI's loras folder any more. Pick another style or None.`);
+    const [entry] = await ctx.deps.loras.classify([style]);
+    return entry?.family === familyOf(ctx.preset.id) ? { name: style, strength: styleStrength(strength) } : null;
 }
 
 /**

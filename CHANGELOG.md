@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+- New: a Style knob on Image and Video cards uses a LoRA from your ComfyUI loras folder, with a strength from Subtle to Strong. Each card only lists the LoRAs made for its model.
+
 ## 2026.1007.636
 
 - New: edit a space's name and notes, or delete it, from its tile on the Spaces list or from the top of its board. Deleting asks first, keeps your rendered files in the media folder, and waits while the Director or a render is still working on it.
