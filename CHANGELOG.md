@@ -5,6 +5,8 @@ that heading into the version number and uses the section as the release notes.
 
 ## Unreleased
 
+## 2026.1008.530
+
 - New: a Style knob on Image and Video cards uses a LoRA from your ComfyUI loras folder, with a strength from Subtle to Strong. Each card only lists the LoRAs made for its model.
 
 ## 2026.1007.636
